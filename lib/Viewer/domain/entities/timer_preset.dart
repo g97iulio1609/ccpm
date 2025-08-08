@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TimerPreset {
   final String
-      id; // Potrebbe essere l'ID del documento Firestore o un UUID generato localmente
+  id; // Potrebbe essere l'ID del documento Firestore o un UUID generato localmente
   final String userId; // ID dell'utente a cui appartiene questo preset
   final String label;
   final int seconds;
@@ -17,12 +17,7 @@ class TimerPreset {
   });
 
   factory TimerPreset.empty() {
-    return TimerPreset(
-      id: '',
-      userId: '',
-      label: '',
-      seconds: 0,
-    );
+    return TimerPreset(id: '', userId: '', label: '', seconds: 0);
   }
 
   TimerPreset copyWith({
@@ -49,8 +44,7 @@ class TimerPreset {
       'seconds': seconds,
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
-          : FieldValue
-              .serverTimestamp(), // Usa serverTimestamp se createdAt è null durante la creazione
+          : FieldValue.serverTimestamp(), // Usa serverTimestamp se createdAt è null durante la creazione
     };
   }
 
@@ -76,7 +70,9 @@ class TimerPreset {
   }
 
   factory TimerPreset.fromJsonFromCache(
-      Map<String, dynamic> json, String userId) {
+    Map<String, dynamic> json,
+    String userId,
+  ) {
     return TimerPreset(
       id: json['id'] as String,
       userId: userId, // userId iniettato perché non presente nella cache entry

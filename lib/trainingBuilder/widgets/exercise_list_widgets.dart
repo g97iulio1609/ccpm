@@ -58,9 +58,9 @@ class EmptyExerciseState extends StatelessWidget {
     return Text(
       'Nessun esercizio disponibile',
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
       textAlign: TextAlign.center,
     );
   }
@@ -68,9 +68,9 @@ class EmptyExerciseState extends StatelessWidget {
   Widget _buildEmptySubtitle(BuildContext context) {
     return Text(
       'Aggiungi il primo esercizio per iniziare',
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
       textAlign: TextAlign.center,
     );
   }
@@ -193,21 +193,18 @@ class ExerciseLayoutBuilder extends StatelessWidget {
 
   Widget _buildListLayout(BuildContext context) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index == exercises.length) {
-            return Padding(
-              padding: EdgeInsets.only(top: spacing),
-              child: addExerciseButton,
-            );
-          }
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == exercises.length) {
           return Padding(
-            padding: EdgeInsets.only(bottom: spacing),
-            child: exerciseBuilder(exercises[index]),
+            padding: EdgeInsets.only(top: spacing),
+            child: addExerciseButton,
           );
-        },
-        childCount: exercises.length + 1,
-      ),
+        }
+        return Padding(
+          padding: EdgeInsets.only(bottom: spacing),
+          child: exerciseBuilder(exercises[index]),
+        );
+      }, childCount: exercises.length + 1),
     );
   }
 
@@ -216,20 +213,17 @@ class ExerciseLayoutBuilder extends StatelessWidget {
     final crossAxisCount = width >= 1600
         ? 4
         : width >= 1200
-            ? 3
-            : 2;
+        ? 3
+        : 2;
     final aspectRatio = width >= 1400 ? 1.0 : 0.9;
 
     return SliverGrid(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index == exercises.length) {
-            return addExerciseButton;
-          }
-          return exerciseBuilder(exercises[index]);
-        },
-        childCount: exercises.length + 1,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == exercises.length) {
+          return addExerciseButton;
+        }
+        return exerciseBuilder(exercises[index]);
+      }, childCount: exercises.length + 1),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: spacing,

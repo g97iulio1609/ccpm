@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart'; // Per caricare il workout completo
@@ -79,7 +80,12 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
     int repsDone,
     double weightDone,
   ) async {
-    // Potremmo voler mostrare un feedback di caricamento specifico per la serie
+    // Validazione parametri
+    if (seriesId.isEmpty) {
+      state = state.copyWith(error: "ID serie mancante");
+      return;
+    }
+
     try {
       await _completeSeriesUseCase.call(
         CompleteSeriesParams(
@@ -89,13 +95,19 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
           weightDone: weightDone,
         ),
       );
-      // Dopo aver completato la serie, ricarichiamo il workout per riflettere i cambiamenti.
-      // Questo è un approccio semplice. Alternative più complesse potrebbero aggiornare
-      // solo la serie specifica nello stato locale per una UI più reattiva,
-      // ma richiederebbero una gestione dello stato più granulare.
-      await _loadWorkout();
+      
+      // Tenta l'aggiornamento locale, se fallisce ricarichiamo tutto
+      try {
+        _updateSeriesInLocalState(seriesId, isDone, repsDone, weightDone);
+      } catch (localUpdateError) {
+        debugPrint("Errore aggiornamento locale, ricarico workout: $localUpdateError");
+        await _loadWorkout();
+      }
     } catch (e) {
-      // Gestire l'errore, magari mostrandolo nella UI
+      // Logging dell'errore per debugging
+      debugPrint("Errore completamento serie - ID: $seriesId, Done: $isDone, Reps: $repsDone, Weight: $weightDone");
+      debugPrint("Errore: ${e.toString()}");
+      
       state = state.copyWith(
         error: "Errore nel completare la serie: ${e.toString()}",
       );
@@ -112,8 +124,8 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
           note: note,
         ),
       );
-      // Ricarica per vedere la nota aggiornata
-      await _loadWorkout();
+      // Aggiorna solo la nota nell'esercizio specifico
+      _updateExerciseNoteInLocalState(exerciseId, note);
     } catch (e) {
       state = state.copyWith(
         error: "Errore nel salvare la nota: ${e.toString()}",
@@ -130,12 +142,101 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
           exerciseId: exerciseId,
         ),
       );
-      // Ricarica per vedere la nota rimossa
-      await _loadWorkout();
+      // Rimuove la nota dall'esercizio specifico
+      _updateExerciseNoteInLocalState(exerciseId, null);
     } catch (e) {
       state = state.copyWith(
         error: "Errore nell'eliminare la nota: ${e.toString()}",
       );
+    }
+  }
+
+  /// Aggiorna solo la serie specifica nello stato locale senza ricaricare tutto
+  void _updateSeriesInLocalState(
+    String seriesId,
+    bool isDone,
+    int repsDone,
+    double weightDone,
+  ) {
+    if (state.workout == null) return;
+
+    final updatedWorkout = _updateSeriesInWorkout(
+      state.workout!,
+      seriesId,
+      isDone,
+      repsDone,
+      weightDone,
+    );
+
+    if (updatedWorkout != null) {
+      state = state.copyWith(workout: updatedWorkout);
+    }
+  }
+
+  /// Trova e aggiorna la serie nel workout
+  Workout? _updateSeriesInWorkout(
+    Workout workout,
+    String seriesId,
+    bool isDone,
+    int repsDone,
+    double weightDone,
+  ) {
+    if (seriesId.isEmpty) {
+      debugPrint("Errore: seriesId è vuoto");
+      return null;
+    }
+
+    bool updated = false;
+    
+    try {
+      final updatedExercises = workout.exercises.map((exercise) {
+        final updatedSeries = exercise.series.map((series) {
+          if (series.id == seriesId) {
+            updated = true;
+            return series.copyWith(
+              done: isDone,
+              isCompleted: isDone,
+              repsDone: repsDone,
+              weightDone: weightDone,
+            );
+          }
+          return series;
+        }).toList();
+
+        return exercise.copyWith(series: updatedSeries);
+      }).toList();
+
+      if (updated) {
+        return workout.copyWith(exercises: updatedExercises);
+      }
+    } catch (e) {
+      debugPrint("Errore aggiornamento serie locale: $e");
+      // In caso di errore, ricarichiamo tutto per sicurezza
+      _loadWorkout();
+      return null;
+    }
+    
+    return null;
+  }
+
+  /// Aggiorna solo la nota dell'esercizio specifico nello stato locale
+  void _updateExerciseNoteInLocalState(String exerciseId, String? note) {
+    if (state.workout == null || exerciseId.isEmpty) return;
+
+    try {
+      final updatedExercises = state.workout!.exercises.map((exercise) {
+        if (exercise.id == exerciseId) {
+          return exercise.copyWith(note: note);
+        }
+        return exercise;
+      }).toList();
+
+      final updatedWorkout = state.workout!.copyWith(exercises: updatedExercises);
+      state = state.copyWith(workout: updatedWorkout);
+    } catch (e) {
+      debugPrint("Errore aggiornamento nota locale: $e");
+      // In caso di errore, ricarichiamo tutto per sicurezza
+      _loadWorkout();
     }
   }
 

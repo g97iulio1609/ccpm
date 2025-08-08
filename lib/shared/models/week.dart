@@ -10,17 +10,17 @@ class Week {
   final int number;
   final String? name; // Viewer compatibility
   final String? description; // Viewer compatibility
-  
+
   // Content fields
   final List<Workout> workouts;
-  
+
   // Status and tracking fields
   final bool isCompleted; // Viewer compatibility
   final DateTime? startDate;
   final DateTime? endDate;
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  
+
   // Additional metadata
   final Map<String, dynamic>? metadata;
   final String? notes;
@@ -49,10 +49,7 @@ class Week {
 
   /// Factory constructor for empty week
   factory Week.empty() {
-    return const Week(
-      number: 1,
-      workouts: [],
-    );
+    return const Week(number: 1, workouts: []);
   }
 
   /// Factory constructor from Firestore document
@@ -117,7 +114,8 @@ class Week {
       metadata: metadata ?? this.metadata,
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
-      targetWorkoutsPerWeek: targetWorkoutsPerWeek ?? this.targetWorkoutsPerWeek,
+      targetWorkoutsPerWeek:
+          targetWorkoutsPerWeek ?? this.targetWorkoutsPerWeek,
       isActive: isActive ?? this.isActive,
     );
   }
@@ -139,7 +137,8 @@ class Week {
       if (metadata != null) 'metadata': metadata,
       if (notes != null) 'notes': notes,
       if (tags != null) 'tags': tags,
-      if (targetWorkoutsPerWeek != null) 'targetWorkoutsPerWeek': targetWorkoutsPerWeek,
+      if (targetWorkoutsPerWeek != null)
+        'targetWorkoutsPerWeek': targetWorkoutsPerWeek,
       'isActive': isActive,
     };
   }
@@ -153,7 +152,7 @@ class Week {
   static List<Workout> _parseWorkouts(dynamic data) {
     if (data == null) return [];
     if (data is! List) return [];
-    
+
     return data
         .map((item) {
           if (item is Map<String, dynamic>) {
@@ -178,10 +177,8 @@ class Week {
   static List<String>? _parseStringList(dynamic data) {
     if (data == null) return null;
     if (data is! List) return null;
-    
-    return data
-        .map((item) => item.toString())
-        .toList();
+
+    return data.map((item) => item.toString()).toList();
   }
 
   /// Get total number of workouts
@@ -200,16 +197,20 @@ class Week {
   bool get hasWorkouts => workouts.isNotEmpty;
 
   /// Check if week is fully completed
-  bool get isFullyCompleted => workouts.isNotEmpty && workouts.every((w) => w.isCompleted);
+  bool get isFullyCompleted =>
+      workouts.isNotEmpty && workouts.every((w) => w.isCompleted);
 
   /// Get total exercises across all workouts
-  int get totalExercises => workouts.fold(0, (total, workout) => total + workout.totalExercises);
+  int get totalExercises =>
+      workouts.fold(0, (total, workout) => total + workout.totalExercises);
 
   /// Get total series across all workouts
-  int get totalSeries => workouts.fold(0, (total, workout) => total + workout.totalSeries);
+  int get totalSeries =>
+      workouts.fold(0, (total, workout) => total + workout.totalSeries);
 
   /// Get estimated total duration for the week
-  int get estimatedTotalDuration => workouts.fold(0, (total, workout) => total + workout.estimatedDuration);
+  int get estimatedTotalDuration =>
+      workouts.fold(0, (total, workout) => total + workout.estimatedDuration);
 
   /// Check if week is current (within date range)
   bool get isCurrent {
@@ -274,13 +275,7 @@ class Week {
 
   @override
   int get hashCode {
-    return Object.hash(
-      id,
-      programId,
-      number,
-      name,
-      isCompleted,
-    );
+    return Object.hash(id, programId, number, name, isCompleted);
   }
 
   @override
@@ -290,25 +285,19 @@ class Week {
 }
 
 /// Enum for week status
-enum WeekStatus {
-  upcoming,
-  current,
-  inProgress,
-  completed,
-  overdue,
-}
+enum WeekStatus { upcoming, current, inProgress, completed, overdue }
 
 /// Extension methods for backward compatibility and additional functionality
 extension WeekCompatibility on Week {
   /// TrainingBuilder compatibility - get workouts list
   List<Workout> get workoutsList => workouts;
-  
+
   /// Viewer compatibility - check if week was started
   bool get wasStarted => completedWorkouts > 0;
-  
+
   /// Get week number as string
   String get weekNumber => number.toString();
-  
+
   /// Get completion status as string
   String get statusText {
     switch (status) {
@@ -324,7 +313,7 @@ extension WeekCompatibility on Week {
         return 'Upcoming';
     }
   }
-  
+
   /// Get formatted duration string for the week
   String get durationText {
     final duration = estimatedTotalDuration;
@@ -339,97 +328,81 @@ extension WeekCompatibility on Week {
       return '${hours}h ${minutes}min';
     }
   }
-  
+
   /// Get progress text (e.g., "2/4 workouts")
   String get progressText {
     return '$completedWorkouts/$totalWorkouts workouts';
   }
-  
+
   /// Create a copy with updated completion status
   Week markAsCompleted() {
-    return copyWith(
-      isCompleted: true,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(isCompleted: true, updatedAt: DateTime.now());
   }
-  
+
   /// Create a copy with reset completion status
   Week resetCompletion() {
-    return copyWith(
-      isCompleted: false,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(isCompleted: false, updatedAt: DateTime.now());
   }
-  
+
   /// Add workout to week
   Week addWorkout(Workout workout) {
     final updatedWorkouts = List<Workout>.from(workouts);
     updatedWorkouts.add(workout);
-    return copyWith(
-      workouts: updatedWorkouts,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(workouts: updatedWorkouts, updatedAt: DateTime.now());
   }
-  
+
   /// Remove workout from week
   Week removeWorkout(String workoutId) {
-    final updatedWorkouts = workouts
-        .where((w) => w.id != workoutId)
-        .toList();
-    return copyWith(
-      workouts: updatedWorkouts,
-      updatedAt: DateTime.now(),
-    );
+    final updatedWorkouts = workouts.where((w) => w.id != workoutId).toList();
+    return copyWith(workouts: updatedWorkouts, updatedAt: DateTime.now());
   }
-  
+
   /// Update workout in week
   Week updateWorkout(Workout updatedWorkout) {
     final updatedWorkouts = workouts
         .map((w) => w.id == updatedWorkout.id ? updatedWorkout : w)
         .toList();
-    return copyWith(
-      workouts: updatedWorkouts,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(workouts: updatedWorkouts, updatedAt: DateTime.now());
   }
-  
+
   /// Reorder workouts
   Week reorderWorkouts(List<Workout> reorderedWorkouts) {
-    return copyWith(
-      workouts: reorderedWorkouts,
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(workouts: reorderedWorkouts, updatedAt: DateTime.now());
   }
-  
+
   /// Get next workout to perform
   Workout? get nextWorkout {
     return workouts
         .where((w) => !w.isCompleted)
         .fold<Workout?>(
           null,
-          (next, workout) => next == null || workout.order < next.order ? workout : next,
+          (next, workout) =>
+              next == null || workout.order < next.order ? workout : next,
         );
   }
-  
+
   /// Get last completed workout
   Workout? get lastCompletedWorkout {
     return workouts
         .where((w) => w.isCompleted)
         .fold<Workout?>(
           null,
-          (last, workout) => last == null || workout.order > last.order ? workout : last,
+          (last, workout) =>
+              last == null || workout.order > last.order ? workout : last,
         );
   }
-  
+
   /// Check if week meets target workouts
   bool get meetsTarget {
     if (targetWorkoutsPerWeek == null) return true;
     return completedWorkouts >= targetWorkoutsPerWeek!;
   }
-  
+
   /// Get remaining workouts to meet target
   int get remainingWorkoutsForTarget {
     if (targetWorkoutsPerWeek == null) return 0;
-    return (targetWorkoutsPerWeek! - completedWorkouts).clamp(0, double.infinity).toInt();
+    return (targetWorkoutsPerWeek! - completedWorkouts)
+        .clamp(0, double.infinity)
+        .toInt();
   }
 }

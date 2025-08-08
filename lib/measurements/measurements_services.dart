@@ -26,17 +26,17 @@ class MeasurementsService {
         .collection('measurements')
         .doc(measurementId)
         .update({
-      'date': Timestamp.fromDate(date),
-      'weight': weight,
-      'height': height,
-      'bmi': bmi,
-      'bodyFatPercentage': bodyFatPercentage,
-      'waistCircumference': waistCircumference,
-      'hipCircumference': hipCircumference,
-      'chestCircumference': chestCircumference,
-      'bicepsCircumference': bicepsCircumference,
-      'userId': userId,
-    });
+          'date': Timestamp.fromDate(date),
+          'weight': weight,
+          'height': height,
+          'bmi': bmi,
+          'bodyFatPercentage': bodyFatPercentage,
+          'waistCircumference': waistCircumference,
+          'hipCircumference': hipCircumference,
+          'chestCircumference': chestCircumference,
+          'bicepsCircumference': bicepsCircumference,
+          'userId': userId,
+        });
   }
 
   Future<String> addMeasurement({
@@ -80,14 +80,20 @@ class MeasurementsService {
         .collection('measurements')
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) =>
-                MeasurementModel.fromJson({...doc.data(), 'id': doc.id}))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map(
+                (doc) =>
+                    MeasurementModel.fromJson({...doc.data(), 'id': doc.id}),
+              )
+              .toList(),
+        );
   }
 
-  Future<void> deleteMeasurement(
-      {required String userId, required String measurementId}) async {
+  Future<void> deleteMeasurement({
+    required String userId,
+    required String measurementId,
+  }) async {
     await _firestore
         .collection('users')
         .doc(userId)

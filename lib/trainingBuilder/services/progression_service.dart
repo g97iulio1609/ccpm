@@ -47,7 +47,9 @@ class ProgressionService {
 
   /// Builds week progressions for an exercise
   static List<List<WeekProgression>> buildWeekProgressions(
-      List<Week> weeks, Exercise exercise) {
+    List<Week> weeks,
+    Exercise exercise,
+  ) {
     return List.generate(weeks.length, (weekIndex) {
       final week = weeks[weekIndex];
       return week.workouts.map((workout) {
@@ -69,7 +71,8 @@ class ProgressionService {
             sessionProgression = WeekProgression(
               weekNumber: weekIndex + 1,
               sessionNumber: workout.order,
-              series: []);
+              series: [],
+            );
           }
         }
 
@@ -140,15 +143,25 @@ class ProgressionService {
   }) {
     final minIntensityValue = double.tryParse(minIntensity) ?? 0;
     final minWeight = WeightCalculationService.calculateWeightFromIntensity(
-        latestMaxWeight, minIntensityValue);
-    final roundedMinWeight = WeightCalculationService.roundWeight(minWeight, exerciseType);
+      latestMaxWeight,
+      minIntensityValue,
+    );
+    final roundedMinWeight = WeightCalculationService.roundWeight(
+      minWeight,
+      exerciseType,
+    );
 
     String maxWeightValue = '';
     if (maxIntensity.isNotEmpty) {
       final maxIntensityValue = double.tryParse(maxIntensity) ?? 0;
       final maxWeight = WeightCalculationService.calculateWeightFromIntensity(
-        latestMaxWeight, maxIntensityValue);
-      final roundedMaxWeight = WeightCalculationService.roundWeight(maxWeight, exerciseType);
+        latestMaxWeight,
+        maxIntensityValue,
+      );
+      final roundedMaxWeight = WeightCalculationService.roundWeight(
+        maxWeight,
+        exerciseType,
+      );
       maxWeightValue = roundedMaxWeight.toStringAsFixed(1);
     }
 
@@ -164,13 +177,18 @@ class ProgressionService {
   }) {
     final minWeightValue = double.tryParse(minWeight) ?? 0;
     final minIntensity = WeightCalculationService.calculateIntensityFromWeight(
-        minWeightValue, latestMaxWeight);
+      minWeightValue,
+      latestMaxWeight,
+    );
 
     String maxIntensityValue = '';
     if (maxWeight.isNotEmpty) {
       final maxWeightValue = double.tryParse(maxWeight) ?? 0;
-      final maxIntensity = WeightCalculationService.calculateIntensityFromWeight(
-        maxWeightValue, latestMaxWeight);
+      final maxIntensity =
+          WeightCalculationService.calculateIntensityFromWeight(
+            maxWeightValue,
+            latestMaxWeight,
+          );
       maxIntensityValue = maxIntensity.toStringAsFixed(1);
     }
 
@@ -217,50 +235,58 @@ class ProgressionService {
 
     for (int weekIndex = 0; weekIndex < controllers.length; weekIndex++) {
       List<WeekProgression> weekProgressions = [];
-      for (int sessionIndex = 0;
-          sessionIndex < controllers[weekIndex].length;
-          sessionIndex++) {
+      for (
+        int sessionIndex = 0;
+        sessionIndex < controllers[weekIndex].length;
+        sessionIndex++
+      ) {
         List<Series> updatedSeries = [];
 
         // Itera attraverso ogni gruppo
-        for (int groupIndex = 0;
-            groupIndex < controllers[weekIndex][sessionIndex].length;
-            groupIndex++) {
+        for (
+          int groupIndex = 0;
+          groupIndex < controllers[weekIndex][sessionIndex].length;
+          groupIndex++
+        ) {
           final groupControllers =
               controllers[weekIndex][sessionIndex][groupIndex];
           final sets = parseAndDefaultInt(groupControllers.sets.text);
 
           // Crea il numero corretto di serie per questo gruppo
           for (int i = 0; i < sets; i++) {
-            updatedSeries.add(Series(
-              serieId: generateRandomId(16).toString(),
-              exerciseId: '',
-              reps: parseAndDefaultInt(groupControllers.reps.min.text),
-              maxReps: int.tryParse(groupControllers.reps.max.text),
-              sets: 1, // Ogni serie individuale ha sets=1
-              intensity: groupControllers.intensity.min.text,
-              maxIntensity: groupControllers.intensity.max.text.isNotEmpty
-                  ? groupControllers.intensity.max.text
-                  : null,
-              rpe: groupControllers.rpe.min.text,
-              maxRpe: groupControllers.rpe.max.text.isNotEmpty
-                  ? groupControllers.rpe.max.text
-                  : null,
-              weight: parseAndDefaultDouble(groupControllers.weight.min.text),
-              maxWeight: double.tryParse(groupControllers.weight.max.text),
-              order: updatedSeries.length + 1,
-              done: false,
-              repsDone: 0,
-              weightDone: 0.0,
-            ));
+            updatedSeries.add(
+              Series(
+                serieId: generateRandomId(16).toString(),
+                exerciseId: '',
+                reps: parseAndDefaultInt(groupControllers.reps.min.text),
+                maxReps: int.tryParse(groupControllers.reps.max.text),
+                sets: 1, // Ogni serie individuale ha sets=1
+                intensity: groupControllers.intensity.min.text,
+                maxIntensity: groupControllers.intensity.max.text.isNotEmpty
+                    ? groupControllers.intensity.max.text
+                    : null,
+                rpe: groupControllers.rpe.min.text,
+                maxRpe: groupControllers.rpe.max.text.isNotEmpty
+                    ? groupControllers.rpe.max.text
+                    : null,
+                weight: parseAndDefaultDouble(groupControllers.weight.min.text),
+                maxWeight: double.tryParse(groupControllers.weight.max.text),
+                order: updatedSeries.length + 1,
+                done: false,
+                repsDone: 0,
+                weightDone: 0.0,
+              ),
+            );
           }
         }
 
-        weekProgressions.add(WeekProgression(
-          weekNumber: weekIndex + 1,
-          sessionNumber: sessionIndex + 1,
-          series: updatedSeries,
-        ));
+        weekProgressions.add(
+          WeekProgression(
+            weekNumber: weekIndex + 1,
+            sessionNumber: sessionIndex + 1,
+            series: updatedSeries,
+          ),
+        );
       }
       updatedWeekProgressions.add(weekProgressions);
     }
@@ -281,14 +307,19 @@ class ProgressionService {
     // Mostra percentuale e peso calcolato
     if (minIntensity.isNotEmpty) {
       final minIntensityValue = double.tryParse(minIntensity) ?? 0;
-      final maxIntensityValue =
-          maxIntensity.isNotEmpty ? double.tryParse(maxIntensity) : null;
+      final maxIntensityValue = maxIntensity.isNotEmpty
+          ? double.tryParse(maxIntensity)
+          : null;
 
       final minWeight = WeightCalculationService.calculateWeightFromIntensity(
-          latestMaxWeight, minIntensityValue);
+        latestMaxWeight,
+        minIntensityValue,
+      );
       final maxWeight = maxIntensityValue != null
           ? WeightCalculationService.calculateWeightFromIntensity(
-              latestMaxWeight, maxIntensityValue)
+              latestMaxWeight,
+              maxIntensityValue,
+            )
           : null;
 
       String intensityText = minIntensityValue.toString();

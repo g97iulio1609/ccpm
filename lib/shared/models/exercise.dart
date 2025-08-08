@@ -14,15 +14,15 @@ class Exercise {
   final String? variant;
   final int order;
   final String? superSetId;
-  
+
   // Viewer-specific fields
   final String? workoutId;
   final String? note;
-  
+
   // TrainingBuilder-specific fields
   final List<List<WeekProgression>>? weekProgressions;
   final num? latestMaxWeight;
-  
+
   // Common fields
   final List<Series> series;
   final DateTime? createdAt;
@@ -48,12 +48,7 @@ class Exercise {
 
   /// Factory constructor for empty exercise
   factory Exercise.empty() {
-    return const Exercise(
-      name: '',
-      type: 'weight',
-      order: 0,
-      series: [],
-    );
+    return const Exercise(name: '', type: 'weight', order: 0, series: []);
   }
 
   /// Factory constructor from Firestore document
@@ -156,9 +151,11 @@ class Exercise {
   static List<List<WeekProgression>>? _parseWeekProgressions(dynamic data) {
     if (data == null) return null;
     return List<List<WeekProgression>>.from(
-      data.map((week) => List<WeekProgression>.from(
-        week.map((prog) => WeekProgression.fromMap(prog))
-      ))
+      data.map(
+        (week) => List<WeekProgression>.from(
+          week.map((prog) => WeekProgression.fromMap(prog)),
+        ),
+      ),
     );
   }
 
@@ -169,9 +166,9 @@ class Exercise {
     if (data is List) {
       return data
           .where((e) => e != null)
-          .map((seriesData) => Series.fromMap(
-                seriesData as Map<String, dynamic>,
-              ))
+          .map(
+            (seriesData) => Series.fromMap(seriesData as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -179,9 +176,10 @@ class Exercise {
     if (data is Map) {
       return data.values
           .where((e) => e != null)
-          .map((seriesData) => Series.fromMap(
-                Map<String, dynamic>.from(seriesData as Map),
-              ))
+          .map(
+            (seriesData) =>
+                Series.fromMap(Map<String, dynamic>.from(seriesData as Map)),
+          )
           .toList();
     }
 
@@ -241,16 +239,17 @@ class Exercise {
 extension ExerciseCompatibility on Exercise {
   /// TrainingBuilder compatibility getter
   String? get exerciseIdCompat => exerciseId ?? originalExerciseId;
-  
+
   /// Viewer compatibility getter
   String? get originalExerciseIdCompat => originalExerciseId ?? exerciseId;
-  
+
   /// Check if exercise has progressions (TrainingBuilder feature)
-  bool get hasProgressions => weekProgressions != null && weekProgressions!.isNotEmpty;
-  
+  bool get hasProgressions =>
+      weekProgressions != null && weekProgressions!.isNotEmpty;
+
   /// Check if exercise belongs to a workout (Viewer feature)
   bool get belongsToWorkout => workoutId != null;
-  
+
   /// Check if exercise is completed (all series are done)
   bool get isCompleted => series.isNotEmpty && series.every((s) => s.done);
 }

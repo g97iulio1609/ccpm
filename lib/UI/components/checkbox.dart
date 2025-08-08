@@ -40,15 +40,15 @@ class AppCheckbox extends StatelessWidget {
                 border: Border.all(
                   color: value
                       ? (isEnabled
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant.withAlpha(128))
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant.withAlpha(128))
                       : colorScheme.outline,
                   width: 2,
                 ),
                 color: value
                     ? (isEnabled
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant.withAlpha(128))
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant.withAlpha(128))
                     : Colors.transparent,
               ),
               child: value

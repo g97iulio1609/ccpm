@@ -35,21 +35,18 @@ Future<void> showTimerNotification({
 }) async {
   const AndroidNotificationDetails androidPlatformChannelSpecifics =
       AndroidNotificationDetails(
-    'exercise_timer_channel',
-    'Timer Esercizi',
-    channelDescription: 'Notifiche per il timer degli esercizi',
-    importance: Importance.max,
-    priority: Priority.high,
-    enableVibration: true,
-    playSound: true,
-    sound: null,
-  );
+        'exercise_timer_channel',
+        'Timer Esercizi',
+        channelDescription: 'Notifiche per il timer degli esercizi',
+        importance: Importance.max,
+        priority: Priority.high,
+        enableVibration: true,
+        playSound: true,
+        sound: null,
+      );
 
   const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-      DarwinNotificationDetails(
-    presentSound: true,
-    sound: null,
-  );
+      DarwinNotificationDetails(presentSound: true, sound: null);
 
   const NotificationDetails platformChannelSpecifics = NotificationDetails(
     android: androidPlatformChannelSpecifics,

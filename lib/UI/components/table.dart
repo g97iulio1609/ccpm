@@ -46,9 +46,7 @@ class AppTable<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -103,9 +101,7 @@ class AppTable<T> extends StatelessWidget {
             Center(
               child: Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
-                child: CircularProgressIndicator(
-                  color: colorScheme.primary,
-                ),
+                child: CircularProgressIndicator(color: colorScheme.primary),
               ),
             )
           else if (rows.isEmpty)
@@ -174,9 +170,7 @@ class AppTable<T> extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
         border: showDividers
             ? Border(
-                bottom: BorderSide(
-                  color: colorScheme.outline.withAlpha(26),
-                ),
+                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
               )
             : null,
       ),
@@ -200,8 +194,13 @@ class AppTable<T> extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(T row, int index, ColorScheme colorScheme, ThemeData theme,
-      {bool isLastRow = false}) {
+  Widget _buildRow(
+    T row,
+    int index,
+    ColorScheme colorScheme,
+    ThemeData theme, {
+    bool isLastRow = false,
+  }) {
     final cells = buildCells(row);
     final expansion = buildExpansion?.call(row);
     final backgroundColor = zebra && index % 2 == 1
@@ -214,8 +213,9 @@ class AppTable<T> extends StatelessWidget {
           color: backgroundColor,
           child: InkWell(
             onTap: onRowTap != null ? () => onRowTap!(row) : null,
-            onLongPress:
-                onRowLongPress != null ? () => onRowLongPress!(row) : null,
+            onLongPress: onRowLongPress != null
+                ? () => onRowLongPress!(row)
+                : null,
             child: Container(
               decoration: BoxDecoration(
                 border: showDividers && !isLastRow
@@ -324,11 +324,7 @@ class BadgeCell extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(
-              icon,
-              size: 16,
-              color: textColor ?? colorScheme.primary,
-            ),
+            Icon(icon, size: 16, color: textColor ?? colorScheme.primary),
             SizedBox(width: AppTheme.spacing.xs),
           ],
           Text(

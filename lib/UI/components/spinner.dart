@@ -31,9 +31,7 @@ class AppSpinner extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(26),
-            ),
+            border: Border.all(color: colorScheme.outline.withAlpha(26)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -65,9 +63,7 @@ class AppSpinner extends StatelessWidget {
     if (overlay) {
       return Stack(
         children: [
-          ModalBarrier(
-            color: colorScheme.scrim.withAlpha(82),
-          ),
+          ModalBarrier(color: colorScheme.scrim.withAlpha(82)),
           Center(child: spinner),
         ],
       );

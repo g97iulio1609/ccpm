@@ -33,9 +33,7 @@ class NumberInputField extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(128)),
       ),
       child: TextField(
         controller: controller,

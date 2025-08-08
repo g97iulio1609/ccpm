@@ -12,31 +12,31 @@ class ExerciseListController
   String? _currentExerciseType;
 
   ExerciseListController(this._exercisesService)
-      : super(const AsyncValue.loading()) {
+    : super(const AsyncValue.loading()) {
     _init();
   }
 
   void _init() {
-    _exercisesService.getExercises().listen(
-      (exercises) {
-        _allExercises = exercises;
-        _applyFilters(); // Applica i filtri correnti
-      },
-      onError: (error) => state = AsyncValue.error(error, StackTrace.current),
-    );
+    _exercisesService.getExercises().listen((exercises) {
+      _allExercises = exercises;
+      _applyFilters(); // Applica i filtri correnti
+    }, onError: (error) => state = AsyncValue.error(error, StackTrace.current));
   }
 
   void _applyFilters() {
     final filteredList = _allExercises
-        .where((exercise) =>
-            exercise.name
-                .toLowerCase()
-                .contains(_currentSearchText.toLowerCase()) &&
-            (_selectedMuscleGroups.isEmpty ||
-                _selectedMuscleGroups
-                    .any((group) => exercise.muscleGroups.contains(group))) &&
-            (_currentExerciseType == null ||
-                exercise.type == _currentExerciseType))
+        .where(
+          (exercise) =>
+              exercise.name.toLowerCase().contains(
+                _currentSearchText.toLowerCase(),
+              ) &&
+              (_selectedMuscleGroups.isEmpty ||
+                  _selectedMuscleGroups.any(
+                    (group) => exercise.muscleGroups.contains(group),
+                  )) &&
+              (_currentExerciseType == null ||
+                  exercise.type == _currentExerciseType),
+        )
         .toList();
 
     // Ordina gli esercizi mettendo prima quelli in attesa di approvazione
@@ -46,8 +46,9 @@ class ExerciseListController
       } else if (a.status != 'pending' && b.status == 'pending') {
         return 1;
       }
-      return a.name
-          .compareTo(b.name); // Ordine alfabetico come criterio secondario
+      return a.name.compareTo(
+        b.name,
+      ); // Ordine alfabetico come criterio secondario
     });
 
     state = AsyncValue.data(filteredList);
@@ -80,7 +81,8 @@ class ExerciseListController
   }
 }
 
-final exerciseListControllerProvider = StateNotifierProvider<
-    ExerciseListController, AsyncValue<List<ExerciseModel>>>(
-  (ref) => ExerciseListController(ref.watch(exercisesServiceProvider)),
-);
+final exerciseListControllerProvider =
+    StateNotifierProvider<
+      ExerciseListController,
+      AsyncValue<List<ExerciseModel>>
+    >((ref) => ExerciseListController(ref.watch(exercisesServiceProvider)));

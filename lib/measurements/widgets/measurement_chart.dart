@@ -106,10 +106,7 @@ class MeasurementChart extends StatelessWidget {
           interval: ChartConfig.yAxisInterval,
           getTitlesWidget: (value, meta) => Text(
             value.toInt().toString(),
-            style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 10,
-            ),
+            style: TextStyle(color: colorScheme.onSurface, fontSize: 10),
           ),
           reservedSize: 40,
         ),
@@ -128,10 +125,7 @@ class MeasurementChart extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   DateFormat('dd/MM').format(measurements[index].date),
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: colorScheme.onSurface, fontSize: 10),
                 ),
               );
             }
@@ -157,31 +151,36 @@ class MeasurementChart extends StatelessWidget {
     final lines = <LineChartBarData>[];
 
     if (showWeight) {
-      lines.add(_createLineData(
-        (m) => m.weight,
-        ChartConfig.chartColors['weight']!,
-      ));
+      lines.add(
+        _createLineData((m) => m.weight, ChartConfig.chartColors['weight']!),
+      );
     }
 
     if (showBodyFat) {
-      lines.add(_createLineData(
-        (m) => m.bodyFatPercentage,
-        ChartConfig.chartColors['bodyFat']!,
-      ));
+      lines.add(
+        _createLineData(
+          (m) => m.bodyFatPercentage,
+          ChartConfig.chartColors['bodyFat']!,
+        ),
+      );
     }
 
     if (showWaist) {
-      lines.add(_createLineData(
-        (m) => m.waistCircumference,
-        ChartConfig.chartColors['waist']!,
-      ));
+      lines.add(
+        _createLineData(
+          (m) => m.waistCircumference,
+          ChartConfig.chartColors['waist']!,
+        ),
+      );
     }
 
     return lines;
   }
 
   LineChartBarData _createLineData(
-      double? Function(MeasurementModel) getValue, Color color) {
+    double? Function(MeasurementModel) getValue,
+    Color color,
+  ) {
     return LineChartBarData(
       spots: measurements.asMap().entries.map((entry) {
         final value = getValue(entry.value);
@@ -210,9 +209,7 @@ class MeasurementChart extends StatelessWidget {
     return LineTouchData(
       touchTooltipData: LineTouchTooltipData(
         tooltipBorderRadius: BorderRadius.circular(AppTheme.radii.md),
-        tooltipBorder: BorderSide(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        tooltipBorder: BorderSide(color: colorScheme.outline.withAlpha(26)),
         tooltipPadding: EdgeInsets.all(AppTheme.spacing.sm),
         tooltipMargin: AppTheme.spacing.sm,
         getTooltipItems: (touchedSpots) {
@@ -222,7 +219,7 @@ class MeasurementChart extends StatelessWidget {
             final measurementType = [
               'Peso',
               'Grasso Corporeo',
-              'Circonferenza Vita'
+              'Circonferenza Vita',
             ][touchedSpot.barIndex];
             return LineTooltipItem(
               '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
@@ -245,16 +242,34 @@ class MeasurementChart extends StatelessWidget {
     final items = <Widget>[];
 
     if (showWeight) {
-      items.add(_buildLegendItem(
-          'Peso', ChartConfig.chartColors['weight']!, theme, colorScheme));
+      items.add(
+        _buildLegendItem(
+          'Peso',
+          ChartConfig.chartColors['weight']!,
+          theme,
+          colorScheme,
+        ),
+      );
     }
     if (showBodyFat) {
-      items.add(_buildLegendItem('Grasso Corporeo',
-          ChartConfig.chartColors['bodyFat']!, theme, colorScheme));
+      items.add(
+        _buildLegendItem(
+          'Grasso Corporeo',
+          ChartConfig.chartColors['bodyFat']!,
+          theme,
+          colorScheme,
+        ),
+      );
     }
     if (showWaist) {
-      items.add(_buildLegendItem('Circonferenza Vita',
-          ChartConfig.chartColors['waist']!, theme, colorScheme));
+      items.add(
+        _buildLegendItem(
+          'Circonferenza Vita',
+          ChartConfig.chartColors['waist']!,
+          theme,
+          colorScheme,
+        ),
+      );
     }
 
     return Wrap(
@@ -265,7 +280,11 @@ class MeasurementChart extends StatelessWidget {
   }
 
   Widget _buildLegendItem(
-      String label, Color color, ThemeData theme, ColorScheme colorScheme) {
+    String label,
+    Color color,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppTheme.spacing.md,
@@ -274,9 +293,7 @@ class MeasurementChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withAlpha(51),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        border: Border.all(
-          color: color.withAlpha(51),
-        ),
+        border: Border.all(color: color.withAlpha(51)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -284,10 +301,7 @@ class MeasurementChart extends StatelessWidget {
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           SizedBox(width: AppTheme.spacing.xs),
           Text(
@@ -314,11 +328,13 @@ class MeasurementChart extends StatelessWidget {
     }
     if (showBodyFat) {
       values.addAll(
-          measurements.map((m) => m.bodyFatPercentage).where((v) => v > 0));
+        measurements.map((m) => m.bodyFatPercentage).where((v) => v > 0),
+      );
     }
     if (showWaist) {
       values.addAll(
-          measurements.map((m) => m.waistCircumference).where((v) => v > 0));
+        measurements.map((m) => m.waistCircumference).where((v) => v > 0),
+      );
     }
 
     if (values.isEmpty) {

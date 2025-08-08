@@ -1,21 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
-enum AppButtonVariant {
-  filled,
-  outline,
-  ghost,
-  subtle,
-  primary,
-  secondary,
-}
+enum AppButtonVariant { filled, outline, ghost, subtle, primary, secondary }
 
-enum AppButtonSize {
-  sm,
-  md,
-  lg,
-  full,
-}
+enum AppButtonSize { sm, md, lg, full }
 
 class AppButton extends StatelessWidget {
   final String? label;
@@ -69,23 +57,23 @@ class AppButton extends StatelessWidget {
     final double height = size == AppButtonSize.sm
         ? 32
         : size == AppButtonSize.md
-            ? 40
-            : 48;
+        ? 40
+        : 48;
     final double iconSize = size == AppButtonSize.sm
         ? 16
         : size == AppButtonSize.md
-            ? 20
-            : 24;
+        ? 20
+        : 24;
     final double fontSize = size == AppButtonSize.sm
         ? 14
         : size == AppButtonSize.md
-            ? 16
-            : 18;
+        ? 16
+        : 18;
     final double horizontalPadding = size == AppButtonSize.sm
         ? 12
         : size == AppButtonSize.md
-            ? 16
-            : 24;
+        ? 16
+        : 24;
 
     Color getBackgroundColor() {
       if (backgroundColor != null) return backgroundColor!;
@@ -121,10 +109,7 @@ class AppButton extends StatelessWidget {
     BorderSide? getBorderSide() {
       switch (variant) {
         case AppButtonVariant.outline:
-          return BorderSide(
-            color: colorScheme.primary,
-            width: 1.5,
-          );
+          return BorderSide(color: colorScheme.primary, width: 1.5);
         default:
           return null;
       }
@@ -146,11 +131,7 @@ class AppButton extends StatelessWidget {
           if (label != null) SizedBox(width: AppTheme.spacing.sm),
         ] else ...[
           if (icon != null) ...[
-            Icon(
-              icon,
-              size: iconSize,
-              color: getForegroundColor(),
-            ),
+            Icon(icon, size: iconSize, color: getForegroundColor()),
             if (label != null) SizedBox(width: AppTheme.spacing.sm),
           ],
         ],
@@ -181,9 +162,7 @@ class AppButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           side: getBorderSide() ?? BorderSide.none,
         ),
-        padding: EdgeInsets.symmetric(
-          horizontal: horizontalPadding,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         child: buttonChild,
       ),
     );

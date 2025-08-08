@@ -23,7 +23,10 @@ class ValidationUtils {
         return exerciseIndex >= 0 &&
             exerciseIndex <
                 program
-                    .weeks[weekIndex].workouts[workoutIndex].exercises.length;
+                    .weeks[weekIndex]
+                    .workouts[workoutIndex]
+                    .exercises
+                    .length;
       }
     }
 
@@ -38,7 +41,8 @@ class ValidationUtils {
     int? groupIndex,
   ]) {
     if (weekIndex < 0 || weekIndex >= weekProgressions.length) return false;
-    if (sessionIndex < 0 || sessionIndex >= weekProgressions[weekIndex].length) {
+    if (sessionIndex < 0 ||
+        sessionIndex >= weekProgressions[weekIndex].length) {
       return false;
     }
 

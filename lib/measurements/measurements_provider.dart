@@ -11,7 +11,8 @@ class MeasurementsStateNotifier extends StateNotifier<MeasurementsState> {
 
 final measurementsStateNotifierProvider =
     StateNotifierProvider<MeasurementsStateNotifier, MeasurementsState>(
-        (ref) => MeasurementsStateNotifier());
+      (ref) => MeasurementsStateNotifier(),
+    );
 
 class MeasurementsState {
   final DateTime? startDate;
@@ -21,8 +22,7 @@ class MeasurementsState {
 }
 
 class SelectedMeasurementsNotifier extends StateNotifier<Set<String>> {
-  SelectedMeasurementsNotifier()
-      : super({'weight', 'bodyFatPercentage'});
+  SelectedMeasurementsNotifier() : super({'weight', 'bodyFatPercentage'});
 
   void toggleSelectedMeasurement(String measurement) {
     if (state.contains(measurement)) {
@@ -35,9 +35,8 @@ class SelectedMeasurementsNotifier extends StateNotifier<Set<String>> {
 
 final selectedMeasurementsProvider =
     StateNotifierProvider<SelectedMeasurementsNotifier, Set<String>>((ref) {
-  return SelectedMeasurementsNotifier();
-});
-
+      return SelectedMeasurementsNotifier();
+    });
 
 class MeasurementFormState {
   final GlobalKey<FormState> formKey;
@@ -69,21 +68,21 @@ class MeasurementFormState {
 
 class MeasurementFormNotifier extends StateNotifier<MeasurementFormState> {
   MeasurementFormNotifier()
-      : super(
-          MeasurementFormState(
-            formKey: GlobalKey<FormState>(),
-            selectedDate: DateTime.now(),
-            controllers: {
-              'weight': TextEditingController(),
-              'height': TextEditingController(),
-              'bodyFat': TextEditingController(),
-              'waist': TextEditingController(),
-              'hip': TextEditingController(),
-              'chest': TextEditingController(),
-              'biceps': TextEditingController(),
-            },
-          ),
-        );
+    : super(
+        MeasurementFormState(
+          formKey: GlobalKey<FormState>(),
+          selectedDate: DateTime.now(),
+          controllers: {
+            'weight': TextEditingController(),
+            'height': TextEditingController(),
+            'bodyFat': TextEditingController(),
+            'waist': TextEditingController(),
+            'hip': TextEditingController(),
+            'chest': TextEditingController(),
+            'biceps': TextEditingController(),
+          },
+        ),
+      );
 
   void updateSelectedDate(DateTime date) {
     state = state.copyWith(selectedDate: date);

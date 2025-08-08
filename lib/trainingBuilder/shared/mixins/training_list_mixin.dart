@@ -53,11 +53,7 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            leadingIcon,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(leadingIcon, color: colorScheme.primary, size: 24),
         ),
         items: items,
       ),
@@ -74,9 +70,7 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
@@ -104,8 +98,9 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
         backgroundColor: isPrimary
             ? colorScheme.primary
             : colorScheme.surfaceContainerHighest,
-        foregroundColor:
-            isPrimary ? colorScheme.onPrimary : colorScheme.onSurface,
+        foregroundColor: isPrimary
+            ? colorScheme.onPrimary
+            : colorScheme.onSurface,
         padding: EdgeInsets.symmetric(
           horizontal: AppTheme.spacing.lg,
           vertical: AppTheme.spacing.md,
@@ -121,9 +116,10 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
 
   /// Gets responsive layout properties
   @Deprecated(
-      'Use MediaQuery.of(context).size.width directly for responsive checks')
+    'Use MediaQuery.of(context).size.width directly for responsive checks',
+  )
   ({bool isSmallScreen, double spacing, EdgeInsets padding})
-      getLayoutProperties(BuildContext context) {
+  getLayoutProperties(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
 
@@ -131,7 +127,8 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
       isSmallScreen: isSmallScreen,
       spacing: isSmallScreen ? AppTheme.spacing.sm : AppTheme.spacing.md,
       padding: EdgeInsets.all(
-          isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg),
+        isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg,
+      ),
     );
   }
 

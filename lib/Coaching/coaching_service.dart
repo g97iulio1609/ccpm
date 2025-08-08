@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
-
 class Association {
   final String id;
   final String coachId;
@@ -26,11 +25,7 @@ class Association {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'coachId': coachId,
-      'athleteId': athleteId,
-      'status': status,
-    };
+    return {'coachId': coachId, 'athleteId': athleteId, 'status': status};
   }
 }
 
@@ -45,9 +40,11 @@ class CoachingService {
         .collection('associations')
         .where('coachId', isEqualTo: coachId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Association.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => Association.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   /// Ottiene le associazioni per un cliente specifico
@@ -56,9 +53,11 @@ class CoachingService {
         .collection('associations')
         .where('athleteId', isEqualTo: userId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Association.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => Association.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   /// Cerca i coach in base al nome o all'email
@@ -139,11 +138,10 @@ class CoachingService {
   /// Risponde a una richiesta di associazione (accetta o rifiuta)
   Future<bool> respondToAssociation(String associationId, bool accept) async {
     try {
-      DocumentReference docRef =
-          _firestore.collection('associations').doc(associationId);
-      await docRef.update({
-        'status': accept ? 'accepted' : 'rejected',
-      });
+      DocumentReference docRef = _firestore
+          .collection('associations')
+          .doc(associationId);
+      await docRef.update({'status': accept ? 'accepted' : 'rejected'});
       return true;
     } catch (e) {
       //debugPrint('Error responding to association: $e');

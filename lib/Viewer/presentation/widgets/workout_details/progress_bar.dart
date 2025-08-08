@@ -5,7 +5,12 @@ class ProgressBar extends StatelessWidget {
   final int done;
   final int total;
   final String Function(double pct)? labelBuilder;
-  const ProgressBar({super.key, required this.done, required this.total, this.labelBuilder});
+  const ProgressBar({
+    super.key,
+    required this.done,
+    required this.total,
+    this.labelBuilder,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,13 +31,12 @@ class ProgressBar extends StatelessWidget {
         SizedBox(height: AppTheme.spacing.xs),
         Text(
           labelBuilder?.call(pct) ?? '${(pct * 100).round()}%',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
           textAlign: TextAlign.right,
         ),
       ],
     );
   }
 }
-

@@ -1,12 +1,11 @@
-import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, WeekRepository;
+import 'package:alphanessone/shared/shared.dart'
+    hide ValidationUtils, ModelUtils, WeekRepository;
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
 
 /// Business service per le operazioni sulle settimane
 /// Segue il principio Single Responsibility
 class WeekBusinessService {
-
-
   WeekBusinessService();
 
   /// Aggiunge una nuova settimana al programma
@@ -14,14 +13,7 @@ class WeekBusinessService {
     final newWeek = Week(
       id: null,
       number: program.weeks.length + 1,
-      workouts: [
-        Workout(
-          id: '',
-          name: 'Workout 1',
-          order: 1,
-          exercises: [],
-        ),
-      ],
+      workouts: [Workout(id: '', name: 'Workout 1', order: 1, exercises: [])],
     );
     program.weeks.add(newWeek);
   }
@@ -46,7 +38,8 @@ class WeekBusinessService {
   ) async {
     if (!ValidationUtils.isValidProgramIndex(program, sourceWeekIndex)) {
       throw ArgumentError(
-          'Indice settimana sorgente non valido: $sourceWeekIndex');
+        'Indice settimana sorgente non valido: $sourceWeekIndex',
+      );
     }
 
     final sourceWeek = program.weeks[sourceWeekIndex];
@@ -61,7 +54,7 @@ class WeekBusinessService {
       program.weeks[destinationWeekIndex] = copiedWeek;
     } else {
       final weekWithNewNumber = copiedWeek.copyWith(
-        number: program.weeks.length + 1
+        number: program.weeks.length + 1,
       );
       program.weeks.add(weekWithNewNumber);
     }
@@ -125,10 +118,12 @@ class WeekBusinessService {
       'totalWeeks': program.weeks.length,
       'totalWorkouts': totalWorkouts,
       'totalExercises': totalExercises,
-      'averageWorkoutsPerWeek':
-          program.weeks.isNotEmpty ? totalWorkouts / program.weeks.length : 0,
-      'averageExercisesPerWorkout':
-          totalWorkouts > 0 ? totalExercises / totalWorkouts : 0,
+      'averageWorkoutsPerWeek': program.weeks.isNotEmpty
+          ? totalWorkouts / program.weeks.length
+          : 0,
+      'averageExercisesPerWorkout': totalWorkouts > 0
+          ? totalExercises / totalWorkouts
+          : 0,
     };
   }
 

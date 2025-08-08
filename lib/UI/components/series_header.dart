@@ -56,11 +56,9 @@ class SeriesHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             );
-          })
+          }),
         ],
       ),
     );
   }
 }
-
-

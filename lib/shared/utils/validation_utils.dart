@@ -3,12 +3,13 @@
 class ValidationUtils {
   // Private constructor to prevent instantiation
   ValidationUtils._();
-  
+
   /// Validation result class
   static const ValidationResult valid = ValidationResult._(true, null);
-  
-  static ValidationResult invalid(String message) => ValidationResult._(false, message);
-  
+
+  static ValidationResult invalid(String message) =>
+      ValidationResult._(false, message);
+
   // Exercise validation
   static ValidationResult validateExerciseName(String name) {
     if (name.trim().isEmpty) {
@@ -22,7 +23,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateExerciseType(String type) {
     const validTypes = {
       'strength',
@@ -34,7 +35,7 @@ class ValidationUtils {
       'isolation',
       'functional',
     };
-    
+
     if (type.trim().isEmpty) {
       return invalid('Exercise type cannot be empty');
     }
@@ -43,7 +44,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateExerciseOrder(int order) {
     if (order < 0) {
       return invalid('Exercise order cannot be negative');
@@ -53,7 +54,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   // Series validation
   static ValidationResult validateReps(int reps) {
     if (reps < 0) {
@@ -64,7 +65,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateSets(int sets) {
     if (sets < 0) {
       return invalid('Sets cannot be negative');
@@ -74,7 +75,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateWeight(double weight) {
     if (weight < 0) {
       return invalid('Weight cannot be negative');
@@ -84,12 +85,12 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateRpe(String? rpe) {
     if (rpe == null || rpe.trim().isEmpty) {
       return valid; // RPE is optional
     }
-    
+
     final rpeValue = double.tryParse(rpe);
     if (rpeValue == null) {
       return invalid('RPE must be a valid number');
@@ -99,15 +100,17 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateIntensity(String? intensity) {
     if (intensity == null || intensity.trim().isEmpty) {
       return valid; // Intensity is optional
     }
-    
+
     // Check if it's a percentage
     if (intensity.endsWith('%')) {
-      final percentValue = double.tryParse(intensity.substring(0, intensity.length - 1));
+      final percentValue = double.tryParse(
+        intensity.substring(0, intensity.length - 1),
+      );
       if (percentValue == null) {
         return invalid('Intensity percentage must be a valid number');
       }
@@ -116,7 +119,7 @@ class ValidationUtils {
       }
       return valid;
     }
-    
+
     // Check if it's a decimal value
     final decimalValue = double.tryParse(intensity);
     if (decimalValue == null) {
@@ -127,7 +130,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateRestTime(int? restTimeSeconds) {
     if (restTimeSeconds == null) {
       return valid; // Rest time is optional
@@ -140,7 +143,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   // Workout validation
   static ValidationResult validateWorkoutName(String name) {
     if (name.trim().isEmpty) {
@@ -154,7 +157,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateWorkoutOrder(int order) {
     if (order < 0) {
       return invalid('Workout order cannot be negative');
@@ -164,7 +167,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateEstimatedDuration(int? durationMinutes) {
     if (durationMinutes == null) {
       return valid; // Duration is optional
@@ -177,7 +180,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   // Week validation
   static ValidationResult validateWeekNumber(int number) {
     if (number <= 0) {
@@ -188,7 +191,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateWeekName(String? name) {
     if (name == null || name.trim().isEmpty) {
       return valid; // Week name is optional
@@ -198,8 +201,11 @@ class ValidationUtils {
     }
     return valid;
   }
-  
-  static ValidationResult validateDateRange(DateTime? startDate, DateTime? endDate) {
+
+  static ValidationResult validateDateRange(
+    DateTime? startDate,
+    DateTime? endDate,
+  ) {
     if (startDate == null || endDate == null) {
       return valid; // Date range is optional
     }
@@ -211,7 +217,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateTargetWorkouts(int? targetWorkouts) {
     if (targetWorkouts == null) {
       return valid; // Target workouts is optional
@@ -224,7 +230,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   // Range validation
   static ValidationResult validateRange(int min, int? max, String fieldName) {
     if (max == null) {
@@ -238,7 +244,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateWeightRange(double min, double? max) {
     if (max == null) {
       return valid; // Max is optional
@@ -251,7 +257,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   // Text validation
   static ValidationResult validateNotes(String? notes) {
     if (notes == null || notes.trim().isEmpty) {
@@ -262,7 +268,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   static ValidationResult validateDescription(String? description) {
     if (description == null || description.trim().isEmpty) {
       return valid; // Description is optional
@@ -272,7 +278,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   // ID validation
   static ValidationResult validateId(String? id, String fieldName) {
     if (id == null || id.trim().isEmpty) {
@@ -286,11 +292,13 @@ class ValidationUtils {
     }
     // Check for valid characters (alphanumeric, hyphens, underscores)
     if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(id)) {
-      return invalid('$fieldName ID can only contain letters, numbers, hyphens, and underscores');
+      return invalid(
+        '$fieldName ID can only contain letters, numbers, hyphens, and underscores',
+      );
     }
     return valid;
   }
-  
+
   // Email validation
   static ValidationResult validateEmail(String? email) {
     if (email == null || email.trim().isEmpty) {
@@ -301,7 +309,7 @@ class ValidationUtils {
     }
     return valid;
   }
-  
+
   // Composite validation methods
   static List<ValidationResult> validateExercise({
     required String name,
@@ -318,7 +326,7 @@ class ValidationUtils {
       validateNotes(notes),
     ].where((result) => !result.isValid).toList();
   }
-  
+
   static List<ValidationResult> validateSeries({
     required int reps,
     required int sets,
@@ -340,7 +348,7 @@ class ValidationUtils {
       validateWeightRange(weight, maxWeight),
     ].where((result) => !result.isValid).toList();
   }
-  
+
   static List<ValidationResult> validateWorkout({
     required String name,
     required int order,
@@ -356,7 +364,7 @@ class ValidationUtils {
       validateNotes(notes),
     ].where((result) => !result.isValid).toList();
   }
-  
+
   static List<ValidationResult> validateWeek({
     required int number,
     String? name,
@@ -381,16 +389,16 @@ class ValidationUtils {
 class ValidationResult {
   final bool isValid;
   final String? message;
-  
+
   const ValidationResult._(this.isValid, this.message);
-  
+
   bool get isInvalid => !isValid;
-  
+
   @override
   String toString() {
     return isValid ? 'Valid' : 'Invalid: $message';
   }
-  
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -398,7 +406,7 @@ class ValidationResult {
         other.isValid == isValid &&
         other.message == message;
   }
-  
+
   @override
   int get hashCode => Object.hash(isValid, message);
 }
@@ -407,23 +415,23 @@ class ValidationResult {
 extension ValidationExtensions on List<ValidationResult> {
   /// Check if all validations passed
   bool get allValid => every((result) => result.isValid);
-  
+
   /// Check if any validation failed
   bool get anyInvalid => any((result) => result.isInvalid);
-  
+
   /// Get all error messages
   List<String> get errorMessages {
-    return where((result) => result.isInvalid)
-        .map((result) => result.message!)
-        .toList();
+    return where(
+      (result) => result.isInvalid,
+    ).map((result) => result.message!).toList();
   }
-  
+
   /// Get first error message
   String? get firstError {
     final invalid = where((result) => result.isInvalid).firstOrNull;
     return invalid?.message;
   }
-  
+
   /// Combine all error messages
   String get combinedErrors {
     return errorMessages.join('; ');
@@ -433,13 +441,13 @@ extension ValidationExtensions on List<ValidationResult> {
 /// Validation exception for throwing validation errors
 class ValidationException implements Exception {
   final List<ValidationResult> validationResults;
-  
+
   const ValidationException(this.validationResults);
-  
+
   List<String> get errorMessages => validationResults.errorMessages;
-  
+
   String get message => validationResults.combinedErrors;
-  
+
   @override
   String toString() {
     return 'ValidationException: $message';
@@ -450,13 +458,13 @@ class ValidationException implements Exception {
 mixin Validatable {
   /// Validate the model and return validation results
   List<ValidationResult> validate();
-  
+
   /// Check if the model is valid
   bool get isValid => validate().allValid;
-  
+
   /// Get validation error messages
   List<String> get validationErrors => validate().errorMessages;
-  
+
   /// Validate and throw exception if invalid
   void validateOrThrow() {
     final results = validate();

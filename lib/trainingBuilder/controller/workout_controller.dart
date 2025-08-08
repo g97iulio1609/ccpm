@@ -31,7 +31,9 @@ class WorkoutController {
   }
 
   void _removeExerciseAndRelatedData(
-      TrainingProgram program, Exercise exercise) {
+    TrainingProgram program,
+    Exercise exercise,
+  ) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
@@ -47,16 +49,28 @@ class WorkoutController {
   }
 
   void _updateWorkoutOrders(
-      TrainingProgram program, int weekIndex, int startIndex) {
-    for (int i = startIndex;
-        i < program.weeks[weekIndex].workouts.length;
-        i++) {
-      program.weeks[weekIndex].workouts[i] = program.weeks[weekIndex].workouts[i].copyWith(order: i + 1);
+    TrainingProgram program,
+    int weekIndex,
+    int startIndex,
+  ) {
+    for (
+      int i = startIndex;
+      i < program.weeks[weekIndex].workouts.length;
+      i++
+    ) {
+      program.weeks[weekIndex].workouts[i] = program
+          .weeks[weekIndex]
+          .workouts[i]
+          .copyWith(order: i + 1);
     }
   }
 
-  Future<void> copyWorkout(TrainingProgram program, int sourceWeekIndex,
-      int workoutIndex, BuildContext context) async {
+  Future<void> copyWorkout(
+    TrainingProgram program,
+    int sourceWeekIndex,
+    int workoutIndex,
+    BuildContext context,
+  ) async {
     final destinationWeekIndex = await _showCopyWorkoutDialog(program, context);
     if (destinationWeekIndex != null) {
       final sourceWorkout =
@@ -102,8 +116,9 @@ class WorkoutController {
   }
 
   Exercise _copyExercise(Exercise sourceExercise) {
-    final copiedSeries =
-        sourceExercise.series.map((series) => _copySeries(series)).toList();
+    final copiedSeries = sourceExercise.series
+        .map((series) => _copySeries(series))
+        .toList();
 
     return sourceExercise.copyWith(
       id: generateRandomId(16).toString(),
@@ -122,7 +137,9 @@ class WorkoutController {
   }
 
   Future<int?> _showCopyWorkoutDialog(
-      TrainingProgram program, BuildContext context) async {
+    TrainingProgram program,
+    BuildContext context,
+  ) async {
     return showDialog<int>(
       context: context,
       builder: (context) {
@@ -140,9 +157,7 @@ class WorkoutController {
             onChanged: (value) {
               Navigator.pop(context, value);
             },
-            decoration: const InputDecoration(
-              labelText: 'Destination Week',
-            ),
+            decoration: const InputDecoration(labelText: 'Destination Week'),
           ),
           actions: [
             TextButton(
@@ -156,7 +171,11 @@ class WorkoutController {
   }
 
   void reorderWorkouts(
-      TrainingProgram program, int weekIndex, int oldIndex, int newIndex) {
+    TrainingProgram program,
+    int weekIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }

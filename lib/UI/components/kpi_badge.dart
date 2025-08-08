@@ -6,12 +6,7 @@ class KpiBadge extends StatelessWidget {
   final Color? color;
   final IconData? icon;
 
-  const KpiBadge({
-    super.key,
-    required this.text,
-    this.color,
-    this.icon,
-  });
+  const KpiBadge({super.key, required this.text, this.color, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +33,12 @@ class KpiBadge extends StatelessWidget {
           Text(
             text,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: foreground,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: foreground,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-

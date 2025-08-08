@@ -77,9 +77,7 @@ class AppRadioSelect<T> extends StatelessWidget {
 
         // Radio Options
         if (isVertical)
-          Column(
-            children: _buildOptions(theme, colorScheme),
-          )
+          Column(children: _buildOptions(theme, colorScheme))
         else
           Wrap(
             spacing: spacing ?? AppTheme.spacing.md,
@@ -150,8 +148,8 @@ class AppRadioSelect<T> extends StatelessWidget {
                       border: Border.all(
                         color: isEnabled
                             ? (isSelected
-                                ? colorScheme.primary
-                                : colorScheme.outline)
+                                  ? colorScheme.primary
+                                  : colorScheme.outline)
                             : colorScheme.onSurfaceVariant.withAlpha(128),
                         width: 2,
                       ),
@@ -165,8 +163,9 @@ class AppRadioSelect<T> extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 color: isEnabled
                                     ? colorScheme.primary
-                                    : colorScheme.onSurfaceVariant
-                                        .withAlpha(128),
+                                    : colorScheme.onSurfaceVariant.withAlpha(
+                                        128,
+                                      ),
                               ),
                             )
                           : null,
@@ -179,8 +178,8 @@ class AppRadioSelect<T> extends StatelessWidget {
                       size: 20,
                       color: isEnabled
                           ? (isSelected
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant)
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant)
                           : colorScheme.onSurfaceVariant.withAlpha(128),
                     ),
                     SizedBox(width: AppTheme.spacing.sm),
@@ -190,8 +189,8 @@ class AppRadioSelect<T> extends StatelessWidget {
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: isEnabled
                           ? (isSelected
-                              ? colorScheme.primary
-                              : colorScheme.onSurface)
+                                ? colorScheme.primary
+                                : colorScheme.onSurface)
                           : colorScheme.onSurfaceVariant.withAlpha(128),
                       fontWeight: isSelected ? FontWeight.w600 : null,
                     ),

@@ -6,9 +6,7 @@ import 'ai_extension.dart';
 
 class MaxRMExtension implements AIExtension {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(),
-  );
+  final Logger _logger = Logger(printer: PrettyPrinter());
 
   @override
   Future<bool> canHandle(Map<String, dynamic> interpretation) async {
@@ -16,8 +14,11 @@ class MaxRMExtension implements AIExtension {
   }
 
   @override
-  Future<String?> handle(Map<String, dynamic> interpretation, String userId,
-      UserModel user) async {
+  Future<String?> handle(
+    Map<String, dynamic> interpretation,
+    String userId,
+    UserModel user,
+  ) async {
     final action = interpretation['action'] as String?;
     _logger.d('Handling maxrm action: $action');
 
@@ -56,7 +57,9 @@ class MaxRMExtension implements AIExtension {
   }
 
   Future<String?> _handleUpdate(
-      Map<String, dynamic> interpretation, String userId) async {
+    Map<String, dynamic> interpretation,
+    String userId,
+  ) async {
     final exerciseName = interpretation['exercise'];
     final weight = interpretation['weight'];
     final reps = interpretation['reps'];
@@ -102,7 +105,9 @@ class MaxRMExtension implements AIExtension {
   }
 
   Future<String?> _handleQuery(
-      Map<String, dynamic> interpretation, String userId) async {
+    Map<String, dynamic> interpretation,
+    String userId,
+  ) async {
     final exerciseName = interpretation['exercise'] as String?;
     if (exerciseName == null) {
       _logger.w('Exercise name not provided for query.');
@@ -133,14 +138,17 @@ class MaxRMExtension implements AIExtension {
 
     final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
     _logger.d(
-        'Queried maxrm: ${record.maxWeight} kg x ${record.repetitions} reps');
+      'Queried maxrm: ${record.maxWeight} kg x ${record.repetitions} reps',
+    );
     return 'Il tuo massimale per $exerciseName è ${record.maxWeight} kg per ${record.repetitions} ripetizioni (aggiornato il ${record.date.toLocal().toString().split(' ')[0]}).';
   }
 
   Future<String?> _handleList(String userId) async {
     _logger.i('Listing all maxrm records for user: $userId');
-    final exercisesRef =
-        _firestore.collection('users').doc(userId).collection('exercises');
+    final exercisesRef = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('exercises');
 
     final exercisesSnapshot = await exercisesRef.get();
     if (exercisesSnapshot.docs.isEmpty) {
@@ -170,7 +178,8 @@ class MaxRMExtension implements AIExtension {
       if (recordsQuery.docs.isNotEmpty) {
         final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
         buffer.writeln(
-            '- **$exerciseName**: ${record.maxWeight}kg x ${record.repetitions} reps _(${record.date.toLocal().toString().split(' ')[0]})_');
+          '- **$exerciseName**: ${record.maxWeight}kg x ${record.repetitions} reps _(${record.date.toLocal().toString().split(' ')[0]})_',
+        );
         foundSomething = true;
       }
     }
@@ -211,9 +220,11 @@ class MaxRMExtension implements AIExtension {
   String _formatExerciseName(String name) {
     return name
         .split(' ')
-        .map((word) => word.isEmpty
-            ? ''
-            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+        )
         .join(' ');
   }
 }

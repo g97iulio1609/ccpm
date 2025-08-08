@@ -39,23 +39,27 @@ class SeriesInputFields extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final intensityController =
-        useTextEditingController(text: initialIntensity);
-    final maxIntensityController =
-        useTextEditingController(text: initialMaxIntensity);
+    final intensityController = useTextEditingController(
+      text: initialIntensity,
+    );
+    final maxIntensityController = useTextEditingController(
+      text: initialMaxIntensity,
+    );
     final rpeController = useTextEditingController(text: initialRpe);
     final maxRpeController = useTextEditingController(text: initialMaxRpe);
     final weightController = useTextEditingController(text: initialWeight);
-    final maxWeightController =
-        useTextEditingController(text: initialMaxWeight);
+    final maxWeightController = useTextEditingController(
+      text: initialMaxWeight,
+    );
 
     final colorScheme = Theme.of(context).colorScheme;
 
     // Funzione per calcolare il peso dall'intensità
     void updateWeightFromIntensity(String intensity, [String? maxIntensity]) {
       final intensityValue = double.tryParse(intensity) ?? 0;
-      final calculatedWeight =
-          maxWeight > 0 ? (maxWeight.toDouble() * intensityValue / 100) : 0.0;
+      final calculatedWeight = maxWeight > 0
+          ? (maxWeight.toDouble() * intensityValue / 100)
+          : 0.0;
       weightController.text = calculatedWeight.toStringAsFixed(1);
       onWeightChanged(calculatedWeight);
 
@@ -101,9 +105,7 @@ class SeriesInputFields extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(26),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
       ),
       child: Padding(
         padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -116,17 +118,17 @@ class SeriesInputFields extends HookConsumerWidget {
                   child: Text(
                     exerciseName,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 if (maxWeight > 0)
                   Text(
                     'Max: ${maxWeight.toStringAsFixed(1)} kg',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
               ],
             ),
@@ -136,8 +138,8 @@ class SeriesInputFields extends HookConsumerWidget {
             Text(
               'Intensità (%)',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
             SizedBox(height: AppTheme.spacing.sm),
             Row(
@@ -160,7 +162,9 @@ class SeriesInputFields extends HookConsumerWidget {
                       final intensity = double.tryParse(value) ?? 0;
                       onIntensityChanged(intensity);
                       updateWeightFromIntensity(
-                          value, maxIntensityController.text);
+                        value,
+                        maxIntensityController.text,
+                      );
                     },
                   ),
                 ),
@@ -183,7 +187,9 @@ class SeriesInputFields extends HookConsumerWidget {
                       final maxIntensity = double.tryParse(value);
                       onMaxIntensityChanged(maxIntensity);
                       updateWeightFromIntensity(
-                          intensityController.text, value);
+                        intensityController.text,
+                        value,
+                      );
                     },
                   ),
                 ),
@@ -195,8 +201,8 @@ class SeriesInputFields extends HookConsumerWidget {
             Text(
               'RPE',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
             SizedBox(height: AppTheme.spacing.sm),
             Row(
@@ -250,8 +256,8 @@ class SeriesInputFields extends HookConsumerWidget {
             Text(
               'Peso (kg)',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
             SizedBox(height: AppTheme.spacing.sm),
             Row(
@@ -274,7 +280,9 @@ class SeriesInputFields extends HookConsumerWidget {
                       final weight = double.tryParse(value) ?? 0;
                       onWeightChanged(weight);
                       updateIntensityFromWeight(
-                          value, maxWeightController.text);
+                        value,
+                        maxWeightController.text,
+                      );
                     },
                   ),
                 ),

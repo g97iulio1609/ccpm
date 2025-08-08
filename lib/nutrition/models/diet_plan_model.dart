@@ -65,10 +65,8 @@ class DietPlanDay {
   final String dayOfWeek;
   final List<String> mealIds;
 
-  DietPlanDay({
-    required this.dayOfWeek,
-    List<String>? mealIds,
-  }) : mealIds = mealIds ?? [];
+  DietPlanDay({required this.dayOfWeek, List<String>? mealIds})
+    : mealIds = mealIds ?? [];
 
   factory DietPlanDay.fromMap(Map<String, dynamic> map) {
     return DietPlanDay(
@@ -78,16 +76,10 @@ class DietPlanDay {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'dayOfWeek': dayOfWeek,
-      'mealIds': mealIds,
-    };
+    return {'dayOfWeek': dayOfWeek, 'mealIds': mealIds};
   }
 
-  DietPlanDay copyWith({
-    String? dayOfWeek,
-    List<String>? mealIds,
-  }) {
+  DietPlanDay copyWith({String? dayOfWeek, List<String>? mealIds}) {
     return DietPlanDay(
       dayOfWeek: dayOfWeek ?? this.dayOfWeek,
       mealIds: mealIds ?? List.from(this.mealIds),
@@ -95,10 +87,7 @@ class DietPlanDay {
   }
 
   DietPlanDay addMealId(String mealId) {
-    return DietPlanDay(
-      dayOfWeek: dayOfWeek,
-      mealIds: [...mealIds, mealId],
-    );
+    return DietPlanDay(dayOfWeek: dayOfWeek, mealIds: [...mealIds, mealId]);
   }
 
   DietPlanDay removeMealId(String mealId) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/Viewer/UI/widgets/workout_formatters.dart';
 import 'dart:math' as math;
 
 class TimerDisplay extends StatefulWidget {
@@ -48,10 +49,7 @@ class _TimerDisplayState extends State<TimerDisplay>
     );
 
     _smoothProgressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _progressController,
-        curve: Curves.easeOutCubic,
-      ),
+      CurvedAnimation(parent: _progressController, curve: Curves.easeOutCubic),
     );
 
     _progressController.forward();
@@ -76,11 +74,6 @@ class _TimerDisplayState extends State<TimerDisplay>
     super.dispose();
   }
 
-  String _formatTime(int totalSeconds) {
-    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
 
   bool get _shouldPulse =>
       widget.remainingSeconds <= 5 && widget.remainingSeconds > 0;
@@ -98,8 +91,10 @@ class _TimerDisplayState extends State<TimerDisplay>
     } else {
       if (_pulseController.isAnimating) {
         _pulseController.stop();
-        _pulseController.animateTo(0.0,
-            duration: const Duration(milliseconds: 200));
+        _pulseController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 200),
+        );
       }
     }
 
@@ -133,8 +128,11 @@ class _TimerDisplayState extends State<TimerDisplay>
     }
 
     return AnimatedBuilder(
-      animation: Listenable.merge(
-          [widget.animation, _pulseAnimation, _smoothProgressAnimation]),
+      animation: Listenable.merge([
+        widget.animation,
+        _pulseAnimation,
+        _smoothProgressAnimation,
+      ]),
       builder: (context, child) {
         // Progresso interpolato per maggiore fluidità
         final smoothProgress = rawProgress * _smoothProgressAnimation.value;
@@ -199,22 +197,25 @@ class _TimerDisplayState extends State<TimerDisplay>
                         duration: const Duration(milliseconds: 300),
                         transitionBuilder:
                             (Widget child, Animation<double> animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.0, 0.2),
-                                end: Offset.zero,
-                              ).animate(CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOutCubic,
-                              )),
-                              child: child,
-                            ),
-                          );
-                        },
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position:
+                                      Tween<Offset>(
+                                        begin: const Offset(0.0, 0.2),
+                                        end: Offset.zero,
+                                      ).animate(
+                                        CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeOutCubic,
+                                        ),
+                                      ),
+                                  child: child,
+                                ),
+                              );
+                            },
                         child: Text(
-                          _formatTime(widget.remainingSeconds),
+                          WorkoutFormatters.formatTime(widget.remainingSeconds),
                           key: ValueKey(widget.remainingSeconds),
                           style: theme.textTheme.displaySmall?.copyWith(
                             color: colorScheme.onSurface,
@@ -237,8 +238,9 @@ class _TimerDisplayState extends State<TimerDisplay>
                         ),
                         decoration: BoxDecoration(
                           color: accentColor.withAlpha(15),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.full),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.full,
+                          ),
                           border: Border.all(
                             color: accentColor.withAlpha(50),
                             width: 1,
@@ -301,11 +303,7 @@ class _TimerDisplayState extends State<TimerDisplay>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.repeat_rounded,
-            size: 16,
-            color: AppTheme.primaryGold,
-          ),
+          Icon(Icons.repeat_rounded, size: 16, color: AppTheme.primaryGold),
           SizedBox(width: AppTheme.spacing.xs),
           Text(
             'MODALITÀ EMOM',

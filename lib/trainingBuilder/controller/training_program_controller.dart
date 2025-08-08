@@ -339,6 +339,22 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       workoutIndex,
       context,
     );
+    
+    // Salva le modifiche nel database
+    try {
+      await _trainingService.addOrUpdateTrainingProgram(program);
+    } catch (e) {
+      debugPrint("Errore salvando esercizio: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nel salvare l\'esercizio: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+    
     _emit();
   }
 
@@ -355,16 +371,32 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       exerciseIndex,
       context,
     );
+    
+    // Salva le modifiche nel database
+    try {
+      await _trainingService.addOrUpdateTrainingProgram(program);
+    } catch (e) {
+      debugPrint("Errore salvando modifica esercizio: $e");
+    }
+    
     _emit();
   }
 
-  void removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) {
+  Future<void> removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) async {
     _trainingBusinessService.removeExercise(
       program,
       weekIndex,
       workoutIndex,
       exerciseIndex,
     );
+    
+    // Salva le modifiche nel database
+    try {
+      await _trainingService.addOrUpdateTrainingProgram(program);
+    } catch (e) {
+      debugPrint("Errore salvando rimozione esercizio: $e");
+    }
+    
     _emit();
   }
 

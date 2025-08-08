@@ -41,18 +41,14 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
 
       final paymentIntent = await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: widget.clientSecret,
-        data: PaymentMethodParams.card(
-          paymentMethodData: PaymentMethodData(),
-        ),
+        data: PaymentMethodParams.card(paymentMethodData: PaymentMethodData()),
       );
 
       if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
         widget.onPaymentSuccess(widget.sessionId);
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const PaymentSuccessScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const PaymentSuccessScreen()),
           );
         }
       } else {
@@ -64,9 +60,7 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => PaymentFailureScreen(
-              error: e.toString(),
-            ),
+            builder: (_) => PaymentFailureScreen(error: e.toString()),
           ),
         );
       }
@@ -159,8 +153,9 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(

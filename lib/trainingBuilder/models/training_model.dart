@@ -71,7 +71,6 @@ class TrainingProgram {
       athleteId: data['athleteId'],
       status: data['status'] ?? 'private',
       mesocycleNumber: data['mesocycleNumber'],
-      
     );
   }
 

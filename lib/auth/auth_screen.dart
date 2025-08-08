@@ -80,10 +80,7 @@ class AuthScreen extends HookConsumerWidget {
         // App Name with Gradient
         ShaderMask(
           shaderCallback: (bounds) => LinearGradient(
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.secondary,
-            ],
+            colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           ).createShader(bounds),
           child: Text(
             'ALPHANESS ONE',

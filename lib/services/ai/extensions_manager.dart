@@ -27,7 +27,9 @@ class ExtensionsManager {
   }
 
   Future<String?> executeAction(
-      Map<String, dynamic> interpretation, UserModel user) async {
+    Map<String, dynamic> interpretation,
+    UserModel user,
+  ) async {
     try {
       // Se riceviamo un testo naturale, lo passiamo all'agente
       if (interpretation['text'] != null) {
@@ -56,7 +58,8 @@ class ExtensionsManager {
               } catch (e) {
                 _logger.e('Error executing action', error: e);
                 results.add(
-                    'Errore nell\'esecuzione dell\'azione: ${e.toString()}');
+                  'Errore nell\'esecuzione dell\'azione: ${e.toString()}',
+                );
               }
             }
           }

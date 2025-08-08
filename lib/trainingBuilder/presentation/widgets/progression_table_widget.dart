@@ -59,9 +59,7 @@ class ProgressionTableWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: viewModel.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: viewModel.colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: viewModel.colorScheme.outline.withAlpha(26)),
       ),
       child: Column(
         children: [
@@ -88,8 +86,10 @@ class ProgressionTableWidget extends StatelessWidget {
   }
 
   Widget _buildWeekRow(int weekIndex, int sessionIndex, BuildContext context) {
-    final sessionControllers =
-        viewModel.getSessionControllers(weekIndex, sessionIndex);
+    final sessionControllers = viewModel.getSessionControllers(
+      weekIndex,
+      sessionIndex,
+    );
 
     if (sessionControllers == null) {
       return const SizedBox.shrink();

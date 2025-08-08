@@ -51,12 +51,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
         ),
       ],
       children: [
-        _buildExerciseSelection(
-          context,
-          selectedExercises,
-          theme,
-          colorScheme,
-        ),
+        _buildExerciseSelection(context, selectedExercises, theme, colorScheme),
       ],
     );
   }
@@ -78,12 +73,14 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
           ),
         ),
         SizedBox(height: AppTheme.spacing.md),
-        ...workoutExercises.map((exercise) => _buildExerciseCheckbox(
-              exercise,
-              selectedExercises,
-              theme,
-              colorScheme,
-            )),
+        ...workoutExercises.map(
+          (exercise) => _buildExerciseCheckbox(
+            exercise,
+            selectedExercises,
+            theme,
+            colorScheme,
+          ),
+        ),
       ],
     );
   }

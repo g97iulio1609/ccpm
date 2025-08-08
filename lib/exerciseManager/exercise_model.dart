@@ -40,9 +40,6 @@ class ExerciseModel {
 
   factory ExerciseModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return ExerciseModel.fromJson({
-      ...data,
-      'id': doc.id,
-    });
+    return ExerciseModel.fromJson({...data, 'id': doc.id});
   }
 }

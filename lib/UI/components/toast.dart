@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
-enum ToastType {
-  success,
-  error,
-  warning,
-  info,
-}
+enum ToastType { success, error, warning, info }
 
 class AppToast extends StatelessWidget {
   final String message;
@@ -43,10 +38,7 @@ class AppToast extends StatelessWidget {
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
+          child: Opacity(opacity: value, child: child),
         );
       },
       child: Container(
@@ -57,9 +49,7 @@ class AppToast extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
           boxShadow: [
             BoxShadow(
               color: toastColor.withAlpha(26),
@@ -83,11 +73,7 @@ class AppToast extends StatelessWidget {
                         color: toastColor.withAlpha(26),
                         borderRadius: BorderRadius.circular(AppTheme.radii.md),
                       ),
-                      child: Icon(
-                        toastIcon,
-                        color: toastColor,
-                        size: 20,
-                      ),
+                      child: Icon(toastIcon, color: toastColor, size: 20),
                     ),
                     SizedBox(width: AppTheme.spacing.md),
                     Expanded(
@@ -116,9 +102,7 @@ class AppToast extends StatelessWidget {
                 Container(
                   decoration: BoxDecoration(
                     border: Border(
-                      top: BorderSide(
-                        color: colorScheme.outline.withAlpha(26),
-                      ),
+                      top: BorderSide(color: colorScheme.outline.withAlpha(26)),
                     ),
                   ),
                   child: Material(

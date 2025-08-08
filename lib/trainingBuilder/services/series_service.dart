@@ -4,8 +4,11 @@ import 'package:alphanessone/shared/shared.dart';
 class SeriesService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<String> addSeriesToExercise(String exerciseId, Series series,
-      {String? originalExerciseId}) async {
+  Future<String> addSeriesToExercise(
+    String exerciseId,
+    Series series, {
+    String? originalExerciseId,
+  }) async {
     // Assicuriamoci che l'originalExerciseId sia impostato
     if (originalExerciseId != null) {
       series = series.copyWith(originalExerciseId: originalExerciseId);
@@ -35,8 +38,9 @@ class SeriesService {
         .where('exerciseId', isEqualTo: exerciseId)
         .orderBy('order')
         .get();
-    var seriesList =
-        snapshot.docs.map((doc) => Series.fromFirestore(doc)).toList();
+    var seriesList = snapshot.docs
+        .map((doc) => Series.fromFirestore(doc))
+        .toList();
     return seriesList;
   }
 }

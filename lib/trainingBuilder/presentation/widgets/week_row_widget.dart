@@ -40,9 +40,7 @@ class WeekRowWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
         ),
       ),
       child: Padding(
@@ -121,8 +119,11 @@ class WeekRowWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildGroupRow(BuildContext context, int groupIndex,
-      ProgressionControllers controllers) {
+  Widget _buildGroupRow(
+    BuildContext context,
+    int groupIndex,
+    ProgressionControllers controllers,
+  ) {
     final groupContent = Row(
       children: [
         Expanded(
@@ -143,8 +144,11 @@ class WeekRowWidget extends StatelessWidget {
         ),
         if (!isSmallScreen)
           IconButton(
-            icon:
-                Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+            icon: Icon(
+              Icons.delete_outline,
+              size: 20,
+              color: colorScheme.error,
+            ),
             onPressed: () =>
                 onRemoveSeriesGroup(weekIndex, sessionIndex, groupIndex),
             tooltip: 'Rimuovi Gruppo',
@@ -188,7 +192,10 @@ class WeekRowWidget extends StatelessWidget {
           TextButton.icon(
             onPressed: () {
               onAddSeriesGroup(
-                  weekIndex, sessionIndex, sessionControllers.length);
+                weekIndex,
+                sessionIndex,
+                sessionControllers.length,
+              );
             },
             icon: Icon(
               Icons.add_circle_outline,

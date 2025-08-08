@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/range_controllers.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart' as tb_format;
 
 import 'package:alphanessone/trainingBuilder/services/progression_service.dart';
 
@@ -14,11 +15,11 @@ class ProgressionControllers {
   final RangeControllers weight;
 
   ProgressionControllers()
-      : reps = RangeControllers(),
-        sets = TextEditingController(),
-        intensity = RangeControllers(),
-        rpe = RangeControllers(),
-        weight = RangeControllers();
+    : reps = RangeControllers(),
+      sets = TextEditingController(),
+      intensity = RangeControllers(),
+      rpe = RangeControllers(),
+      weight = RangeControllers();
 
   void dispose() {
     reps.dispose();
@@ -31,15 +32,15 @@ class ProgressionControllers {
   void updateFromSeries(Series series) {
     try {
       // Safely update all fields with null checks
-      reps.min.text = _formatNumber(series.reps.toString());
-      reps.max.text = _formatNumber(series.maxReps?.toString() ?? '');
-      sets.text = _formatNumber(series.sets.toString());
-      intensity.min.text = _formatNumber(series.intensity ?? '');
-      intensity.max.text = _formatNumber(series.maxIntensity ?? '');
-      rpe.min.text = _formatNumber(series.rpe ?? '');
-      rpe.max.text = _formatNumber(series.maxRpe ?? '');
-      weight.min.text = _formatNumber(series.weight.toString());
-      weight.max.text = _formatNumber(series.maxWeight?.toString() ?? '');
+      reps.min.text = tb_format.FormatUtils.formatNumber(series.reps.toString());
+      reps.max.text = tb_format.FormatUtils.formatNumber(series.maxReps?.toString() ?? '');
+      sets.text = tb_format.FormatUtils.formatNumber(series.sets.toString());
+      intensity.min.text = tb_format.FormatUtils.formatNumber(series.intensity ?? '');
+      intensity.max.text = tb_format.FormatUtils.formatNumber(series.maxIntensity ?? '');
+      rpe.min.text = tb_format.FormatUtils.formatNumber(series.rpe ?? '');
+      rpe.max.text = tb_format.FormatUtils.formatNumber(series.maxRpe ?? '');
+      weight.min.text = tb_format.FormatUtils.formatNumber(series.weight.toString());
+      weight.max.text = tb_format.FormatUtils.formatNumber(series.maxWeight?.toString() ?? '');
     } catch (e) {
       debugPrint('WARNING: Error updating controllers from series: $e');
       // Set safe defaults in case of error
@@ -47,12 +48,6 @@ class ProgressionControllers {
     }
   }
 
-  String _formatNumber(String value) {
-    if (value.isEmpty) return '';
-    final num? parsed = num.tryParse(value);
-    if (parsed == null) return value;
-    return parsed % 1 == 0 ? parsed.toInt().toString() : parsed.toStringAsFixed(1);
-  }
 
   /// Sets safe default values to prevent null errors
   void _setSafeDefaults() {
@@ -91,26 +86,36 @@ class ProgressionControllersNotifier
 
   void initialize(List<List<WeekProgression>> weekProgressions) {
     state = weekProgressions
-        .map((week) => week
-            .map((session) =>
-                session.series.map((_) => ProgressionControllers()).toList())
-            .toList())
+        .map(
+          (week) => week
+              .map(
+                (session) => session.series
+                    .map((_) => ProgressionControllers())
+                    .toList(),
+              )
+              .toList(),
+        )
         .toList();
 
     _initializeFromProgressions(weekProgressions);
   }
 
   void _initializeFromProgressions(
-      List<List<WeekProgression>> weekProgressions) {
+    List<List<WeekProgression>> weekProgressions,
+  ) {
     for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
-      for (int sessionIndex = 0;
-          sessionIndex < weekProgressions[weekIndex].length;
-          sessionIndex++) {
+      for (
+        int sessionIndex = 0;
+        sessionIndex < weekProgressions[weekIndex].length;
+        sessionIndex++
+      ) {
         final seriesFromProgressions =
             weekProgressions[weekIndex][sessionIndex].series;
-        for (int seriesIndex = 0;
-            seriesIndex < seriesFromProgressions.length;
-            seriesIndex++) {
+        for (
+          int seriesIndex = 0;
+          seriesIndex < seriesFromProgressions.length;
+          seriesIndex++
+        ) {
           final series = seriesFromProgressions[seriesIndex];
           updateControllers(weekIndex, sessionIndex, seriesIndex, series);
         }
@@ -119,9 +124,17 @@ class ProgressionControllersNotifier
   }
 
   void updateControllers(
-      int weekIndex, int sessionIndex, int groupIndex, Series series) {
+    int weekIndex,
+    int sessionIndex,
+    int groupIndex,
+    Series series,
+  ) {
     if (ProgressionService.isValidIndex(
-        state, weekIndex, sessionIndex, groupIndex)) {
+      state,
+      weekIndex,
+      sessionIndex,
+      groupIndex,
+    )) {
       final controllers = state[weekIndex][sessionIndex][groupIndex];
       controllers.updateFromSeries(series);
       state = [...state];
@@ -139,7 +152,11 @@ class ProgressionControllersNotifier
 
   void removeControllers(int weekIndex, int sessionIndex, int groupIndex) {
     if (ProgressionService.isValidIndex(
-        state, weekIndex, sessionIndex, groupIndex)) {
+      state,
+      weekIndex,
+      sessionIndex,
+      groupIndex,
+    )) {
       final newState = List<List<List<ProgressionControllers>>>.from(state);
       newState[weekIndex][sessionIndex].removeAt(groupIndex);
       state = newState;
@@ -148,8 +165,10 @@ class ProgressionControllersNotifier
 }
 
 /// Provider for progression controllers
-final progressionControllersProvider = StateNotifierProvider<
-    ProgressionControllersNotifier,
-    List<List<List<ProgressionControllers>>>>((ref) {
-  return ProgressionControllersNotifier();
-});
+final progressionControllersProvider =
+    StateNotifierProvider<
+      ProgressionControllersNotifier,
+      List<List<List<ProgressionControllers>>>
+    >((ref) {
+      return ProgressionControllersNotifier();
+    });

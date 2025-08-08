@@ -81,7 +81,7 @@ class Food {
     double? vitaminA,
     double? vitaminC,
     double? calcium,
-    double? iron, 
+    double? iron,
     required String mealId,
   }) {
     return Food(
@@ -115,7 +115,7 @@ class Food {
   factory Food.fromMap(Map<String, dynamic> map) {
     return Food(
       id: map['id'],
-            mealId: map['mealId'],
+      mealId: map['mealId'],
 
       name: map['name'],
       brands: map['brands'],
@@ -146,7 +146,7 @@ class Food {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Food(
       id: doc.id,
-            mealId: data['mealId'],
+      mealId: data['mealId'],
 
       name: data['name'],
       brands: data['brands'],
@@ -176,7 +176,7 @@ class Food {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'mealId':mealId,
+      'mealId': mealId,
       'name': name,
       'brands': brands,
       'carbs': carbs,

@@ -22,8 +22,10 @@ class ProgressionBusinessServiceOptimized {
       final week = weekEntry.value;
 
       return week.workouts.map((workout) {
-        final exerciseInWorkout =
-            _findExerciseInWorkout(workout, exercise.exerciseId!);
+        final exerciseInWorkout = _findExerciseInWorkout(
+          workout,
+          exercise.exerciseId!,
+        );
 
         if (exerciseInWorkout == null) {
           return WeekProgression(
@@ -52,7 +54,10 @@ class ProgressionBusinessServiceOptimized {
     required Exercise exercise,
   }) {
     if (!tb_validation.ValidationUtils.isValidProgressionIndex(
-        weekProgressions, weekIndex, sessionIndex)) {
+      weekProgressions,
+      weekIndex,
+      sessionIndex,
+    )) {
       throw ArgumentError('Invalid progression indices');
     }
 
@@ -75,13 +80,18 @@ class ProgressionBusinessServiceOptimized {
     required List<List<WeekProgression>> weekProgressions,
   }) {
     if (!tb_validation.ValidationUtils.isValidProgressionIndex(
-        weekProgressions, weekIndex, sessionIndex)) {
+      weekProgressions,
+      weekIndex,
+      sessionIndex,
+    )) {
       throw ArgumentError('Invalid progression indices');
     }
 
     try {
       final session = weekProgressions[weekIndex][sessionIndex];
-      final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(session.series);
+      final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(
+        session.series,
+      );
 
       if (groupIndex >= 0 && groupIndex < groupedSeries.length) {
         groupedSeries.removeAt(groupIndex);
@@ -98,7 +108,10 @@ class ProgressionBusinessServiceOptimized {
     required List<List<WeekProgression>> weekProgressions,
   }) {
     if (!tb_validation.ValidationUtils.isValidProgressionIndex(
-        weekProgressions, params.weekIndex, params.sessionIndex)) {
+      weekProgressions,
+      params.weekIndex,
+      params.sessionIndex,
+    )) {
       throw ArgumentError('Invalid progression indices');
     }
 
@@ -106,7 +119,9 @@ class ProgressionBusinessServiceOptimized {
       final session = weekProgressions[params.weekIndex][params.sessionIndex];
       if (session.series.isEmpty) return;
 
-      final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(session.series);
+      final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(
+        session.series,
+      );
 
       if (!_isValidGroupIndex(params.groupIndex, groupedSeries.length)) {
         throw ArgumentError('Invalid group index');
@@ -224,13 +239,19 @@ class ProgressionBusinessServiceOptimized {
 
       if (existingProgression.series.isNotEmpty) {
         return _createProgressionFromExisting(
-            existingProgression, weekIndex, sessionOrder);
+          existingProgression,
+          weekIndex,
+          sessionOrder,
+        );
       }
     }
 
     // Create from exercise series
     return _createProgressionFromExercise(
-        exerciseInWorkout, weekIndex, sessionOrder);
+      exerciseInWorkout,
+      weekIndex,
+      sessionOrder,
+    );
   }
 
   /// Creates progression from existing progression data
@@ -239,10 +260,14 @@ class ProgressionBusinessServiceOptimized {
     int weekIndex,
     int sessionOrder,
   ) {
-    final groupedSeries =
-        tb_model_utils.ModelUtils.groupSimilarSeries(existingProgression.series);
+    final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(
+      existingProgression.series,
+    );
     final representativeSeries = groupedSeries
-        .map((group) => tb_model_utils.ModelUtils.createRepresentativeSeries(group))
+        .map(
+          (group) =>
+              tb_model_utils.ModelUtils.createRepresentativeSeries(group),
+        )
         .toList();
 
     return WeekProgression(
@@ -258,9 +283,14 @@ class ProgressionBusinessServiceOptimized {
     int weekIndex,
     int sessionOrder,
   ) {
-    final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(exercise.series);
+    final groupedSeries = tb_model_utils.ModelUtils.groupSimilarSeries(
+      exercise.series,
+    );
     final representativeSeries = groupedSeries
-        .map((group) => tb_model_utils.ModelUtils.createRepresentativeSeries(group))
+        .map(
+          (group) =>
+              tb_model_utils.ModelUtils.createRepresentativeSeries(group),
+        )
         .toList();
 
     return WeekProgression(
@@ -300,27 +330,37 @@ class ProgressionBusinessServiceOptimized {
       final sets = parseInt(_getControllerText(controller, 'sets') ?? '1');
 
       for (int j = 0; j < sets; j++) {
-        series.add(Series(
-          serieId: '${DateTime.now().millisecondsSinceEpoch}_${i}_$j',
-          exerciseId: '',
-          reps: parseInt(_getControllerText(controller, 'reps', 'min') ?? '0'),
-          maxReps:
-              _parseOptionalInt(_getControllerText(controller, 'reps', 'max')),
-          sets: 1,
-          intensity: _getControllerText(controller, 'intensity', 'min') ?? '',
-          maxIntensity: _parseOptionalString(
-              _getControllerText(controller, 'intensity', 'max')),
-          rpe: _getControllerText(controller, 'rpe', 'min') ?? '',
-          maxRpe: _parseOptionalString(
-              _getControllerText(controller, 'rpe', 'max')),
-          weight: parseDouble(_getControllerText(controller, 'weight', 'min') ?? '0.0'),
-          maxWeight: _parseOptionalDouble(
-              _getControllerText(controller, 'weight', 'max')),
-          order: series.length + 1,
-          done: false,
-          repsDone: 0,
-          weightDone: 0.0,
-        ));
+        series.add(
+          Series(
+            serieId: '${DateTime.now().millisecondsSinceEpoch}_${i}_$j',
+            exerciseId: '',
+            reps: parseInt(
+              _getControllerText(controller, 'reps', 'min') ?? '0',
+            ),
+            maxReps: _parseOptionalInt(
+              _getControllerText(controller, 'reps', 'max'),
+            ),
+            sets: 1,
+            intensity: _getControllerText(controller, 'intensity', 'min') ?? '',
+            maxIntensity: _parseOptionalString(
+              _getControllerText(controller, 'intensity', 'max'),
+            ),
+            rpe: _getControllerText(controller, 'rpe', 'min') ?? '',
+            maxRpe: _parseOptionalString(
+              _getControllerText(controller, 'rpe', 'max'),
+            ),
+            weight: parseDouble(
+              _getControllerText(controller, 'weight', 'min') ?? '0.0',
+            ),
+            maxWeight: _parseOptionalDouble(
+              _getControllerText(controller, 'weight', 'max'),
+            ),
+            order: series.length + 1,
+            done: false,
+            repsDone: 0,
+            weightDone: 0.0,
+          ),
+        );
       }
     }
 
@@ -328,8 +368,11 @@ class ProgressionBusinessServiceOptimized {
   }
 
   /// Safely gets text from controller
-  static String? _getControllerText(dynamic controller, String field,
-      [String? subField]) {
+  static String? _getControllerText(
+    dynamic controller,
+    String field, [
+    String? subField,
+  ]) {
     try {
       dynamic fieldController = controller;
 
@@ -356,7 +399,9 @@ class ProgressionBusinessServiceOptimized {
 
   /// Updates series from parameters with safe parsing
   static Series _updateSeriesFromParams(
-      Series series, SeriesUpdateParams params) {
+    Series series,
+    SeriesUpdateParams params,
+  ) {
     return series.copyWith(
       reps: _parseIntOrKeepOriginal(params.reps ?? '0', series.reps),
       maxReps: _parseOptionalInt(params.maxReps),
@@ -386,8 +431,6 @@ class ProgressionBusinessServiceOptimized {
     if (value?.isEmpty ?? true) return original;
     return double.tryParse(value!) ?? original;
   }
-
-
 
   static int? _parseOptionalInt(String? value) {
     if (value?.isEmpty ?? true) return null;

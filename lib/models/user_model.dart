@@ -17,7 +17,7 @@ class UserModel {
   final double? _height; // Private field for height
   final String? currentProgram; // Aggiunto campo currentProgram
   final double? activityLevel; // Activity level stored as double
-  
+
   // GDPR Privacy Consent Fields
   final bool? privacyConsentGiven; // Se l'utente ha dato il consenso
   final DateTime? privacyConsentTimestamp; // Quando ha dato il consenso
@@ -46,8 +46,8 @@ class UserModel {
     this.privacyConsentTimestamp,
     this.privacyPolicyVersion,
     this.lastConsentMethod,
-  })  : _birthdate = birthdate,
-        _height = height;
+  }) : _birthdate = birthdate,
+       _height = height;
 
   // Factory method for creating a UserModel from Firestore data
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -61,8 +61,8 @@ class UserModel {
       photoURL: data['photoURL'] ?? '',
       gender: data['gender'] ?? 0, // Assicurati che sia numerico
       uniqueNumber: data['uniqueNumber'],
-      subscriptionExpiryDate:
-          (data['subscriptionExpiryDate'] as Timestamp?)?.toDate(),
+      subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)
+          ?.toDate(),
       productId: data['productId'],
       purchaseToken: data['purchaseToken'],
       currentProgram: data['currentProgram'], // Aggiunto al fromFirestore
@@ -73,7 +73,8 @@ class UserModel {
       height: (data['height'] as num?)?.toDouble(),
       // GDPR Privacy Consent fields
       privacyConsentGiven: data['privacyConsentGiven'] as bool?,
-      privacyConsentTimestamp: (data['privacyConsentTimestamp'] as Timestamp?)?.toDate(),
+      privacyConsentTimestamp: (data['privacyConsentTimestamp'] as Timestamp?)
+          ?.toDate(),
       privacyPolicyVersion: data['privacyPolicyVersion'] as String?,
       lastConsentMethod: data['lastConsentMethod'] as String?,
     );

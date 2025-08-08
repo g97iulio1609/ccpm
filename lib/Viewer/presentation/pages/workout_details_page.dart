@@ -7,10 +7,21 @@ import 'package:alphanessone/UI/components/skeleton.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/section_header.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/exercise_timer_bottom_sheet.dart';
-import 'package:alphanessone/UI/components/series_header.dart';
 import 'package:alphanessone/shared/widgets/page_scaffold.dart';
 import 'package:alphanessone/shared/widgets/empty_state.dart';
 import 'package:alphanessone/Viewer/UI/widgets/workout_dialogs.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/grouping.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/meta_chips.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/progress_bar.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/exercise_header.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/series_list.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/start_buttons.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/superset_components.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/superset_series_matrix.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/note_dialog.dart'
+    as note_dialog;
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/series_execution_dialog.dart'
+    as series_dialog;
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
   final String programId;
@@ -115,7 +126,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
     // Raggruppa gli esercizi per superSet
     final exercises = state.workout!.exercises;
-    final groupedExercises = _groupExercisesBySuperSet(exercises);
+    final groupedExercises = groupExercisesBySuperSet(exercises);
 
     // Mostra gli esercizi in una lista o griglia
     return Scaffold(
@@ -195,46 +206,44 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
   }
 
-  // Raggruppa gli esercizi per superSet
-  Map<String?, List<Exercise>> _groupExercisesBySuperSet(
-    List<Exercise> exercises,
-  ) {
-    // 1) Raggruppa per superSetId
-    final Map<String?, List<Exercise>> temp = {};
-    for (final exercise in exercises) {
-      final superSetId = exercise.superSetId;
-      (temp[superSetId] ??= <Exercise>[]).add(exercise);
-    }
-
-    // 2) Solo i gruppi con almeno 2 elementi restano "superset".
-    //    Gli altri tornano ad essere esercizi singoli.
-    final Map<String?, List<Exercise>> result = {};
-    temp.forEach((superSetId, group) {
-      if (superSetId == null || superSetId.isEmpty || group.length < 2) {
-        for (final ex in group) {
-          result[ex.id] = [ex];
-        }
-      } else {
-        // Ordina per ordine definito nell'esercizio per coerenza
-        group.sort((a, b) => a.order.compareTo(b.order));
-        result[superSetId] = group;
-      }
-    });
-
-    return result;
-  }
+  // Raggruppamento estratto in grouping.dart
 
   Widget _buildSingleExerciseCard(Exercise exercise, BuildContext context) {
     final series = exercise.series;
     final firstNotDoneSeriesIndex = _findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
     final allSeriesCompleted = series.every((serie) => serie.isCompleted);
-    final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
     return AppCard(
-    header: _buildExerciseName(exercise, context),
+      header: ExerciseHeader(
+        exercise: exercise,
+        onNote: () => _showNoteDialog(
+          exercise.id ?? '',
+          exercise.name,
+          exercise.note,
+          ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier),
+        ),
+        onMenuSelected: (value) {
+          if (value == 'change') {
+            WorkoutDialogs.showChangeExerciseDialog(
+              context,
+              ref,
+              exercise.toMap(),
+              widget.userId,
+            );
+          } else if (value == 'edit_series') {
+            WorkoutDialogs.showSeriesEditDialog(
+              context,
+              ref,
+              exercise.toMap(),
+              exercise.series.map((s) => s.toMap()).toList(),
+              widget.userId,
+            );
+          }
+        },
+      ),
       background: Theme.of(
         context,
       ).colorScheme.surfaceContainerHighest.withAlpha(38),
@@ -246,35 +255,30 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-          // Meta info: set, target, rest
-          _buildExerciseMetaChips(exercise, context),
-          SizedBox(height: AppTheme.spacing.sm),
-          _buildExerciseProgress(series, context),
-          SizedBox(height: AppTheme.spacing.md),
+                  MetaChips(exercise: exercise),
+                  SizedBox(height: AppTheme.spacing.sm),
+                  ProgressBar(
+                    done: series.where((s) => s.isCompleted).length,
+                    total: series.length,
+                    labelBuilder: (pct) =>
+                        '${(pct * 100).round()}% • ${series.where((s) => s.isCompleted).length}/${series.length} serie',
+                  ),
+                  SizedBox(height: AppTheme.spacing.md),
                   if (!allSeriesCompleted) ...[
-                    _buildStartButton(
-                      exercise,
-                      firstNotDoneSeriesIndex,
-                      isContinueMode,
-                      context,
+                    StartExerciseButton(
+                      exercise: exercise,
+                      startIndex: firstNotDoneSeriesIndex,
+                      isContinue: isContinueMode,
+                      onStart: _handleStartSeries,
                     ),
                     SizedBox(height: AppTheme.spacing.md),
                   ],
-                  SectionHeader(title: 'Serie'),
-                  SizedBox(height: AppTheme.spacing.sm),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: AppTheme.spacing.xs,
-                      horizontal: AppTheme.spacing.sm,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-                    ),
-                    child: _buildSeriesHeaderRow(context),
+                  SeriesList(
+                    series: series,
+                    onSeriesTap: (s) => _showSeriesExecutionDialog(context, s),
+                    onToggleComplete: (s) =>
+                        _toggleSeriesCompletion(context, s),
                   ),
-                  SizedBox(height: AppTheme.spacing.sm),
-                  ..._buildSeriesContainers(series, context),
                 ],
               ),
             )
@@ -286,38 +290,31 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-            _buildExerciseMetaChips(exercise, context),
-            SizedBox(height: AppTheme.spacing.sm),
-            _buildExerciseProgress(series, context),
-            SizedBox(height: AppTheme.spacing.md),
+                      MetaChips(exercise: exercise),
+                      SizedBox(height: AppTheme.spacing.sm),
+                      ProgressBar(
+                        done: series.where((s) => s.isCompleted).length,
+                        total: series.length,
+                        labelBuilder: (pct) =>
+                            '${(pct * 100).round()}% • ${series.where((s) => s.isCompleted).length}/${series.length} serie',
+                      ),
+                      SizedBox(height: AppTheme.spacing.md),
                       if (!allSeriesCompleted) ...[
-                        _buildStartButton(
-                          exercise,
-                          firstNotDoneSeriesIndex,
-                          isContinueMode,
-                          context,
+                        StartExerciseButton(
+                          exercise: exercise,
+                          startIndex: firstNotDoneSeriesIndex,
+                          isContinue: isContinueMode,
+                          onStart: _handleStartSeries,
                         ),
                         SizedBox(height: AppTheme.spacing.md),
                       ],
-                      SectionHeader(title: 'Serie'),
-                      SizedBox(height: AppTheme.spacing.sm),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppTheme.spacing.xs,
-                          horizontal: AppTheme.spacing.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withAlpha(
-                            77,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.sm,
-                          ),
-                        ),
-                        child: _buildSeriesHeaderRow(context),
+                      SeriesList(
+                        series: series,
+                        onSeriesTap: (s) =>
+                            _showSeriesExecutionDialog(context, s),
+                        onToggleComplete: (s) =>
+                            _toggleSeriesCompletion(context, s),
                       ),
-                      SizedBox(height: AppTheme.spacing.sm),
-                      ..._buildSeriesContainers(series, context),
                     ],
                   ),
                 ),
@@ -328,81 +325,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
   }
 
-  Widget _buildExerciseName(Exercise exercise, BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final notifier = ref.read(
-      workoutDetailsNotifierProvider(widget.workoutId).notifier,
-    );
-
-    return SectionHeader(
-      title: exercise.name,
-      subtitle: (exercise.variant != null && exercise.variant!.isNotEmpty)
-          ? exercise.variant!
-          : null,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Semantics(
-            label: 'Aggiungi o modifica nota esercizio',
-            button: true,
-            child: IconButton(
-              icon: Icon(
-                Icons.note_alt_outlined,
-                color: exercise.note != null && exercise.note!.isNotEmpty
-                    ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
-              ),
-              onPressed: () => _showNoteDialog(
-                exercise.id ?? '',
-                exercise.name,
-                exercise.note,
-                notifier,
-              ),
-              tooltip: 'Nota',
-            ),
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'Azioni esercizio',
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
-            onSelected: (value) async {
-              if (value == 'change') {
-                WorkoutDialogs.showChangeExerciseDialog(
-                  context,
-                  ref,
-                  exercise.toMap(),
-                  widget.userId,
-                );
-              } else if (value == 'edit_series') {
-                WorkoutDialogs.showSeriesEditDialog(
-                  context,
-                  ref,
-                  exercise.toMap(),
-                  exercise.series.map((s) => s.toMap()).toList(),
-                  widget.userId,
-                );
-              }
-            },
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(
-                value: 'change',
-                child: ListTile(
-                  leading: Icon(Icons.swap_horiz),
-                  title: Text('Cambia esercizio'),
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'edit_series',
-                child: ListTile(
-                  leading: Icon(Icons.tune),
-                  title: Text('Modifica serie…'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Header estratto in ExerciseHeader
 
   Widget _buildSuperSetCard({
     required List<Exercise> superSetExercises,
@@ -430,19 +353,47 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
             child: Column(
               children: [
-                ...superSetExercises.asMap().entries.map(
-                  (entry) => _buildSuperSetExerciseName(
-                    entry.key,
-                    entry.value,
-                    context,
-                  ),
-                ),
+                ...superSetExercises.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final exercise = entry.value;
+                  return SuperSetExerciseNameEntry(
+                    index: idx,
+                    exercise: exercise,
+                    onNote: () => _showNoteDialog(
+                      exercise.id ?? '',
+                      exercise.name,
+                      exercise.note,
+                      ref.read(
+                        workoutDetailsNotifierProvider(
+                          widget.workoutId,
+                        ).notifier,
+                      ),
+                    ),
+                    onMenuSelected: (value) {
+                      if (value == 'change') {
+                        WorkoutDialogs.showChangeExerciseDialog(
+                          context,
+                          ref,
+                          exercise.toMap(),
+                          widget.userId,
+                        );
+                      } else if (value == 'edit_series') {
+                        WorkoutDialogs.showSeriesEditDialog(
+                          context,
+                          ref,
+                          exercise.toMap(),
+                          exercise.series.map((s) => s.toMap()).toList(),
+                          widget.userId,
+                        );
+                      }
+                    },
+                  );
+                }),
                 Padding(
                   padding: EdgeInsets.only(top: AppTheme.spacing.sm),
-                  child: _buildProgressBar(
-                    doneSeries,
-                    totalSeries,
-                    context,
+                  child: ProgressBar(
+                    done: doneSeries,
+                    total: totalSeries,
                     labelBuilder: (pct) =>
                         '${(pct * 100).round()}% • $doneSeries/$totalSeries serie',
                   ),
@@ -457,11 +408,19 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!allSeriesCompleted) ...[
-                    _buildSuperSetStartButton(superSetExercises, context),
+                    StartSuperSetButton(
+                      exercises: superSetExercises,
+                      onStart: _handleStartSeries,
+                    ),
                     const SizedBox(height: 24),
                   ],
-          _buildSuperSetHeaderRow(superSetExercises, context),
-                  ..._buildSeriesRows(superSetExercises, context),
+                  SuperSetHeaderRow(exercises: superSetExercises),
+                  SuperSetSeriesMatrix(
+                    exercises: superSetExercises,
+                    onSeriesTap: (s) => _showSeriesExecutionDialog(context, s),
+                    onToggleComplete: (s) =>
+                        _toggleSeriesCompletion(context, s),
+                  ),
                 ],
               ),
             )
@@ -474,11 +433,20 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (!allSeriesCompleted) ...[
-                        _buildSuperSetStartButton(superSetExercises, context),
+                        StartSuperSetButton(
+                          exercises: superSetExercises,
+                          onStart: _handleStartSeries,
+                        ),
                         const SizedBox(height: 24),
                       ],
-            _buildSuperSetHeaderRow(superSetExercises, context),
-                      ..._buildSeriesRows(superSetExercises, context),
+                      SuperSetHeaderRow(exercises: superSetExercises),
+                      SuperSetSeriesMatrix(
+                        exercises: superSetExercises,
+                        onSeriesTap: (s) =>
+                            _showSeriesExecutionDialog(context, s),
+                        onToggleComplete: (s) =>
+                            _toggleSeriesCompletion(context, s),
+                      ),
                     ],
                   ),
                 ),
@@ -489,668 +457,69 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
   }
 
-  Widget _buildSuperSetExerciseName(
-    int index,
-    Exercise exercise,
-    BuildContext context,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final notifier = ref.read(
-      workoutDetailsNotifierProvider(widget.workoutId).notifier,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '${index + 1}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: AppTheme.spacing.sm),
-          Expanded(
-            child: Text(
-              exercise.name,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Semantics(
-            label: 'Aggiungi o modifica nota esercizio del superset',
-            button: true,
-            child: IconButton(
-              icon: Icon(
-                Icons.note_alt_outlined,
-                size: 20,
-                color: exercise.note != null && exercise.note!.isNotEmpty
-                    ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
-              ),
-              onPressed: () => _showNoteDialog(
-                exercise.id ?? '',
-                exercise.name,
-                exercise.note,
-                notifier,
-              ),
-              tooltip: 'Nota',
-            ),
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'Azioni',
-            icon: Icon(Icons.more_vert, size: 20, color: colorScheme.onSurfaceVariant),
-            onSelected: (value) async {
-              if (value == 'change') {
-                WorkoutDialogs.showChangeExerciseDialog(
-                  context,
-                  ref,
-                  exercise.toMap(),
-                  widget.userId,
-                );
-              } else if (value == 'edit_series') {
-                WorkoutDialogs.showSeriesEditDialog(
-                  context,
-                  ref,
-                  exercise.toMap(),
-                  exercise.series.map((s) => s.toMap()).toList(),
-                  widget.userId,
-                );
-              }
-            },
-            itemBuilder: (ctx) => const [
-              PopupMenuItem(
-                value: 'change',
-                child: ListTile(
-                  leading: Icon(Icons.swap_horiz),
-                  title: Text('Cambia esercizio'),
-                ),
-              ),
-              PopupMenuItem(
-                value: 'edit_series',
-                child: ListTile(
-                  leading: Icon(Icons.tune),
-                  title: Text('Modifica serie…'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Superset exercise headers extracted in SuperSetExerciseNameEntry
 
   Future<void> _showNoteDialog(
     String exerciseId,
     String exerciseName,
     String? existingNote,
     WorkoutDetailsNotifier notifier,
-  ) async {
-    final TextEditingController noteController = TextEditingController(
-      text: existingNote,
-    );
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return showDialog(
+  ) {
+    return note_dialog.showNoteDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        title: Text(
-          'Note per $exerciseName',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
-        ),
-        content: TextField(
-          controller: noteController,
-          maxLines: 5,
-          decoration: InputDecoration(
-            hintText: 'Inserisci una nota...',
-            hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-              borderSide: BorderSide(color: colorScheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-              borderSide: BorderSide(color: colorScheme.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-              borderSide: BorderSide(color: colorScheme.primary, width: 2),
-            ),
-          ),
-          style: TextStyle(color: colorScheme.onSurface),
-        ),
-        actions: [
-          if (existingNote != null)
-            TextButton(
-              onPressed: () async {
-                await notifier.deleteExerciseNote(exerciseId);
-                if (context.mounted) Navigator.of(context).pop();
-              },
-              child: Text(
-                'Elimina',
-                style: TextStyle(color: colorScheme.error),
-              ),
-            ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Annulla',
-              style: TextStyle(color: colorScheme.primary),
-            ),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final note = noteController.text.trim();
-              if (note.isNotEmpty) {
-                await notifier.saveExerciseNote(exerciseId, note);
-              }
-              if (context.mounted) Navigator.of(context).pop();
-            },
-            style: FilledButton.styleFrom(backgroundColor: colorScheme.primary),
-            child: Text(
-              'Salva',
-              style: TextStyle(color: colorScheme.onPrimary),
-            ),
-          ),
-        ],
-      ),
+      title: 'Note per $exerciseName',
+      existingNote: existingNote,
+      onDelete: () => notifier.deleteExerciseNote(exerciseId),
+      onSave: (note) => notifier.saveExerciseNote(exerciseId, note),
     );
   }
 
-  Widget _buildSeriesHeaderRow(BuildContext context) {
-    return const SeriesHeader();
-  }
+  // Series header gestito da SeriesList
 
-  List<Widget> _buildSeriesContainers(
-    List<Series> seriesList,
-    BuildContext context,
-  ) {
-    return seriesList.asMap().entries.map((entry) {
-      final index = entry.key;
-      final series = entry.value;
+  // Series list estratto in SeriesList
 
-      return Container(
-        margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
-        padding: EdgeInsets.symmetric(
-          vertical: AppTheme.spacing.xs,
-          horizontal: AppTheme.spacing.sm,
-        ),
-        decoration: BoxDecoration(
-      color: series.isCompleted
-        ? Theme.of(context)
-          .colorScheme
-          .primaryContainer
-          .withValues(alpha: 0.16)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-          border: Border.all(
-      color: Theme.of(context)
-        .colorScheme
-        .outlineVariant
-        .withValues(alpha: series.isCompleted ? 0 : 0.3),
-          ),
-        ),
-        child: _buildSeriesRow(index, series, context),
-      );
-    }).toList();
-  }
+  // Superset series matrix extracted in SuperSetSeriesMatrix
 
-  List<Widget> _buildSeriesRows(
-    List<Exercise> exercises,
-    BuildContext context,
-  ) {
-    // Modello a colonne per evitare sovrapposizioni: una colonna per ogni esercizio del superset
-    final maxSeries = exercises
-        .map((e) => e.series.length)
-        .fold<int>(0, (p, c) => c > p ? c : p);
+  // Series row estratto in SeriesList
 
-    return List<Widget>.generate(maxSeries, (rowIndex) {
-      return Container(
-        margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
-        padding: EdgeInsets.symmetric(
-          vertical: AppTheme.spacing.xs,
-          horizontal: AppTheme.spacing.sm,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-          color: Colors.transparent,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 30,
-              child: Text(
-                '${rowIndex + 1}',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            ...exercises.asMap().entries.map((entry) {
-              final exIndex = entry.key;
-              final exercise = entry.value;
-              final hasSeries = rowIndex < exercise.series.length;
-              final series = hasSeries ? exercise.series[rowIndex] : null;
-
-              return Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(
-                    left: exIndex == 0 ? 0 : AppTheme.spacing.xs,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    vertical: AppTheme.spacing.xs,
-                    horizontal: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: series?.isCompleted == true
-                        ? Colors.green.withAlpha(26)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-                  ),
-                  child: hasSeries
-                      ? Builder(
-                          builder: (context) {
-                            final s = series!;
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    String.fromCharCode(65 + exIndex),
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(6),
-                                    onTap: () => _showSeriesExecutionDialog(
-                                      context,
-                                      s,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 6,
-                                      ),
-                                      child: Text(
-                                        '${s.reps}',
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(6),
-                                    onTap: () => _showSeriesExecutionDialog(
-                                      context,
-                                      s,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 6,
-                                      ),
-                                      child: Text(
-                                        '${s.weight} kg',
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(6),
-                                    onTap: () => _showSeriesExecutionDialog(
-                                      context,
-                                      s,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 6,
-                                      ),
-                                      child: Text(
-                                        s.isCompleted
-                                            ? '${s.repsDone}×${s.weightDone}'
-                                            : '-',
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              fontWeight: s.isCompleted
-                                                  ? FontWeight.bold
-                                                  : null,
-                                            ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                _buildCompletionButton(
-                                  s,
-                                  exercise.name,
-                                  context,
-                                ),
-                              ],
-                            );
-                          },
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              );
-            }),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  Widget _buildSeriesRow(int index, Series series, BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final done = series.isCompleted;
-    return Row(
-      children: [
-        // Index badge
-        SizedBox(
-          width: 32,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-        color: done
-          ? colorScheme.primaryContainer
-          : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${index + 1}',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: done
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        // Target reps
-        Expanded(
-          flex: 2,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () => _showSeriesExecutionDialog(context, series),
-            child: _pill(
-              context,
-              label: '${series.reps}',
-              icon: Icons.repeat,
-              filled: false,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        // Target weight
-        Expanded(
-          flex: 3,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () => _showSeriesExecutionDialog(context, series),
-            child: _pill(
-              context,
-              label: _formatWeight(series.weight),
-              icon: Icons.fitness_center,
-              filled: false,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        // Done summary
-        Expanded(
-          flex: 3,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () => _showSeriesExecutionDialog(context, series),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Text(
-                done ? '${series.repsDone}×${series.weightDone}' : '-',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: done ? FontWeight.w600 : FontWeight.normal,
-                      color: done
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-          ),
-        ),
-        // Actions
-        Row(
-          children: [
-            _buildCompletionButton(series, "", context),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCompletionButton(
-    Series series,
-    String exerciseName,
-    BuildContext context,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
+  void _toggleSeriesCompletion(BuildContext context, Series series) {
     final notifier = ref.read(
       workoutDetailsNotifierProvider(widget.workoutId).notifier,
     );
-
-    return SizedBox(
-      width: 40,
-      child: IconButton(
-        icon: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          transitionBuilder: (child, anim) => ScaleTransition(
-            scale: CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
-            child: child,
-          ),
-          child: Icon(
-            series.isCompleted
-                ? Icons.check_circle_rounded
-                : Icons.radio_button_unchecked_outlined,
-            key: ValueKey<bool>(series.isCompleted),
-            color: series.isCompleted
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
-            size: 24,
-          ),
+    if (series.isCompleted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Conferma'),
+          content: const Text('Vuoi segnare questa serie come non completata?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () {
+                notifier.completeSeries(series.id ?? '', false, 0, 0);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Conferma'),
+            ),
+          ],
         ),
-        onPressed: () {
-          if (series.isCompleted) {
-            // Se già completata, chiedi conferma per marcarla come non fatta
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Conferma'),
-                content: const Text(
-                  'Vuoi segnare questa serie come non completata?',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Annulla'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      notifier.completeSeries(series.id ?? '', false, 0, 0);
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Conferma'),
-                  ),
-                ],
-              ),
-            );
-          } else {
-            // Segna direttamente come completata usando i target come valori fatti
-            notifier.completeSeries(
-              series.id ?? '',
-              true,
-              series.reps,
-              series.weight,
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildStartButton(
-    Exercise exercise,
-    int startIndex,
-    bool isContinueMode,
-    BuildContext context,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return FilledButton.icon(
-      onPressed: () {
-        final series = exercise.series[startIndex];
-
-        ExerciseTimerBottomSheet.show(
-          context: context,
-          userId: widget.userId,
-          exerciseId: exercise.id ?? '',
-          workoutId: widget.workoutId,
-          exerciseName: exercise.name,
-          onSeriesComplete: (repsDone, weightDone) {
-            final notifier = ref.read(
-              workoutDetailsNotifierProvider(widget.workoutId).notifier,
-            );
-            notifier.completeSeries(
-              series.id ?? '',
-              true,
-              repsDone,
-              weightDone,
-            );
-            Navigator.of(context).pop();
-          },
-          initialTimerSeconds: series.restTimeSeconds ?? 60,
-          reps: series.reps,
-          weight: series.weight,
-        );
-      },
-      style: FilledButton.styleFrom(
-        backgroundColor: colorScheme.primary,
-        padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
-      ),
-      icon: Icon(
-        isContinueMode ? Icons.play_arrow : Icons.fitness_center,
-        color: colorScheme.onPrimary,
-      ),
-      label: Text(
-        isContinueMode
-            ? 'Continua (Serie ${startIndex + 1})'
-            : 'Inizia Allenamento',
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuperSetStartButton(
-    List<Exercise> exercises,
-    BuildContext context,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Trova il primo esercizio e serie non completati
-    Exercise? firstExercise;
-    int startSeriesIndex = 0;
-
-    for (final exercise in exercises) {
-      for (int i = 0; i < exercise.series.length; i++) {
-        if (!exercise.series[i].isCompleted) {
-          firstExercise = exercise;
-          startSeriesIndex = i;
-          break;
-        }
-      }
-      if (firstExercise != null) break;
+      );
+    } else {
+      notifier.completeSeries(
+        series.id ?? '',
+        true,
+        series.reps,
+        series.weight,
+      );
     }
-
-    if (firstExercise == null) return const SizedBox.shrink();
-
-    final isContinueMode = exercises.any(
-      (e) => e.series.any((s) => s.isCompleted),
-    );
-
-    return FilledButton.icon(
-      onPressed: () {
-        final series = firstExercise!.series[startSeriesIndex];
-
-        ExerciseTimerBottomSheet.show(
-          context: context,
-          userId: widget.userId,
-          exerciseId: firstExercise.id ?? '',
-          workoutId: widget.workoutId,
-          exerciseName: firstExercise.name,
-          onSeriesComplete: (repsDone, weightDone) {
-            final notifier = ref.read(
-              workoutDetailsNotifierProvider(widget.workoutId).notifier,
-            );
-            notifier.completeSeries(
-              series.id ?? '',
-              true,
-              repsDone,
-              weightDone,
-            );
-            Navigator.of(context).pop();
-          },
-          initialTimerSeconds: series.restTimeSeconds ?? 60,
-          reps: series.reps,
-          weight: series.weight,
-        );
-      },
-      style: FilledButton.styleFrom(
-        backgroundColor: colorScheme.primary,
-        padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
-      ),
-      icon: Icon(
-        isContinueMode ? Icons.play_arrow : Icons.fitness_center,
-        color: colorScheme.onPrimary,
-      ),
-      label: Text(
-        isContinueMode
-            ? 'Continua Super Set (Serie ${startSeriesIndex + 1})'
-            : 'Inizia Super Set',
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
   }
+
+  // StartButton estratto in StartExerciseButton
+
+  // Button estratto in StartSuperSetButton
 
   // Metodi di utilità
   int _findFirstNotDoneSeriesIndex(List<Series> series) {
@@ -1162,295 +531,69 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     return 0; // Se tutte le serie sono completate, restituisci 0
   }
 
-  // ================= UI helpers migliorati =================
-  Widget _buildExerciseMetaChips(Exercise exercise, BuildContext context) {
-    final reps = exercise.series.isNotEmpty ? exercise.series.first.reps : null;
-    final weight = exercise.series.isNotEmpty ? exercise.series.first.weight : null;
-    final rest = exercise.series
-        .firstWhere((s) => s.restTimeSeconds != null, orElse: () => exercise.series.first)
-        .restTimeSeconds;
+  // UI helper estratti in widget modulari
 
-    return Wrap(
-      spacing: AppTheme.spacing.xs,
-      runSpacing: AppTheme.spacing.xs,
-      children: [
-        _chip(context, Icons.layers_outlined, '${exercise.series.length} serie'),
-        if (reps != null) _chip(context, Icons.repeat, 'x$reps'),
-        if (weight != null) _chip(context, Icons.fitness_center, _formatWeight(weight)),
-  if (rest != null) _chip(context, Icons.timer_outlined, _formatRest(rest)),
-      ],
-    );
-  }
+  // Superset header extracted in SuperSetHeaderRow
 
-  Widget _buildExerciseProgress(List<Series> series, BuildContext context) {
-    final total = series.length;
-    final done = series.where((s) => s.isCompleted).length;
-    return _buildProgressBar(
-      done,
-      total,
-      context,
-      labelBuilder: (pct) => '${(pct * 100).round()}% • $done/$total serie',
-    );
-  }
-
-  Widget _buildProgressBar(
-    int done,
-    int total,
-    BuildContext context, {
-    String Function(double pct)? labelBuilder,
-  }) {
-    final pct = total == 0 ? 0.0 : done / total;
-    final cs = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: LinearProgressIndicator(
-            value: pct.clamp(0, 1),
-            minHeight: 8,
-            backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-            valueColor: AlwaysStoppedAnimation(cs.primary),
-          ),
-        ),
-        SizedBox(height: AppTheme.spacing.xs),
-        Text(
-          labelBuilder?.call(pct) ?? '${(pct * 100).round()}%',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-          textAlign: TextAlign.right,
-        ),
-      ],
-    );
-  }
-
-  Widget _chip(BuildContext context, IconData icon, String label) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-  color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(999),
-  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: cs.onSurfaceVariant),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _pill(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-    bool filled = false,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: filled ? cs.primaryContainer : cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 14, color: filled ? cs.onPrimaryContainer : cs.onSurfaceVariant),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: cs.onSurface,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatWeight(dynamic weight) {
-    if (weight == null) return '-';
-    if (weight is int || weight is double) {
-      final num w = weight as num;
-      final str = (w % 1 == 0) ? w.toInt().toString() : w.toStringAsFixed(1);
-      return '$str kg';
-    }
-    return '$weight kg';
-  }
-
-  String _formatRest(int seconds) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    if (m > 0) {
-      return '${m}m${s.toString().padLeft(2, '0')}s';
-    }
-    return '${s}s';
-  }
-
-  // Header per tabelle di superset: # + per ogni esercizio (lettera, reps, peso, fatti) + azione
-  Widget _buildSuperSetHeaderRow(
-    List<Exercise> exercises,
-    BuildContext context,
-  ) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: AppTheme.spacing.xs,
-        horizontal: AppTheme.spacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withAlpha(77),
-        borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 30,
-            child: Text(
-              '#',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: cs.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ),
-          ...exercises.asMap().entries.map((entry) {
-            final exIndex = entry.key;
-            return Expanded(
-              child: Row(
-                children: [
-                  if (exIndex != 0) SizedBox(width: AppTheme.spacing.xs),
-                  // manteniamo lo stesso numero di colonne delle righe
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'ID',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Reps',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Peso',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Fatti',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ),
-                        SizedBox(width: 40), // spazio azione (match IconButton)
-                      ],
-                    ),
-                  ),
-                ],
+  Future<void> _showSeriesExecutionDialog(BuildContext context, Series series) {
+    return series_dialog.showSeriesExecutionDialog(
+      context: context,
+      initialReps: series.repsDone > 0 ? series.repsDone : series.reps,
+      initialWeight: series.weightDone > 0 ? series.weightDone : series.weight,
+      onSave: (repsDone, weightDone) async {
+        final notifier = ref.read(
+          workoutDetailsNotifierProvider(widget.workoutId).notifier,
+        );
+        
+        try {
+          await notifier.completeSeries(
+            series.id ?? '',
+            true,
+            repsDone,
+            weightDone,
+          );
+          
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Serie completata: ${repsDone}R × ${weightDone}kg'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
               ),
             );
-          }),
-        ],
-      ),
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Errore: ${e.toString()}'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      },
     );
   }
 
-  Future<void> _showSeriesExecutionDialog(
-    BuildContext context,
-    Series series,
-  ) async {
-    final colorScheme = Theme.of(context).colorScheme;
-    final repsController = TextEditingController(
-      text: (series.repsDone > 0 ? series.repsDone : series.reps).toString(),
-    );
-    final weightController = TextEditingController(
-      text: (series.weightDone > 0 ? series.weightDone : series.weight)
-          .toString(),
-    );
-
-    return showDialog(
+  void _handleStartSeries(Series series, Exercise exercise) {
+    ExerciseTimerBottomSheet.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        title: Text(
-          'Segna serie',
-          style: Theme.of(ctx)
-              .textTheme
-              .titleLarge
-              ?.copyWith(color: colorScheme.onSurface),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: repsController,
-              keyboardType: const TextInputType.numberWithOptions(),
-              decoration: const InputDecoration(labelText: 'Reps fatte'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: weightController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Peso fatto (kg)'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Annulla', style: TextStyle(color: colorScheme.primary)),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final repsDone = int.tryParse(repsController.text.trim()) ?? 0;
-              final weightDone =
-                  double.tryParse(weightController.text.trim()) ?? 0.0;
-
-              final notifier = ref.read(
-                workoutDetailsNotifierProvider(widget.workoutId).notifier,
-              );
-              await notifier.completeSeries(
-                series.id ?? '',
-                true,
-                repsDone,
-                weightDone,
-              );
-              if (context.mounted) Navigator.of(ctx).pop();
-            },
-            style:
-                FilledButton.styleFrom(backgroundColor: colorScheme.primary),
-            child: Text('Salva', style: TextStyle(color: colorScheme.onPrimary)),
-          ),
-        ],
-      ),
+      userId: widget.userId,
+      exerciseId: exercise.id ?? '',
+      workoutId: widget.workoutId,
+      exerciseName: exercise.name,
+      onSeriesComplete: (repsDone, weightDone) {
+        final notifier = ref.read(
+          workoutDetailsNotifierProvider(widget.workoutId).notifier,
+        );
+        notifier.completeSeries(series.id ?? '', true, repsDone, weightDone);
+        Navigator.of(context).pop();
+      },
+      initialTimerSeconds: series.restTimeSeconds ?? 60,
+      reps: series.reps,
+      weight: series.weight,
     );
   }
 }

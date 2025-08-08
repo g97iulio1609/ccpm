@@ -6,7 +6,9 @@ import './format_utils.dart' as training_builder_format_utils;
 class ExerciseUtils {
   /// Ottiene i SuperSet associati a un esercizio
   static List<SuperSet> getSuperSets(
-      Exercise exercise, List<SuperSet> allSuperSets) {
+    Exercise exercise,
+    List<SuperSet> allSuperSets,
+  ) {
     return allSuperSets
         .where((superSet) => superSet.exerciseIds.contains(exercise.id))
         .toList();
@@ -19,12 +21,12 @@ class ExerciseUtils {
 
   /// Ottiene il primo SuperSet associato a un esercizio
   static SuperSet? getFirstSuperSet(
-      Exercise exercise, List<SuperSet> superSets) {
+    Exercise exercise,
+    List<SuperSet> superSets,
+  ) {
     final exerciseSuperSets = getSuperSets(exercise, superSets);
     return exerciseSuperSets.isNotEmpty ? exerciseSuperSets.first : null;
   }
-
-
 
   /// Calcola il Max RM usando la formula di Brzycki
   static double calculateMaxRM(double weight, int repetitions) {
@@ -68,8 +70,9 @@ class ExerciseUtils {
     }
 
     // Calcola il Max RM se necessario
-    final calculatedMaxWeight =
-        repetitions > 1 ? calculateMaxRM(maxWeight, repetitions) : maxWeight;
+    final calculatedMaxWeight = repetitions > 1
+        ? calculateMaxRM(maxWeight, repetitions)
+        : maxWeight;
 
     // Crea un nuovo record usando il metodo del servizio
     await exerciseRecordService.addExerciseRecord(
@@ -85,8 +88,10 @@ class ExerciseUtils {
   /// Formatta i nomi degli esercizi per la visualizzazione
   static List<String> formatExerciseNames(List<Exercise> exercises) {
     return exercises
-        .map((exercise) =>
-            '${exercise.order}. ${exercise.name}${exercise.variant?.isNotEmpty == true ? ' (${exercise.variant})' : ''}')
+        .map(
+          (exercise) =>
+              '${exercise.order}. ${exercise.name}${exercise.variant?.isNotEmpty == true ? ' (${exercise.variant})' : ''}',
+        )
         .toList();
   }
 
@@ -104,8 +109,9 @@ class ExerciseUtils {
   static String getRepsRange(Exercise exercise) {
     if (exercise.series.isEmpty) return '';
 
-    final minReps =
-        exercise.series.map((s) => s.reps).reduce((a, b) => a < b ? a : b);
+    final minReps = exercise.series
+        .map((s) => s.reps)
+        .reduce((a, b) => a < b ? a : b);
     final maxReps = exercise.series
         .map((s) => s.maxReps ?? s.reps)
         .reduce((a, b) => a > b ? a : b);
@@ -207,7 +213,10 @@ class ExerciseUtils {
 
   /// Riordina gli esercizi aggiornando il campo order
   static List<Exercise> reorderExercises(
-      List<Exercise> exercises, int oldIndex, int newIndex) {
+    List<Exercise> exercises,
+    int oldIndex,
+    int newIndex,
+  ) {
     final reorderedList = List<Exercise>.from(exercises);
 
     if (oldIndex < newIndex) {

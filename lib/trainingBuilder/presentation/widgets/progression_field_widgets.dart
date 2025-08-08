@@ -35,20 +35,13 @@ class ProgressionGroupFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Reps field
-        Expanded(
-          child: _buildRepsField(context),
-        ),
+        Expanded(child: _buildRepsField(context)),
         SizedBox(width: AppTheme.spacing.xs),
         // Sets field
-        Expanded(
-          child: _buildSetsField(),
-        ),
+        Expanded(child: _buildSetsField()),
         SizedBox(width: AppTheme.spacing.xs),
         // Load field
-        Expanded(
-          flex: isSmallScreen ? 2 : 1,
-          child: _buildLoadField(context),
-        ),
+        Expanded(flex: isSmallScreen ? 2 : 1, child: _buildLoadField(context)),
       ],
     );
   }
@@ -70,9 +63,7 @@ class ProgressionGroupFields extends StatelessWidget {
       controller: controllers.sets,
       labelText: 'Sets',
       keyboardType: TextInputType.number,
-      onChanged: (value) => onUpdateSeries(
-        updateParams.copyWith(sets: value),
-      ),
+      onChanged: (value) => onUpdateSeries(updateParams.copyWith(sets: value)),
       colorScheme: colorScheme,
       theme: theme,
     );
@@ -103,10 +94,7 @@ class ProgressionGroupFields extends StatelessWidget {
           if (min != null) controllers.reps.min.text = min;
           if (max != null) controllers.reps.max.text = max;
 
-          onUpdateSeries(updateParams.copyWith(
-            reps: min,
-            maxReps: max,
-          ));
+          onUpdateSeries(updateParams.copyWith(reps: min, maxReps: max));
 
           Navigator.pop(context);
         },

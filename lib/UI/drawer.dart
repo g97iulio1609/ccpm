@@ -19,8 +19,11 @@ class CustomDrawer extends ConsumerWidget {
   final String userRole;
   final VoidCallback onLogout;
 
-  void _navigateTo(BuildContext context, String route,
-      [Map<String, dynamic>? extra]) {
+  void _navigateTo(
+    BuildContext context,
+    String route, [
+    Map<String, dynamic>? extra,
+  ]) {
     if (route != GoRouterState.of(context).uri.toString()) {
       if (route.contains('/user_programs/')) {
         final userId = route.split('/user_programs/')[1];
@@ -71,13 +74,15 @@ class CustomDrawer extends ConsumerWidget {
                       padding: EdgeInsets.all(AppTheme.spacing.lg),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
-                          ...menuItems.map((menuItem) => _buildMenuItem(
-                                context,
-                                menuItem,
-                                userRole,
-                                theme,
-                                colorScheme,
-                              )),
+                          ...menuItems.map(
+                            (menuItem) => _buildMenuItem(
+                              context,
+                              menuItem,
+                              userRole,
+                              theme,
+                              colorScheme,
+                            ),
+                          ),
                         ]),
                       ),
                     ),
@@ -98,10 +103,12 @@ class CustomDrawer extends ConsumerWidget {
                                 vertical: AppTheme.spacing.xs,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    colorScheme.primaryContainer.withAlpha(76),
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.full),
+                                color: colorScheme.primaryContainer.withAlpha(
+                                  76,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radii.full,
+                                ),
                               ),
                               child: Text(
                                 'Programma Corrente',
@@ -126,9 +133,7 @@ class CustomDrawer extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
                   border: Border(
-                    top: BorderSide(
-                      color: colorScheme.outline.withAlpha(25),
-                    ),
+                    top: BorderSide(color: colorScheme.outline.withAlpha(25)),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -208,8 +213,9 @@ class CustomDrawer extends ConsumerWidget {
                       color: isSelected
                           ? colorScheme.primary
                           : colorScheme.onSurface,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -229,7 +235,10 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   Widget _buildCurrentProgram(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
           .collection('users')
@@ -243,9 +252,7 @@ class CustomDrawer extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                border: Border.all(
-                  color: colorScheme.outline.withAlpha(25),
-                ),
+                border: Border.all(color: colorScheme.outline.withAlpha(25)),
                 boxShadow: AppTheme.elevations.small,
               ),
               child: StreamBuilder<QuerySnapshot>(
@@ -315,13 +322,7 @@ class CustomDrawer extends ConsumerWidget {
           ),
         ),
         children: [
-          _buildWorkoutList(
-            context,
-            weekDoc.id,
-            programId,
-            theme,
-            colorScheme,
-          ),
+          _buildWorkoutList(context, weekDoc.id, programId, theme, colorScheme),
         ],
       ),
     );
@@ -375,8 +376,9 @@ class CustomDrawer extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
                                 .withAlpha(76),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radii.md),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radii.md,
+                            ),
                           ),
                           child: Text(
                             '${workoutDoc['order']}',
@@ -430,11 +432,7 @@ class CustomDrawer extends ConsumerWidget {
                   color: colorScheme.primaryContainer.withAlpha(76),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.person,
-                  color: colorScheme.primary,
-                  size: 24,
-                ),
+                child: Icon(Icons.person, color: colorScheme.primary, size: 24),
               ),
               SizedBox(width: AppTheme.spacing.md),
               Expanded(
@@ -471,7 +469,10 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   Widget _buildLogoutButton(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -486,11 +487,7 @@ class CustomDrawer extends ConsumerWidget {
                   color: colorScheme.errorContainer.withAlpha(76),
                   borderRadius: BorderRadius.circular(AppTheme.radii.md),
                 ),
-                child: Icon(
-                  Icons.logout,
-                  color: colorScheme.error,
-                  size: 20,
-                ),
+                child: Icon(Icons.logout, color: colorScheme.error, size: 20),
               ),
               SizedBox(width: AppTheme.spacing.md),
               Text(
@@ -508,7 +505,10 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   String? _getRouteForMenuItem(
-      String menuItem, String userRole, String? userId) {
+    String menuItem,
+    String userRole,
+    String? userId,
+  ) {
     final routes = {
       'Coaching': '/programs_screen',
       'Association': '/associations',

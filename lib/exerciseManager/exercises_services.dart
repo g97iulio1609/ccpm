@@ -7,19 +7,27 @@ class ExercisesService {
   ExercisesService(this._firestore);
 
   Stream<List<ExerciseModel>> getExercises() {
-    return _firestore.collection('exercises').snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => ExerciseModel.fromFirestore(doc)).toList());
+    return _firestore
+        .collection('exercises')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ExerciseModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   Future<ExerciseModel?> getExerciseById(String id) async {
     final exercises = await getExercises().first;
-    return exercises.firstWhere(
-      (exercise) => exercise.id == id,
-    );
+    return exercises.firstWhere((exercise) => exercise.id == id);
   }
 
-  Future<void> addExercise(String name, List<String> muscleGroups, String type,
-      String userId) async {
+  Future<void> addExercise(
+    String name,
+    List<String> muscleGroups,
+    String type,
+    String userId,
+  ) async {
     try {
       await _firestore.collection('exercises').add({
         'name': name,
@@ -34,7 +42,11 @@ class ExercisesService {
   }
 
   Future<void> updateExercise(
-      String id, String name, List<String> muscleGroups, String type) async {
+    String id,
+    String name,
+    List<String> muscleGroups,
+    String type,
+  ) async {
     try {
       await _firestore.collection('exercises').doc(id).update({
         'name': name,

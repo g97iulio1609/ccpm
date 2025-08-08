@@ -5,4 +5,4 @@ ExerciseModel defaultExercise = ExerciseModel(
   name: 'Exercise not found',
   type: '',
   muscleGroups: [],
-); 
+);

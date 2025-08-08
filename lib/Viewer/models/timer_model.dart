@@ -54,7 +54,8 @@ class TimerModel {
       isEmomMode: isEmomMode ?? this.isEmomMode,
       superSetExerciseIndex:
           superSetExerciseIndex ?? this.superSetExerciseIndex,
-      superSetExercises: superSetExercises ?? this.superSetExercises, // Aggiungi questo campo
+      superSetExercises:
+          superSetExercises ?? this.superSetExercises, // Aggiungi questo campo
     );
   }
 }

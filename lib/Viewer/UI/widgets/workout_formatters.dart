@@ -35,8 +35,9 @@ class WorkoutFormatters {
     }
 
     // Se la serie è fallita, prepara sia il formato esteso che quello compatto
-    final targetText =
-        maxValue != null && maxValue != value ? '$value-$maxValue' : '$value';
+    final targetText = maxValue != null && maxValue != value
+        ? '$value-$maxValue'
+        : '$value';
 
     return {
       'compact': '$valueDone$unit',
@@ -103,5 +104,42 @@ class WorkoutFormatters {
     final weightDone = seriesData['weight_done'];
     return (repsDone != null && repsDone != 0) ||
         (weightDone != null && weightDone != 0);
+  }
+
+  // Shared formatting utilities to eliminate duplication
+  static String formatTime(int totalSeconds) {
+    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  static String formatWeight(dynamic weight) {
+    if (weight == null) return '-';
+    if (weight is int || weight is double) {
+      final num w = weight as num;
+      final str = (w % 1 == 0) ? w.toInt().toString() : w.toStringAsFixed(1);
+      return '$str kg';
+    }
+    return '$weight kg';
+  }
+
+  static String formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (minutes > 0) {
+      return remainingSeconds > 0
+          ? '${minutes}m ${remainingSeconds}s'
+          : '${minutes}m';
+    }
+    return '${remainingSeconds}s';
+  }
+
+  static String formatRest(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m${secs > 0 ? ' ${secs}s' : ''}';
+    }
+    return '${secs}s';
   }
 }

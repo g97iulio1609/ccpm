@@ -103,8 +103,12 @@ class TimerControls extends StatelessWidget {
     );
   }
 
-  Widget _buildModernPresetCard(Map<String, dynamic> preset, ThemeData theme,
-      ColorScheme colorScheme, int index) {
+  Widget _buildModernPresetCard(
+    Map<String, dynamic> preset,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    int index,
+  ) {
     final seconds = preset['seconds'] as int;
     final isQuick = seconds <= 60;
     final isMedium = seconds > 60 && seconds <= 180;
@@ -161,11 +165,7 @@ class TimerControls extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        categoryIcon,
-                        color: categoryColor,
-                        size: 24,
-                      ),
+                      Icon(categoryIcon, color: categoryColor, size: 24),
                       SizedBox(height: AppTheme.spacing.xs),
                       Text(
                         formatDuration(seconds),
@@ -225,11 +225,7 @@ class TimerControls extends StatelessWidget {
       ),
       child: TextButton.icon(
         onPressed: onAddPresetPressed,
-        icon: Icon(
-          Icons.add_rounded,
-          size: 20,
-          color: AppTheme.primaryGold,
-        ),
+        icon: Icon(Icons.add_rounded, size: 20, color: AppTheme.primaryGold),
         label: Text(
           'Crea Nuovo Preset',
           style: theme.textTheme.titleSmall?.copyWith(
@@ -254,10 +250,7 @@ class TimerControls extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(30),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(20),
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(20), width: 1),
       ),
       child: Center(
         child: Column(
@@ -296,20 +289,13 @@ class TimerControls extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(30),
-          width: 1,
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(30), width: 1),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Icon(
-                Icons.tune_rounded,
-                color: AppTheme.primaryGold,
-                size: 20,
-              ),
+              Icon(Icons.tune_rounded, color: AppTheme.primaryGold, size: 20),
               SizedBox(width: AppTheme.spacing.xs),
               Text(
                 'Timer Personalizzato',
@@ -469,10 +455,7 @@ class TimerControls extends StatelessWidget {
             ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryGold,
-                  AppTheme.primaryGoldDark,
-                ],
+                colors: [AppTheme.primaryGold, AppTheme.primaryGoldDark],
               )
             : null,
         color: !isEnabled

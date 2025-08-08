@@ -6,7 +6,12 @@ class ExerciseHeader extends StatelessWidget {
   final Exercise exercise;
   final VoidCallback onNote;
   final void Function(String action) onMenuSelected;
-  const ExerciseHeader({super.key, required this.exercise, required this.onNote, required this.onMenuSelected});
+  const ExerciseHeader({
+    super.key,
+    required this.exercise,
+    required this.onNote,
+    required this.onMenuSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,4 +64,3 @@ class ExerciseHeader extends StatelessWidget {
     );
   }
 }
-

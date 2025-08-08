@@ -122,8 +122,13 @@ class BulkSeriesForm extends HookConsumerWidget {
           SizedBox(height: AppTheme.spacing.lg),
 
           // Preview dei pesi per esercizio
-          _buildWeightPreview(exercises, maxWeights.value,
-              intensityController.text, theme, colorScheme),
+          _buildWeightPreview(
+            exercises,
+            maxWeights.value,
+            intensityController.text,
+            theme,
+            colorScheme,
+          ),
 
           SizedBox(height: AppTheme.spacing.xl),
 
@@ -227,7 +232,9 @@ class BulkSeriesForm extends HookConsumerWidget {
           final maxWeight = maxWeights[exercise.exerciseId] ?? 0;
           final calculatedWeight = maxWeight > 0
               ? WeightCalculationService.calculateWeightFromIntensity(
-                  maxWeight.toDouble(), intensityValue)
+                  maxWeight.toDouble(),
+                  intensityValue,
+                )
               : 0.0;
 
           return Container(

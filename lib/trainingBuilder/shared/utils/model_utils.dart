@@ -25,8 +25,10 @@ class ModelUtils {
   }
 
   /// Creates a deep copy of a workout with new IDs
-  static Workout copyWorkout(Workout source,
-      {Map<String, String>? exerciseIdMap}) {
+  static Workout copyWorkout(
+    Workout source, {
+    Map<String, String>? exerciseIdMap,
+  }) {
     final newExerciseIdMap = <String, String>{};
 
     final copiedExercises = source.exercises.map((exercise) {
@@ -40,13 +42,16 @@ class ModelUtils {
     final copiedSuperSets = source.superSets?.map((superSetData) {
       final newSuperSetId = generateRandomId(16).toString();
       final exerciseIds = superSetData['exerciseIds'] as List<dynamic>? ?? [];
-      final newExerciseIds =
-          exerciseIds.map((id) => newExerciseIdMap[id.toString()] ?? id.toString()).toList();
+      final newExerciseIds = exerciseIds
+          .map((id) => newExerciseIdMap[id.toString()] ?? id.toString())
+          .toList();
 
       // Update superset IDs in exercises by creating new instances
       for (int i = 0; i < copiedExercises.length; i++) {
         if (newExerciseIds.contains(copiedExercises[i].id)) {
-          copiedExercises[i] = copiedExercises[i].copyWith(superSetId: newSuperSetId);
+          copiedExercises[i] = copiedExercises[i].copyWith(
+            superSetId: newSuperSetId,
+          );
         }
       }
 
@@ -73,8 +78,12 @@ class ModelUtils {
   }
 
   /// Updates order for a list of items with order property
-  static void updateOrders<T>(List<T> items, int Function(T) getOrder,
-      void Function(T, int) setOrder, int startIndex) {
+  static void updateOrders<T>(
+    List<T> items,
+    int Function(T) getOrder,
+    void Function(T, int) setOrder,
+    int startIndex,
+  ) {
     for (int i = startIndex; i < items.length; i++) {
       setOrder(items[i], i + 1);
     }

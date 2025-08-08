@@ -53,9 +53,11 @@ class PrivacyConsentModel {
       id: data['id'] ?? '',
       userId: data['userId'] ?? '',
       consentGiven: data['consentGiven'] ?? false,
-      consentTimestamp: data['consentTimestamp'] is Timestamp 
+      consentTimestamp: data['consentTimestamp'] is Timestamp
           ? (data['consentTimestamp'] as Timestamp).toDate()
-          : DateTime.parse(data['consentTimestamp'] ?? DateTime.now().toIso8601String()),
+          : DateTime.parse(
+              data['consentTimestamp'] ?? DateTime.now().toIso8601String(),
+            ),
       ipAddress: data['ipAddress'],
       userAgent: data['userAgent'],
       privacyPolicyVersion: data['privacyPolicyVersion'] ?? '1.0',

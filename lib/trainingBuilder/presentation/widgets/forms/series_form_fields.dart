@@ -26,6 +26,7 @@ class SeriesFormFields extends StatefulWidget {
 class _SeriesFormFieldsState extends State<SeriesFormFields> {
   late TextEditingController _repsController;
   late TextEditingController _maxRepsController;
+  late TextEditingController _setsController;
   late TextEditingController _intensityController;
   late TextEditingController _maxIntensityController;
   late TextEditingController _rpeController;
@@ -40,25 +41,34 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
   }
 
   void _initializeControllers() {
-    _repsController =
-        TextEditingController(text: widget.series.reps.toString());
-    _maxRepsController =
-        TextEditingController(text: widget.series.maxReps?.toString() ?? '');
-    _intensityController = TextEditingController(text: widget.series.intensity);
-    _maxIntensityController =
-        TextEditingController(text: widget.series.maxIntensity ?? '');
-    _rpeController = TextEditingController(text: widget.series.rpe);
+    _repsController = TextEditingController(
+      text: widget.series.reps.toString(),
+    );
+    _maxRepsController = TextEditingController(
+      text: widget.series.maxReps?.toString() ?? '',
+    );
+    _setsController = TextEditingController(
+      text: widget.series.sets.toString(),
+    );
+    _intensityController = TextEditingController(text: widget.series.intensity ?? '');
+    _maxIntensityController = TextEditingController(
+      text: widget.series.maxIntensity ?? '',
+    );
+    _rpeController = TextEditingController(text: widget.series.rpe ?? '');
     _maxRpeController = TextEditingController(text: widget.series.maxRpe ?? '');
-    _weightController =
-        TextEditingController(text: widget.series.weight.toString());
-    _maxWeightController =
-        TextEditingController(text: widget.series.maxWeight?.toString() ?? '');
+    _weightController = TextEditingController(
+      text: widget.series.weight.toString(),
+    );
+    _maxWeightController = TextEditingController(
+      text: widget.series.maxWeight?.toString() ?? '',
+    );
   }
 
   @override
   void dispose() {
     _repsController.dispose();
     _maxRepsController.dispose();
+    _setsController.dispose();
     _intensityController.dispose();
     _maxIntensityController.dispose();
     _rpeController.dispose();
@@ -91,8 +101,7 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
             Expanded(
               child: NumberInputField(
                 label: 'Sets',
-                controller:
-                    TextEditingController(text: widget.series.sets.toString()),
+                controller: _setsController,
                 icon: Icons.format_list_numbered,
                 onChanged: (value) => _updateSeries(),
               ),
@@ -222,10 +231,11 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
 
       final maxWeight = double.tryParse(_maxWeightController.text);
       if (maxWeight != null && maxWeight > 0) {
-        final maxIntensity = WeightCalculationService.calculateIntensityFromWeight(
-          maxWeight,
-          widget.maxWeight.toDouble(),
-        );
+        final maxIntensity =
+            WeightCalculationService.calculateIntensityFromWeight(
+              maxWeight,
+              widget.maxWeight.toDouble(),
+            );
         _maxIntensityController.text = maxIntensity.toStringAsFixed(1);
       }
     }
@@ -236,13 +246,15 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
       final updatedSeries = widget.series.copyWith(
         reps: int.tryParse(_repsController.text) ?? widget.series.reps,
         maxReps: int.tryParse(_maxRepsController.text),
-        intensity: _intensityController.text,
+        sets: int.tryParse(_setsController.text) ?? widget.series.sets,
+        intensity: _intensityController.text.isNotEmpty ? _intensityController.text : null,
         maxIntensity: _maxIntensityController.text.isNotEmpty
             ? _maxIntensityController.text
             : null,
-        rpe: _rpeController.text,
-        maxRpe:
-            _maxRpeController.text.isNotEmpty ? _maxRpeController.text : null,
+        rpe: _rpeController.text.isNotEmpty ? _rpeController.text : null,
+        maxRpe: _maxRpeController.text.isNotEmpty
+            ? _maxRpeController.text
+            : null,
         weight: double.tryParse(_weightController.text) ?? widget.series.weight,
         maxWeight: double.tryParse(_maxWeightController.text),
       );

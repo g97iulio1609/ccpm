@@ -7,7 +7,12 @@ class SeriesList extends StatelessWidget {
   final List<Series> series;
   final void Function(Series series) onSeriesTap;
   final void Function(Series series) onToggleComplete;
-  const SeriesList({super.key, required this.series, required this.onSeriesTap, required this.onToggleComplete});
+  const SeriesList({
+    super.key,
+    required this.series,
+    required this.onSeriesTap,
+    required this.onToggleComplete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,17 +43,15 @@ class SeriesList extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: s.isCompleted
-                  ? Theme.of(context)
-                      .colorScheme
-                      .primaryContainer
-                      .withValues(alpha: 0.16)
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withValues(alpha: 0.16)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(AppTheme.radii.sm),
               border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withValues(alpha: s.isCompleted ? 0 : 0.3),
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(
+                  alpha: s.isCompleted ? 0 : 0.3,
+                ),
               ),
             ),
             child: _SeriesRow(
@@ -69,7 +72,12 @@ class _SeriesRow extends StatelessWidget {
   final Series series;
   final VoidCallback onTap;
   final VoidCallback onToggleComplete;
-  const _SeriesRow({required this.index, required this.series, required this.onTap, required this.onToggleComplete});
+  const _SeriesRow({
+    required this.index,
+    required this.series,
+    required this.onTap,
+    required this.onToggleComplete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -90,11 +98,11 @@ class _SeriesRow extends StatelessWidget {
             child: Text(
               '${index + 1}',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: done
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: done
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -114,7 +122,11 @@ class _SeriesRow extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onTap,
-            child: _pill(context, label: _formatWeight(series.weight), icon: Icons.fitness_center),
+            child: _pill(
+              context,
+              label: _formatWeight(series.weight),
+              icon: Icons.fitness_center,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -129,11 +141,11 @@ class _SeriesRow extends StatelessWidget {
                 done ? '${series.repsDone}×${series.weightDone}' : '-',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: done ? FontWeight.w600 : FontWeight.normal,
-                      color: done
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurfaceVariant,
-                    ),
+                  fontWeight: done ? FontWeight.w600 : FontWeight.normal,
+                  color: done
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ),
@@ -167,7 +179,11 @@ class _SeriesRow extends StatelessWidget {
     return '$weight kg';
   }
 
-  Widget _pill(BuildContext context, {required String label, required IconData icon}) {
+  Widget _pill(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+  }) {
     final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -185,9 +201,9 @@ class _SeriesRow extends StatelessWidget {
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: cs.onSurface,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: cs.onSurface),
             ),
           ),
         ],
@@ -195,4 +211,3 @@ class _SeriesRow extends StatelessWidget {
     );
   }
 }
-

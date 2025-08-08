@@ -40,8 +40,8 @@ class SubscriptionChecker {
       }
 
       try {
-        final subscriptionDetails =
-            await _inAppPurchaseService.getSubscriptionDetails();
+        final subscriptionDetails = await _inAppPurchaseService
+            .getSubscriptionDetails();
 
         if (subscriptionDetails != null) {
           return subscriptionDetails.status.toLowerCase() == 'active' &&

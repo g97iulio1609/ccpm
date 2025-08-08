@@ -4,17 +4,25 @@ class MacrosCalculator {
   static const double fatCaloriesPerGram = 9;
 
   static Map<String, double> calculateMacrosFromPercentages(
-      double tdee, Map<String, double> macroPercentages) {
+    double tdee,
+    Map<String, double> macroPercentages,
+  ) {
     final macros = <String, double>{};
-    final totalPercentage = macroPercentages.values.fold(0.0, (sum, percentage) => sum + percentage);
+    final totalPercentage = macroPercentages.values.fold(
+      0.0,
+      (sum, percentage) => sum + percentage,
+    );
 
     if (totalPercentage != 100) {
-      final unsetMacros = ['carbs', 'protein', 'fat']
-          .where((macro) => !macroPercentages.containsKey(macro))
-          .toList();
+      final unsetMacros = [
+        'carbs',
+        'protein',
+        'fat',
+      ].where((macro) => !macroPercentages.containsKey(macro)).toList();
 
       if (unsetMacros.isNotEmpty) {
-        final distributedPercentage = (100 - totalPercentage) / unsetMacros.length;
+        final distributedPercentage =
+            (100 - totalPercentage) / unsetMacros.length;
         for (final macro in unsetMacros) {
           macroPercentages[macro] = distributedPercentage;
         }
@@ -37,7 +45,10 @@ class MacrosCalculator {
   }
 
   static Map<String, double> calculateMacrosFromGramsPerKg(
-      double tdee, double weight, Map<String, double> macroGramsPerKg) {
+    double tdee,
+    double weight,
+    Map<String, double> macroGramsPerKg,
+  ) {
     final macros = <String, double>{};
     final macroPercentages = <String, double>{};
 
@@ -62,7 +73,9 @@ class MacrosCalculator {
   }
 
   static Map<String, double> calculatePercentagesFromGrams(
-      double tdee, Map<String, double> macroGrams) {
+    double tdee,
+    Map<String, double> macroGrams,
+  ) {
     final macroPercentages = <String, double>{};
 
     for (final macro in macroGrams.keys) {
@@ -78,7 +91,10 @@ class MacrosCalculator {
   }
 
   static Map<String, double> calculatePercentagesFromGramsPerKg(
-      double tdee, double weight, Map<String, double> macroGramsPerKg) {
+    double tdee,
+    double weight,
+    Map<String, double> macroGramsPerKg,
+  ) {
     final macroGrams = <String, double>{};
 
     for (final macro in macroGramsPerKg.keys) {
@@ -91,7 +107,9 @@ class MacrosCalculator {
   }
 
   static Map<String, double> calculateMacrosFromGrams(
-      double tdee, Map<String, double> macroGrams) {
+    double tdee,
+    Map<String, double> macroGrams,
+  ) {
     final macros = <String, double>{};
     final macroPercentages = <String, double>{};
 
@@ -135,10 +153,17 @@ class MacrosCalculator {
   }
 
   static void _adjustMacroPercentages(Map<String, double> macroPercentages) {
-    final totalPercentage = macroPercentages.values.fold(0.0, (sum, percentage) => sum + percentage);
+    final totalPercentage = macroPercentages.values.fold(
+      0.0,
+      (sum, percentage) => sum + percentage,
+    );
 
     if (totalPercentage != 100) {
-      final unsetMacros = ['carbs', 'protein', 'fat'].where((macro) => !macroPercentages.containsKey(macro)).toList();
+      final unsetMacros = [
+        'carbs',
+        'protein',
+        'fat',
+      ].where((macro) => !macroPercentages.containsKey(macro)).toList();
 
       if (unsetMacros.isNotEmpty) {
         final remainingPercentage = 100 - totalPercentage;

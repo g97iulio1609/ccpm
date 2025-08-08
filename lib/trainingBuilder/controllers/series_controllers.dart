@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/range_controllers.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart' as tb_format;
 
 /// Controller per tutti i campi di una serie
 class SeriesControllers {
@@ -27,25 +28,17 @@ class SeriesControllers {
   }
 
   void initializeFromSeries(Series series) {
-    reps.min.text = _formatNumber(series.reps.toString());
-    reps.max.text = _formatNumber(series.maxReps?.toString() ?? '');
-    sets.text = _formatNumber(series.sets.toString());
-    intensity.min.text = _formatNumber(series.intensity ?? '');
-    intensity.max.text = _formatNumber(series.maxIntensity ?? '');
-    rpe.min.text = _formatNumber(series.rpe ?? '');
-    rpe.max.text = _formatNumber(series.maxRpe ?? '');
-    weight.min.text = _formatNumber(series.weight.toString());
-    weight.max.text = _formatNumber(series.maxWeight?.toString() ?? '');
+    reps.min.text = tb_format.FormatUtils.formatNumber(series.reps.toString());
+    reps.max.text = tb_format.FormatUtils.formatNumber(series.maxReps?.toString() ?? '');
+    sets.text = tb_format.FormatUtils.formatNumber(series.sets.toString());
+    intensity.min.text = tb_format.FormatUtils.formatNumber(series.intensity ?? '');
+    intensity.max.text = tb_format.FormatUtils.formatNumber(series.maxIntensity ?? '');
+    rpe.min.text = tb_format.FormatUtils.formatNumber(series.rpe ?? '');
+    rpe.max.text = tb_format.FormatUtils.formatNumber(series.maxRpe ?? '');
+    weight.min.text = tb_format.FormatUtils.formatNumber(series.weight.toString());
+    weight.max.text = tb_format.FormatUtils.formatNumber(series.maxWeight?.toString() ?? '');
   }
 
-  String _formatNumber(String value) {
-    if (value.isEmpty) return '';
-    final num? parsed = num.tryParse(value);
-    if (parsed == null) return value;
-    return parsed % 1 == 0
-        ? parsed.toInt().toString()
-        : parsed.toStringAsFixed(1);
-  }
 
   void clear() {
     reps.clear();

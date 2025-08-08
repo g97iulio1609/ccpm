@@ -93,7 +93,10 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                 child: selectedUserId != null
                     ? _buildMeasurementsContent(selectedUserId)
                     : _buildUserSelectionPrompt(
-                        theme, colorScheme, currentUserRole),
+                        theme,
+                        colorScheme,
+                        currentUserRole,
+                      ),
               ),
             ],
           ),
@@ -108,9 +111,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: UserTypeAheadField(
@@ -122,9 +123,11 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
         onChanged: (value) {
           final allUsers = ref.read(userListProvider);
           final filteredUsers = allUsers
-              .where((user) =>
-                  user.name.toLowerCase().contains(value.toLowerCase()) ||
-                  user.email.toLowerCase().contains(value.toLowerCase()))
+              .where(
+                (user) =>
+                    user.name.toLowerCase().contains(value.toLowerCase()) ||
+                    user.email.toLowerCase().contains(value.toLowerCase()),
+              )
               .toList();
           ref.read(filteredUserListProvider.notifier).state = filteredUsers;
         },
@@ -133,7 +136,10 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
   }
 
   Widget _buildUserSelectionPrompt(
-      ThemeData theme, ColorScheme colorScheme, String currentUserRole) {
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String currentUserRole,
+  ) {
     if (currentUserRole == 'admin' || currentUserRole == 'coach') {
       return Center(
         child: Column(
@@ -157,14 +163,16 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
       );
     }
     return _buildMeasurementsContent(
-        ref.read(usersServiceProvider).getCurrentUserId());
+      ref.read(usersServiceProvider).getCurrentUserId(),
+    );
   }
 
   Widget _buildMeasurementsContent(String userId) {
     return Consumer(
       builder: (context, ref, _) {
-        final measurementsAsync =
-            ref.watch(measurementControllerProvider(userId));
+        final measurementsAsync = ref.watch(
+          measurementControllerProvider(userId),
+        );
         final userAsync = ref.watch(userProvider(userId));
 
         return userAsync.when(
@@ -185,17 +193,17 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
   }
 
   Widget _buildAddButton(
-      BuildContext context, ColorScheme colorScheme, String? selectedUserId) {
+    BuildContext context,
+    ColorScheme colorScheme,
+    String? selectedUserId,
+  ) {
     return Padding(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              colorScheme.primary,
-              colorScheme.primary.withAlpha(204),
-            ],
+            colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
           ),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           boxShadow: [
@@ -220,18 +228,14 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.add,
-                    color: colorScheme.onPrimary,
-                    size: 24,
-                  ),
+                  Icon(Icons.add, color: colorScheme.onPrimary, size: 24),
                   SizedBox(width: AppTheme.spacing.sm),
                   Text(
                     'Aggiungi Misurazione',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -285,9 +289,10 @@ class _MeasurementsContent extends ConsumerWidget {
   }
 
   List<MapEntry<String, double?>> _calculateComparisonValues(
-      MeasurementModel referenceMeasurement,
-      List<MeasurementModel> previousMeasurements,
-      String key) {
+    MeasurementModel referenceMeasurement,
+    List<MeasurementModel> previousMeasurements,
+    String key,
+  ) {
     if (previousMeasurements.isEmpty) return [];
 
     final currentValue = _getMeasurementValue(referenceMeasurement, key);
@@ -305,7 +310,10 @@ class _MeasurementsContent extends ConsumerWidget {
   }
 
   Widget _buildMeasurementCards(
-      ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
+    ThemeData theme,
+    ColorScheme colorScheme,
+    WidgetRef ref,
+  ) {
     final measurementsAsync = ref.watch(measurementsProvider(userId));
 
     return measurementsAsync.when(
@@ -315,8 +323,9 @@ class _MeasurementsContent extends ConsumerWidget {
         }
 
         final referenceMeasurement = measurements.first;
-        final previousMeasurementsAsync =
-            ref.watch(previousMeasurementsProvider);
+        final previousMeasurementsAsync = ref.watch(
+          previousMeasurementsProvider,
+        );
 
         return previousMeasurementsAsync.when(
           data: (previousMeasurements) {
@@ -339,8 +348,10 @@ class _MeasurementsContent extends ConsumerWidget {
                 final entry = MeasurementConstants.measurementLabels.entries
                     .toList()[index];
 
-                final value =
-                    _getMeasurementValue(referenceMeasurement, entry.key);
+                final value = _getMeasurementValue(
+                  referenceMeasurement,
+                  entry.key,
+                );
 
                 return SizedBox(
                   width: width,
@@ -351,9 +362,10 @@ class _MeasurementsContent extends ConsumerWidget {
                     icon: MeasurementConstants.measurementIcons[entry.key]!,
                     status: _getMeasurementStatus(ref, entry.key, value ?? 0),
                     comparisonValues: _calculateComparisonValues(
-                        referenceMeasurement,
-                        filteredPreviousMeasurements,
-                        entry.key),
+                      referenceMeasurement,
+                      filteredPreviousMeasurements,
+                      entry.key,
+                    ),
                   ),
                 );
               },
@@ -361,7 +373,8 @@ class _MeasurementsContent extends ConsumerWidget {
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(
-              child: Text('Error loading previous measurements: $error')),
+            child: Text('Error loading previous measurements: $error'),
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -392,7 +405,10 @@ class _MeasurementsContent extends ConsumerWidget {
   }
 
   MeasurementStatus _getMeasurementStatus(
-      WidgetRef ref, String key, double value) {
+    WidgetRef ref,
+    String key,
+    double value,
+  ) {
     final controller = ref.read(measurementControllerProvider(userId).notifier);
     switch (key) {
       case 'weight':

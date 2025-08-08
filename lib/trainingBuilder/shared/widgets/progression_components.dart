@@ -93,9 +93,7 @@ class ProgressionFieldContainer extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(26),
-            ),
+            border: Border.all(color: colorScheme.outline.withAlpha(26)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -154,9 +152,7 @@ class ProgressionTextField extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -245,8 +241,9 @@ class _ProgressionRangeEditDialogState
             TextField(
               controller: _minController,
               decoration: InputDecoration(labelText: 'Minimum ${widget.title}'),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               onChanged: (value) {
                 widget.onChanged(value, _maxController.text);
               },
@@ -255,8 +252,9 @@ class _ProgressionRangeEditDialogState
             TextField(
               controller: _maxController,
               decoration: InputDecoration(labelText: 'Maximum ${widget.title}'),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               onChanged: (value) {
                 widget.onChanged(_minController.text, value);
               },
@@ -269,7 +267,9 @@ class _ProgressionRangeEditDialogState
                   final min = _minController.text.trim();
                   final max = _maxController.text.trim();
                   widget.onSave(
-                      min.isNotEmpty ? min : null, max.isNotEmpty ? max : null);
+                    min.isNotEmpty ? min : null,
+                    max.isNotEmpty ? max : null,
+                  );
                 },
                 child: const Text('Save'),
               ),
@@ -365,11 +365,7 @@ class _ProgressionCombinedLoadDialogState
       children: [
         Row(
           children: [
-            Icon(
-              Icons.speed,
-              color: widget.colorScheme.primary,
-              size: 20,
-            ),
+            Icon(Icons.speed, color: widget.colorScheme.primary, size: 20),
             SizedBox(width: AppTheme.spacing.sm),
             Text(
               'Intensità (% 1RM)',
@@ -392,11 +388,12 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor:
-                      widget.colorScheme.surfaceContainerHighest.withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest
+                      .withAlpha(77),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (value) => _updateWithDelay('Intensity'),
               ),
             ),
@@ -410,11 +407,12 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor:
-                      widget.colorScheme.surfaceContainerHighest.withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest
+                      .withAlpha(77),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (value) => _updateWithDelay('Intensity'),
               ),
             ),
@@ -457,11 +455,12 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor:
-                      widget.colorScheme.surfaceContainerHighest.withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest
+                      .withAlpha(77),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (value) => _updateWithDelay('Weight'),
               ),
             ),
@@ -475,11 +474,12 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor:
-                      widget.colorScheme.surfaceContainerHighest.withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest
+                      .withAlpha(77),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (value) => _updateWithDelay('Weight'),
               ),
             ),
@@ -522,11 +522,12 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor:
-                      widget.colorScheme.surfaceContainerHighest.withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest
+                      .withAlpha(77),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (value) => _updateWithDelay('RPE'),
               ),
             ),
@@ -540,11 +541,12 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor:
-                      widget.colorScheme.surfaceContainerHighest.withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest
+                      .withAlpha(77),
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 onChanged: (value) => _updateWithDelay('RPE'),
               ),
             ),
@@ -583,14 +585,14 @@ class _ProgressionCombinedLoadDialogState
     final minValue = type == 'Intensity'
         ? widget.intensityControllers.min.text
         : type == 'RPE'
-            ? widget.rpeControllers.min.text
-            : widget.weightControllers.min.text;
+        ? widget.rpeControllers.min.text
+        : widget.weightControllers.min.text;
 
     final maxValue = type == 'Intensity'
         ? widget.intensityControllers.max.text
         : type == 'RPE'
-            ? widget.rpeControllers.max.text
-            : widget.weightControllers.max.text;
+        ? widget.rpeControllers.max.text
+        : widget.weightControllers.max.text;
 
     widget.onRealTimeUpdate(type, minValue, maxValue, type);
   }

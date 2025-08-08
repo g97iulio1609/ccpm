@@ -11,8 +11,8 @@ class AIAgent {
   AIAgent({
     required LLMService llm,
     required ExtensionsManager extensionsManager,
-  })  : _llm = llm,
-        _extensionsManager = extensionsManager;
+  }) : _llm = llm,
+       _extensionsManager = extensionsManager;
 
   Future<String?> executeTask(String text, UserModel user) async {
     try {
@@ -49,10 +49,7 @@ class AIAgent {
 
           // Richiedi un piano alternativo
           final adjustedPlan = await _llm.adjustPlan(
-            ActionPlan(
-              actions: remainingActions,
-              context: currentContext,
-            ),
+            ActionPlan(actions: remainingActions, context: currentContext),
             result,
           );
 
@@ -125,12 +122,14 @@ class AIAgent {
     Map<String, dynamic> action,
   ) async {
     // Analizza il risultato per determinare il successo e il contesto
-    final isSuccess = !result.toLowerCase().contains('errore') &&
+    final isSuccess =
+        !result.toLowerCase().contains('errore') &&
         !result.toLowerCase().contains('non trovato') &&
         !result.toLowerCase().contains('non valido');
 
-    final data =
-        isSuccess ? await _extractDataFromResult(result, action) : null;
+    final data = isSuccess
+        ? await _extractDataFromResult(result, action)
+        : null;
     String? errorType;
     Map<String, dynamic>? errorContext;
 
@@ -144,10 +143,7 @@ class AIAgent {
         errorType = 'general_error';
       }
 
-      errorContext = {
-        'originalAction': action,
-        'errorMessage': result,
-      };
+      errorContext = {'originalAction': action, 'errorMessage': result};
     }
 
     return ActionResult(

@@ -67,8 +67,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '179277367624',
     projectId: 'alphaness-322423',
     storageBucket: 'alphaness-322423.appspot.com',
-    androidClientId: '179277367624-394c1q9b0bft0l05u627s2r39j2tvnrh.apps.googleusercontent.com',
-    iosClientId: '179277367624-c8rp756q5jgi7t6oso5lng8l6he2591h.apps.googleusercontent.com',
+    androidClientId:
+        '179277367624-394c1q9b0bft0l05u627s2r39j2tvnrh.apps.googleusercontent.com',
+    iosClientId:
+        '179277367624-c8rp756q5jgi7t6oso5lng8l6he2591h.apps.googleusercontent.com',
     iosBundleId: 'com.example.alphanessone',
   );
 
@@ -78,8 +80,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '179277367624',
     projectId: 'alphaness-322423',
     storageBucket: 'alphaness-322423.appspot.com',
-    androidClientId: '179277367624-394c1q9b0bft0l05u627s2r39j2tvnrh.apps.googleusercontent.com',
-    iosClientId: '179277367624-puf2tc4m6atim9395vna4pb4cngq0tgv.apps.googleusercontent.com',
+    androidClientId:
+        '179277367624-394c1q9b0bft0l05u627s2r39j2tvnrh.apps.googleusercontent.com',
+    iosClientId:
+        '179277367624-puf2tc4m6atim9395vna4pb4cngq0tgv.apps.googleusercontent.com',
     iosBundleId: 'com.example.alphanessone.RunnerTests',
   );
 }

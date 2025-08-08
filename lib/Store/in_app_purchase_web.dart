@@ -40,10 +40,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _initializeProducts();
     _checkPaymentStatus();
@@ -132,13 +129,16 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                 currency: product.currencyCode.toLowerCase(),
                 onPaymentSuccess: (String paymentId) async {
                   await _inAppPurchase.handleSuccessfulPayment(
-                      paymentId, product.id);
+                    paymentId,
+                    product.id,
+                  );
                   if (mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content:
-                            const Text('Abbonamento attivato con successo!'),
+                        content: const Text(
+                          'Abbonamento attivato con successo!',
+                        ),
                         backgroundColor: AppTheme.success,
                       ),
                     );
@@ -234,8 +234,10 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.error.withAlpha(26),
                 foregroundColor: AppTheme.error,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],
@@ -403,10 +405,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               decoration: BoxDecoration(
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: colorScheme.outlineVariant,
-                  width: 1,
-                ),
+                border: Border.all(color: colorScheme.outlineVariant, width: 1),
               ),
               child: Column(
                 children: [
@@ -453,10 +452,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
       decoration: BoxDecoration(
         border: !isLast
             ? Border(
-                bottom: BorderSide(
-                  color: colorScheme.outlineVariant,
-                  width: 1,
-                ),
+                bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
               )
             : null,
         borderRadius: BorderRadius.vertical(
@@ -472,11 +468,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               color: colorScheme.primary.withAlpha(26),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: colorScheme.primary,
-              size: 24,
-            ),
+            child: Icon(icon, color: colorScheme.primary, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
