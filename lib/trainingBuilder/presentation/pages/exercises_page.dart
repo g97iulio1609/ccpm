@@ -41,6 +41,37 @@ class ExercisesPage extends ConsumerWidget {
     return PageScaffold(
       colorScheme: colorScheme,
       slivers: [
+        // Pulsante globale per aggiungere esercizi (sostituisce la header interna inutile)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: AppTheme.spacing.lg,
+              right: AppTheme.spacing.lg,
+              left: AppTheme.spacing.lg,
+              bottom: AppTheme.spacing.md,
+            ),
+            child: Row(
+              children: [
+                const Spacer(),
+                SizedBox(
+                  width: 260,
+                  child: AppButton(
+                    label: 'Aggiungi Esercizio',
+                    icon: Icons.add_circle_outline,
+                    variant: AppButtonVariant.primary,
+                    size: AppButtonSize.md,
+                    block: true,
+                    onPressed: () => controller.addExercise(
+                      weekIndex,
+                      workoutIndex,
+                      context,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         SliverPadding(
           padding: EdgeInsets.all(AppTheme.spacing.md),
           sliver: exercises.isEmpty
@@ -115,7 +146,8 @@ class ExercisesPage extends ConsumerWidget {
         maxCrossAxisExtent: 600,
         mainAxisSpacing: AppTheme.spacing.md,
         crossAxisSpacing: AppTheme.spacing.md,
-        mainAxisExtent: 400,
+        // Aumentata per evitare il taglio del contenuto delle card (header + info + serie scroll + badge)
+        mainAxisExtent: 520,
       ),
     );
   }

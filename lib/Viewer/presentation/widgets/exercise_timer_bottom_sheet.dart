@@ -488,15 +488,13 @@ class _ExerciseTimerBottomSheetState
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: ElevatedButton(
+                                      child: FilledButton(
                                         onPressed: () {
                                           timerNotifier.resetTimer();
                                         },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFFEF4444,
-                                          ),
-                                          foregroundColor: Colors.white,
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: colorScheme.error,
+                                          foregroundColor: colorScheme.onError,
                                           padding: EdgeInsets.symmetric(
                                             vertical: AppTheme.spacing.lg,
                                           ),
@@ -511,13 +509,12 @@ class _ExerciseTimerBottomSheetState
                                     ),
                                     SizedBox(width: AppTheme.spacing.md),
                                     Expanded(
-                                      child: ElevatedButton(
+                                      child: FilledButton(
                                         onPressed: _handleTimerComplete,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFFFACC15,
-                                          ),
-                                          foregroundColor: Colors.black,
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: colorScheme.primary,
+                                          foregroundColor:
+                                              colorScheme.onPrimary,
                                           padding: EdgeInsets.symmetric(
                                             vertical: AppTheme.spacing.lg,
                                           ),
@@ -889,7 +886,7 @@ class _ExerciseTimerBottomSheetState
   ) {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
+      child: FilledButton(
         onPressed: () {
           // Avvia il timer con l'opzione EMOM
           timerNotifier.startTimer();
@@ -901,7 +898,7 @@ class _ExerciseTimerBottomSheetState
             // Potremmo passare isEmom al notifier, o gestire le notifiche qui
           }
         },
-        style: ElevatedButton.styleFrom(
+        style: FilledButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.lg),

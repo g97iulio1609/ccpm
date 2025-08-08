@@ -49,7 +49,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
-import 'package:alphanessone/Viewer/UI/exercise_timer_bottom_sheet.dart';
+// Nota: il bottom sheet del timer è stato consolidato in
+// `Viewer/presentation/widgets/exercise_timer_bottom_sheet.dart`
 import 'package:alphanessone/Viewer/UI/widgets/exercise_card.dart';
 import 'package:alphanessone/Viewer/UI/widgets/superset_card.dart';
 ```

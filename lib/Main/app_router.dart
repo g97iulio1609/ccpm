@@ -8,7 +8,7 @@ import 'package:alphanessone/UI/home_screen.dart';
 import 'package:alphanessone/UI/legal/privacy_policy_screen.dart';
 import 'package:alphanessone/UI/settings/ai_settings_screen.dart';
 import 'package:alphanessone/Viewer/UI/training_viewer.dart';
-import 'package:alphanessone/Viewer/UI/workout_details.dart';
+import 'package:alphanessone/Viewer/presentation/pages/workout_details_page.dart';
 import 'package:alphanessone/auth/auth_screen.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/Calc/macros_selector.dart';
@@ -146,7 +146,7 @@ class AppRouter {
                       final weekId = extra['weekId'] as String;
                       final workoutId = extra['workoutId'] as String;
                       final userId = extra['userId'] as String;
-                      return WorkoutDetails(
+                      return WorkoutDetailsPage(
                         programId: programId,
                         weekId: weekId,
                         workoutId: workoutId,

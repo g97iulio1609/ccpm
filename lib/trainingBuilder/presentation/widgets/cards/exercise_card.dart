@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 
-
 class ExerciseCard extends StatelessWidget {
   final Exercise exercise;
   final List<SuperSet> superSets;
@@ -25,16 +24,15 @@ class ExerciseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isInSuperSet =
-        superSets.any((ss) => ss.exerciseIds.contains(exercise.id));
+    final isInSuperSet = superSets.any(
+      (ss) => ss.exerciseIds.contains(exercise.id),
+    );
 
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Material(
@@ -52,7 +50,9 @@ class ExerciseCard extends StatelessWidget {
                 _buildExerciseInfo(context, theme, colorScheme),
                 if (seriesWidget != null) ...[
                   SizedBox(height: AppTheme.spacing.md),
-                  Expanded(child: seriesWidget!),
+                  // Usa altezza fissa e scroll interno gestito dal widget delle serie,
+                  // evitando che la card venga tagliata dal layout a griglia
+                  SizedBox(height: 280, child: seriesWidget!),
                 ],
                 if (isInSuperSet) ...[
                   SizedBox(height: AppTheme.spacing.md),
@@ -67,7 +67,10 @@ class ExerciseCard extends StatelessWidget {
   }
 
   Widget _buildHeader(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Row(
       children: [
         Container(
@@ -89,10 +92,7 @@ class ExerciseCard extends StatelessWidget {
         ),
         const Spacer(),
         IconButton(
-          icon: Icon(
-            Icons.more_vert,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
           onPressed: onOptions,
           tooltip: 'Opzioni esercizio',
         ),
@@ -101,7 +101,10 @@ class ExerciseCard extends StatelessWidget {
   }
 
   Widget _buildExerciseInfo(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -131,7 +134,10 @@ class ExerciseCard extends StatelessWidget {
   }
 
   Widget _buildSuperSetBadge(
-      BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppTheme.spacing.md,
@@ -144,11 +150,7 @@ class ExerciseCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.group_work,
-            size: 18,
-            color: colorScheme.secondary,
-          ),
+          Icon(Icons.group_work, size: 18, color: colorScheme.secondary),
           SizedBox(width: AppTheme.spacing.xs),
           Text(
             'Superset',
