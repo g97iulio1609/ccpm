@@ -40,21 +40,22 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
-    // Determina max extent in base alla larghezza dello schermo (responsive)
+    // Deprecated: calcolo colonne non più usato (si usa maxCrossAxisExtent)
     final padding = AppTheme.spacing.md;
     final spacing = AppTheme.spacing.md;
-    // Calcolo dinamico d'aspetto: usa MaxCrossAxisExtent per gestione robusta desktop/tablet
-    final maxExtent = screenWidth >= 1600
-        ? 520.0
-        : screenWidth >= 1200
-            ? 480.0
-            : 420.0;
-    final desiredTileHeight = screenWidth >= 1600
+    // Griglia moderna: usa maxCrossAxisExtent + mainAxisExtent (Flutter 3.10+)
+    final maxCrossAxisExtent = screenWidth >= 1600
         ? 420.0
         : screenWidth >= 1200
-            ? 460.0
-            : 520.0;
-    final computedChildAspectRatio = maxExtent / desiredTileHeight;
+            ? 380.0
+            : screenWidth >= 900
+                ? 340.0
+                : 320.0;
+    final mainAxisExtent = screenWidth >= 1600
+        ? 460.0
+        : screenWidth >= 1200
+            ? 500.0
+            : 540.0;
 
     // Se è in caricamento, mostra un indicatore di progresso
     if (state.isLoading) {
@@ -170,10 +171,10 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               child: GridView.builder(
                 padding: EdgeInsets.all(padding),
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: maxExtent,
+                  maxCrossAxisExtent: maxCrossAxisExtent,
                   crossAxisSpacing: spacing,
                   mainAxisSpacing: spacing,
-                  childAspectRatio: computedChildAspectRatio,
+                  mainAxisExtent: mainAxisExtent,
                 ),
                 itemCount: groupedExercises.length,
                 key: PageStorageKey('workout_exercises_${widget.workoutId}'),
