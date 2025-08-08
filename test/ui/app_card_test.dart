@@ -21,5 +21,3 @@ void main() {
     expect(find.text('Footer'), findsOneWidget);
   });
 }
-
-

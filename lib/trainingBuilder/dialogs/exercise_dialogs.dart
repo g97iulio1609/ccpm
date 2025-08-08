@@ -47,8 +47,10 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
     if (repetitions > 1) {
       final weight = double.tryParse(maxWeightController.text) ?? 0;
       if (weight > 0) {
-        final calculatedMaxWeight =
-            ExerciseService.calculateMaxRM(weight, repetitions);
+        final calculatedMaxWeight = ExerciseService.calculateMaxRM(
+          weight,
+          repetitions,
+        );
         maxWeightController.text = calculatedMaxWeight.toStringAsFixed(1);
         repetitionsController.text = '1';
       }
@@ -107,9 +109,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
       decoration: BoxDecoration(
         color: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: widget.colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: widget.colorScheme.outline.withAlpha(128)),
       ),
       child: TextField(
         controller: maxWeightController,
@@ -124,10 +124,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
             );
           }),
         ],
-        style: TextStyle(
-          color: widget.colorScheme.onSurface,
-          fontSize: 16,
-        ),
+        style: TextStyle(color: widget.colorScheme.onSurface, fontSize: 16),
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
@@ -148,18 +145,13 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
       decoration: BoxDecoration(
         color: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: widget.colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: widget.colorScheme.outline.withAlpha(128)),
       ),
       child: TextField(
         controller: repetitionsController,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        style: TextStyle(
-          color: widget.colorScheme.onSurface,
-          fontSize: 16,
-        ),
+        style: TextStyle(color: widget.colorScheme.onSurface, fontSize: 16),
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
@@ -184,11 +176,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline,
-            size: 16,
-            color: widget.colorScheme.primary,
-          ),
+          Icon(Icons.info_outline, size: 16, color: widget.colorScheme.primary),
           SizedBox(width: AppTheme.spacing.xs),
           Expanded(
             child: Text(
@@ -302,9 +290,7 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
       decoration: BoxDecoration(
         color: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: widget.colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: widget.colorScheme.outline.withAlpha(128)),
       ),
       child: DropdownButtonFormField<String>(
         value: selectedSuperSetId,
@@ -315,13 +301,15 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
         dropdownColor: widget.colorScheme.surface,
         style: TextStyle(color: widget.colorScheme.onSurface),
         items: widget.superSets
-            .map((superSet) => DropdownMenuItem<String>(
-                  value: superSet.id,
-                  child: Text(
-                    superSet.name ?? 'Superset ${superSet.id}',
-                    style: TextStyle(color: widget.colorScheme.onSurface),
-                  ),
-                ))
+            .map(
+              (superSet) => DropdownMenuItem<String>(
+                value: superSet.id,
+                child: Text(
+                  superSet.name ?? 'Superset ${superSet.id}',
+                  style: TextStyle(color: widget.colorScheme.onSurface),
+                ),
+              ),
+            )
             .toList(),
         onChanged: (value) => setState(() => selectedSuperSetId = value),
         icon: Icon(
@@ -405,9 +393,7 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
         children: [
           Text(
             'Seleziona l\'allenamento di destinazione:',
-            style: TextStyle(
-              color: widget.colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(color: widget.colorScheme.onSurfaceVariant),
           ),
           SizedBox(height: AppTheme.spacing.md),
           _buildWorkoutDropdown(),
@@ -448,9 +434,7 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
       decoration: BoxDecoration(
         color: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: widget.colorScheme.outline.withAlpha(128),
-        ),
+        border: Border.all(color: widget.colorScheme.outline.withAlpha(128)),
       ),
       child: DropdownButtonFormField<int>(
         value: selectedWorkoutIndex,
@@ -461,13 +445,15 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
         dropdownColor: widget.colorScheme.surface,
         style: TextStyle(color: widget.colorScheme.onSurface),
         items: availableWorkouts
-            .map((entry) => DropdownMenuItem<int>(
-                  value: entry.key,
-                  child: Text(
-                    'Allenamento ${entry.value.order}',
-                    style: TextStyle(color: widget.colorScheme.onSurface),
-                  ),
-                ))
+            .map(
+              (entry) => DropdownMenuItem<int>(
+                value: entry.key,
+                child: Text(
+                  'Allenamento ${entry.value.order}',
+                  style: TextStyle(color: widget.colorScheme.onSurface),
+                ),
+              ),
+            )
             .toList(),
         onChanged: (value) => setState(() => selectedWorkoutIndex = value),
         icon: Icon(

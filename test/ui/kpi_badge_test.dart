@@ -8,10 +8,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: Center(
-            child: KpiBadge(
-              text: '75 kg',
-              icon: Icons.fitness_center,
-            ),
+            child: KpiBadge(text: '75 kg', icon: Icons.fitness_center),
           ),
         ),
       ),
@@ -21,5 +18,3 @@ void main() {
     expect(find.byIcon(Icons.fitness_center), findsOneWidget);
   });
 }
-
-

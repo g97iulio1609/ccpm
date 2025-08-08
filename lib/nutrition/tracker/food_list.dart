@@ -372,8 +372,8 @@ class FoodListState extends ConsumerState<FoodList> {
               color: isSelected
                   ? colorScheme.primary.withAlpha(26)
                   : (isHovered
-                      ? colorScheme.surfaceContainerHighest.withAlpha(64)
-                      : colorScheme.surface),
+                        ? colorScheme.surfaceContainerHighest.withAlpha(64)
+                        : colorScheme.surface),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected

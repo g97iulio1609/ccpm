@@ -56,7 +56,11 @@ class SkeletonCard extends StatelessWidget {
 class SkeletonList extends StatelessWidget {
   final int itemCount;
   final EdgeInsetsGeometry padding;
-  const SkeletonList({super.key, this.itemCount = 6, this.padding = const EdgeInsets.all(16)});
+  const SkeletonList({
+    super.key,
+    this.itemCount = 6,
+    this.padding = const EdgeInsets.all(16),
+  });
 
   @override
   Widget build(BuildContext context) {

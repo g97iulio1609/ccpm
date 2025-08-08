@@ -5,20 +5,34 @@ class ReorderDialog extends StatefulWidget {
   final List<String> items;
   final Function(int, int) onReorder;
 
-  const ReorderDialog(
-      {required this.items, required this.onReorder, super.key});
+  const ReorderDialog({
+    required this.items,
+    required this.onReorder,
+    super.key,
+  });
 
   @override
   ReorderDialogState createState() => ReorderDialogState();
 }
 
 class ReorderDialogState extends State<ReorderDialog> {
-  late List<String> items;
+  // Etichette visualizzate
+  late List<String> _labels;
+  // Chiavi stabili per ciascun elemento, restano legate all'elemento anche dopo il riordino
+  late List<String> _stableKeys;
+  // Indice dell'elemento attualmente in drag
+  int? _draggingIndex;
 
   @override
   void initState() {
     super.initState();
-    items = List.from(widget.items);
+    _labels = List<String>.from(widget.items);
+    // Genera chiavi univoche e stabili in base alla posizione iniziale
+    // Nota: non includiamo l'indice corrente nell'etichetta per evitare chiavi instabili
+    _stableKeys = List<String>.generate(
+      _labels.length,
+      (index) => 'reorder_key_$index',
+    );
   }
 
   @override
@@ -32,9 +46,7 @@ class ReorderDialogState extends State<ReorderDialog> {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
           boxShadow: AppTheme.elevations.large,
         ),
         child: Column(
@@ -84,80 +96,87 @@ class ReorderDialogState extends State<ReorderDialog> {
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(context).size.height * 0.6,
               ),
-              child: SingleChildScrollView(
-                child: ReorderableListView(
-                  buildDefaultDragHandles: false,
-                  shrinkWrap: true,
-                  padding: EdgeInsets.all(AppTheme.spacing.lg),
-                  proxyDecorator: (child, index, animation) {
-                    return Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withAlpha(204),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radii.lg),
-                          boxShadow: AppTheme.elevations.medium,
-                        ),
-                        child: child,
-                      ),
-                    );
-                  },
-                  children: items.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-                    return Container(
-                      key: ValueKey(item),
-                      margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
+              child: ReorderableListView.builder(
+                buildDefaultDragHandles: false,
+                shrinkWrap: false,
+                padding: EdgeInsets.all(AppTheme.spacing.lg),
+                mouseCursor: SystemMouseCursors.grab,
+                proxyDecorator: (child, index, animation) {
+                  return Material(
+                    color: Colors.transparent,
+                    child: Container(
                       decoration: BoxDecoration(
-                        color:
-                            colorScheme.surfaceContainerHighest.withAlpha(76),
+                        color: colorScheme.primaryContainer.withAlpha(204),
                         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                        border: Border.all(
-                          color: colorScheme.outline.withAlpha(26),
-                        ),
+                        boxShadow: AppTheme.elevations.medium,
                       ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: ListTile(
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radii.lg),
+                      child: child,
+                    ),
+                  );
+                },
+                itemCount: _labels.length,
+                itemBuilder: (context, index) {
+                  final itemLabel = _labels[index];
+                  return Container(
+                    key: ValueKey(_stableKeys[index]),
+                    margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
+                    decoration: BoxDecoration(
+                      color: _draggingIndex == index
+                          ? colorScheme.primaryContainer.withAlpha(96)
+                          : colorScheme.surfaceContainerHighest.withAlpha(76),
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      border: Border.all(
+                        color: colorScheme.outline.withAlpha(26),
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.lg,
                           ),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacing.lg,
-                            vertical: AppTheme.spacing.sm,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing.lg,
+                          vertical: AppTheme.spacing.sm,
+                        ),
+                        title: Text(
+                          itemLabel,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurface,
                           ),
-                          title: Text(
-                            item,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: colorScheme.onSurface,
+                        ),
+                        leading: Container(
+                          padding: EdgeInsets.all(AppTheme.spacing.xs),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer.withAlpha(76),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radii.md,
                             ),
                           ),
-                          leading: Container(
-                            padding: EdgeInsets.all(AppTheme.spacing.xs),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer.withAlpha(76),
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radii.md),
-                            ),
-                            child: Text(
-                              '${index + 1}',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          child: Text(
+                            '${index + 1}',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          trailing: ReorderableDragStartListener(
+                        ),
+                        trailing: MouseRegion(
+                          cursor: _draggingIndex == index
+                              ? SystemMouseCursors.grabbing
+                              : SystemMouseCursors.grab,
+                          child: ReorderableDragStartListener(
                             index: index,
                             child: Container(
                               padding: EdgeInsets.all(AppTheme.spacing.sm),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHighest
                                     .withAlpha(128),
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radii.md,
+                                ),
                               ),
                               child: Icon(
                                 Icons.drag_handle,
@@ -168,19 +187,37 @@ class ReorderDialogState extends State<ReorderDialog> {
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
-                  onReorder: (oldIndex, newIndex) {
-                    setState(() {
-                      if (oldIndex < newIndex) {
-                        newIndex -= 1;
-                      }
-                      final item = items.removeAt(oldIndex);
-                      items.insert(newIndex, item);
-                      widget.onReorder(oldIndex, newIndex);
-                    });
-                  },
-                ),
+                    ),
+                  );
+                },
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    final int externalOldIndex = oldIndex;
+                    final int externalNewIndex = newIndex;
+
+                    int insertIndex = newIndex;
+                    if (oldIndex < newIndex) {
+                      insertIndex -= 1;
+                    }
+
+                    final movedLabel = _labels.removeAt(oldIndex);
+                    final movedKey = _stableKeys.removeAt(oldIndex);
+                    _labels.insert(insertIndex, movedLabel);
+                    _stableKeys.insert(insertIndex, movedKey);
+
+                    widget.onReorder(externalOldIndex, externalNewIndex);
+                  });
+                },
+                onReorderStart: (index) {
+                  setState(() {
+                    _draggingIndex = index;
+                  });
+                },
+                onReorderEnd: (index) {
+                  setState(() {
+                    _draggingIndex = null;
+                  });
+                },
               ),
             ),
 

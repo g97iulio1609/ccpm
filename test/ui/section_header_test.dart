@@ -7,10 +7,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: SectionHeader(
-            title: 'Titolo',
-            subtitle: 'Sottotitolo',
-          ),
+          body: SectionHeader(title: 'Titolo', subtitle: 'Sottotitolo'),
         ),
       ),
     );
@@ -19,5 +16,3 @@ void main() {
     expect(find.text('Sottotitolo'), findsOneWidget);
   });
 }
-
-

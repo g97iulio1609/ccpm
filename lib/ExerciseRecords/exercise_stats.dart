@@ -63,9 +63,7 @@ class ExerciseStats extends HookConsumerWidget {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(
-                  child: CircularProgressIndicator(
-                    color: colorScheme.primary,
-                  ),
+                  child: CircularProgressIndicator(color: colorScheme.primary),
                 );
               }
 
@@ -147,8 +145,9 @@ class ExerciseStats extends HookConsumerWidget {
                               padding: EdgeInsets.all(AppTheme.spacing.lg),
                               decoration: BoxDecoration(
                                 color: colorScheme.surface,
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radii.lg),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radii.lg,
+                                ),
                                 border: Border.all(
                                   color: colorScheme.outline.withAlpha(26),
                                 ),
@@ -182,7 +181,9 @@ class ExerciseStats extends HookConsumerWidget {
   }
 
   Widget _buildPerformanceSummary(
-      List<ExerciseRecord> records, BuildContext context) {
+    List<ExerciseRecord> records,
+    BuildContext context,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -192,9 +193,7 @@ class ExerciseStats extends HookConsumerWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
           boxShadow: AppTheme.elevations.small,
         ),
         child: Column(
@@ -232,9 +231,7 @@ class ExerciseStats extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: colorScheme.outline.withAlpha(26),
-        ),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
       child: Column(
@@ -324,10 +321,11 @@ class ExerciseStats extends HookConsumerWidget {
                   : colorScheme.errorContainer.withAlpha(26),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
-                color: (improvement >= 0
-                        ? colorScheme.tertiary
-                        : colorScheme.error)
-                    .withAlpha(51),
+                color:
+                    (improvement >= 0
+                            ? colorScheme.tertiary
+                            : colorScheme.error)
+                        .withAlpha(51),
               ),
             ),
             child: Row(
@@ -335,10 +333,11 @@ class ExerciseStats extends HookConsumerWidget {
                 Container(
                   padding: EdgeInsets.all(AppTheme.spacing.sm),
                   decoration: BoxDecoration(
-                    color: (improvement >= 0
-                            ? colorScheme.tertiaryContainer
-                            : colorScheme.errorContainer)
-                        .withAlpha(76),
+                    color:
+                        (improvement >= 0
+                                ? colorScheme.tertiaryContainer
+                                : colorScheme.errorContainer)
+                            .withAlpha(76),
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   child: Icon(
@@ -398,9 +397,7 @@ class ExerciseStats extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: textColor.withAlpha(51),
-        ),
+        border: Border.all(color: textColor.withAlpha(51)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,7 +430,9 @@ class ExerciseStats extends HookConsumerWidget {
   }
 
   Widget _buildPerformanceChart(
-      List<ExerciseRecord> records, BuildContext context) {
+    List<ExerciseRecord> records,
+    BuildContext context,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final sortedRecords = records.reversed.toList();
@@ -486,8 +485,9 @@ class ExerciseStats extends HookConsumerWidget {
                 getTitlesWidget: (value, meta) {
                   if (value.toInt() < sortedRecords.length) {
                     return Text(
-                      DateFormat('MMM d')
-                          .format(sortedRecords[value.toInt()].date),
+                      DateFormat(
+                        'MMM d',
+                      ).format(sortedRecords[value.toInt()].date),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -497,10 +497,12 @@ class ExerciseStats extends HookConsumerWidget {
                 },
               ),
             ),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           borderData: FlBorderData(show: false),
           minX: 0,
@@ -511,7 +513,9 @@ class ExerciseStats extends HookConsumerWidget {
             LineChartBarData(
               spots: sortedRecords.asMap().entries.map((entry) {
                 return FlSpot(
-                    entry.key.toDouble(), entry.value.maxWeight.toDouble());
+                  entry.key.toDouble(),
+                  entry.value.maxWeight.toDouble(),
+                );
               }).toList(),
               isCurved: true,
               color: colorScheme.primary,
@@ -556,7 +560,10 @@ class ExerciseStats extends HookConsumerWidget {
   }
 
   Widget _buildRecordList(
-      List<ExerciseRecord> records, BuildContext context, WidgetRef ref) {
+    List<ExerciseRecord> records,
+    BuildContext context,
+    WidgetRef ref,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -572,9 +579,7 @@ class ExerciseStats extends HookConsumerWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(26),
-            ),
+            border: Border.all(color: colorScheme.outline.withAlpha(26)),
             boxShadow: AppTheme.elevations.small,
           ),
           child: Material(
@@ -639,7 +644,10 @@ class ExerciseStats extends HookConsumerWidget {
   }
 
   void _showEditDialog(
-      BuildContext context, WidgetRef ref, ExerciseRecord record) {
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseRecord record,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -654,37 +662,48 @@ class ExerciseStats extends HookConsumerWidget {
   }
 
   void _showDeleteDialog(
-      BuildContext context, WidgetRef ref, ExerciseRecord record) {
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseRecord record,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(
             'Confirmation',
-            style:
-                TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+            style: TextStyle(
+              color: Theme.of(dialogContext).colorScheme.onSurface,
+            ),
           ),
           backgroundColor: Theme.of(dialogContext).colorScheme.surface,
           content: Text(
             'Are you sure you want to delete this record?',
-            style:
-                TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
+            style: TextStyle(
+              color: Theme.of(dialogContext).colorScheme.onSurface,
+            ),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text('Cancel',
-                  style: TextStyle(
-                      color: Theme.of(dialogContext).colorScheme.primary)),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(dialogContext).colorScheme.primary,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 _performDelete(context, ref, record);
               },
-              child: Text('Delete',
-                  style: TextStyle(
-                      color: Theme.of(dialogContext).colorScheme.error)),
+              child: Text(
+                'Delete',
+                style: TextStyle(
+                  color: Theme.of(dialogContext).colorScheme.error,
+                ),
+              ),
             ),
           ],
         );
@@ -693,9 +712,14 @@ class ExerciseStats extends HookConsumerWidget {
   }
 
   void _performDelete(
-      BuildContext context, WidgetRef ref, ExerciseRecord record) async {
+    BuildContext context,
+    WidgetRef ref,
+    ExerciseRecord record,
+  ) async {
     try {
-      await ref.read(exerciseRecordServiceProvider).deleteExerciseRecord(
+      await ref
+          .read(exerciseRecordServiceProvider)
+          .deleteExerciseRecord(
             userId: userId,
             exerciseId: exercise.id,
             recordId: record.id,
@@ -707,9 +731,9 @@ class ExerciseStats extends HookConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete record: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete record: $e')));
       }
     }
   }
@@ -745,10 +769,12 @@ class EditRecordDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController =
-        useTextEditingController(text: record.maxWeight.toString());
-    final repetitionsController =
-        useTextEditingController(text: record.repetitions.toString());
+    final maxWeightController = useTextEditingController(
+      text: record.maxWeight.toString(),
+    );
+    final repetitionsController = useTextEditingController(
+      text: record.repetitions.toString(),
+    );
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
@@ -763,16 +789,23 @@ class EditRecordDialog extends HookConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildDialogTextFormField(
-                maxWeightController, 'Max weight', context),
+              maxWeightController,
+              'Max weight',
+              context,
+            ),
             _buildDialogTextFormField(
-                repetitionsController, 'Repetitions', context),
+              repetitionsController,
+              'Repetitions',
+              context,
+            ),
             _buildDatePicker(context, selectedDate),
             Row(
               children: [
                 Text(
                   'Keep current weight',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 Switch(
                   value: keepWeight.value,
@@ -788,37 +821,46 @@ class EditRecordDialog extends HookConsumerWidget {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          ),
         ),
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
             _handleSave(
-                context,
-                ref,
-                maxWeightController.text,
-                repetitionsController.text,
-                selectedDate.value,
-                keepWeight.value);
+              context,
+              ref,
+              maxWeightController.text,
+              repetitionsController.text,
+              selectedDate.value,
+              keepWeight.value,
+            );
           },
-          child: Text('Save',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          child: Text(
+            'Save',
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildDialogTextFormField(TextEditingController controller,
-      String labelText, BuildContext context) {
+  Widget _buildDialogTextFormField(
+    TextEditingController controller,
+    String labelText,
+    BuildContext context,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
         decoration: InputDecoration(
           labelText: labelText,
-          labelStyle:
-              TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          labelStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         keyboardType: TextInputType.number,
@@ -828,7 +870,9 @@ class EditRecordDialog extends HookConsumerWidget {
   }
 
   Widget _buildDatePicker(
-      BuildContext context, ValueNotifier<DateTime> selectedDate) {
+    BuildContext context,
+    ValueNotifier<DateTime> selectedDate,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: InkWell(
@@ -847,7 +891,8 @@ class EditRecordDialog extends HookConsumerWidget {
           decoration: InputDecoration(
             labelText: 'Date',
             labelStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           child: Row(
@@ -855,11 +900,14 @@ class EditRecordDialog extends HookConsumerWidget {
             children: [
               Text(
                 DateFormat('dd/MM/yyyy').format(selectedDate.value),
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-              Icon(Icons.calendar_today,
-                  color: Theme.of(context).colorScheme.onSurface),
+              Icon(
+                Icons.calendar_today,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ],
           ),
         ),
@@ -867,14 +915,20 @@ class EditRecordDialog extends HookConsumerWidget {
     );
   }
 
-  void _handleSave(BuildContext context, WidgetRef ref, String maxWeightText,
-      String repetitionsText, DateTime selectedDate, bool keepWeight) async {
+  void _handleSave(
+    BuildContext context,
+    WidgetRef ref,
+    String maxWeightText,
+    String repetitionsText,
+    DateTime selectedDate,
+    bool keepWeight,
+  ) async {
     double newMaxWeight = double.parse(maxWeightText);
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight =
-          (newMaxWeight / (1.0278 - (0.0278 * newRepetitions))).roundToDouble();
+      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions)))
+          .roundToDouble();
       newRepetitions = 1;
     }
 
@@ -908,9 +962,9 @@ class EditRecordDialog extends HookConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update record: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update record: $e')));
       }
     }
   }
