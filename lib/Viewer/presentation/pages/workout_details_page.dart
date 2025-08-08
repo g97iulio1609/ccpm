@@ -50,6 +50,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         : 2;
     final padding = AppTheme.spacing.md;
     final spacing = AppTheme.spacing.md;
+    // Calcolo dinamico dell'aspect ratio per evitare card "invisibili" su desktop
+    final tileWidth = (screenWidth - (padding * 2) - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+    final desiredTileHeight = screenWidth >= 1600
+        ? 420.0
+        : screenWidth >= 1200
+            ? 460.0
+            : 520.0;
+    final computedChildAspectRatio = tileWidth / desiredTileHeight;
 
     // Se è in caricamento, mostra un indicatore di progresso
     if (state.isLoading) {
@@ -168,12 +176,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   crossAxisCount: crossAxisCount,
                   crossAxisSpacing: spacing,
                   mainAxisSpacing: spacing,
-                  // Più spazio verticale per contenuti leggibili nelle card
-                  childAspectRatio: screenWidth >= 1600
-                      ? 1.0
-                      : screenWidth >= 1200
-                          ? 0.85
-                          : 0.9,
+                  // Aspect ratio dinamico per avere un'altezza sufficiente
+                  childAspectRatio: computedChildAspectRatio,
                 ),
                 itemCount: groupedExercises.length,
                 key: PageStorageKey('workout_exercises_${widget.workoutId}'),
@@ -182,17 +186,17 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   final superSetId = entry.key;
                   final exercises = entry.value;
 
-                   return Semantics(
-                     container: true,
-                     label: 'Scheda esercizio',
-                     child: superSetId == null || superSetId.isEmpty
-                         ? _buildSingleExerciseCard(exercises.first, context)
-                         : _buildSuperSetCard(
-                             superSetExercises: exercises,
-                             context: context,
-                             isListMode: false,
-                           ),
-                   );
+                  return Semantics(
+                    container: true,
+                    label: 'Scheda esercizio',
+                    child: superSetId == null || superSetId.isEmpty
+                        ? _buildSingleExerciseCard(exercises.first, context)
+                        : _buildSuperSetCard(
+                            superSetExercises: exercises,
+                            context: context,
+                            isListMode: false,
+                          ),
+                  );
                 },
               ),
             ),
