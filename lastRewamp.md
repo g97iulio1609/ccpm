@@ -11,9 +11,9 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
 ## Fasi del piano (Step-by-step)
 
 1) Fondamenta e Qualità
-- Hardening `analysis_options.yaml` (lint severi, prefer_const, public_member_api_docs dove necessario) [todo]
+- Hardening `analysis_options.yaml` (lint severi, prefer_const, public_member_api_docs dove necessario) [ongoing]
 - Pulizia import e normalizzazione casing (Viewer vs viewer) [done]
-- CI locale: `flutter analyze` + test minimi su moduli critici [todo]
+- CI locale: `flutter analyze` + test minimi su moduli critici [ongoing]
 
 2) Tema, Design Tokens e Transizioni
 - Consolidare tokens (spacing, radii, elevations, typography) in `AppTheme` [done]
@@ -22,18 +22,20 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
 - Dinamica Light/Dark completa, contrasto e outlineVariant consistenti [ongoing]
 
 3) Componenti e Pattern M3
+- `AppCard`/`SectionHeader` introdotti e adottati in Viewer/TrainingBuilder/MaxRMDashboard [done]
+- `SeriesHeader` e `KpiBadge` creati e integrati (Viewer, TrainingBuilder, MaxRM) [done]
 - Sostituire `PopupMenuButton` con `MenuAnchor` e `MenuItemButton` [ongoing]
-- Introdurre skeleton/shimmer per liste e card (loading) [todo]
-- Uniformare Card/Badge/Divider/Empty states [ongoing]
+- Introdurre skeleton/shimmer per liste e card (loading) [ongoing]
+- Uniformare Card/Badge/Divider/Empty states [done]
 - Aggiungere Semantics in liste principali e action row [ongoing]
 
 4) Responsività e Layout
-- Breakpoints e adattività per griglie/liste (phone/tablet/desktop) [ongoing]
-- Migliorare padding/spacing in base allo schermo [ongoing]
+- Breakpoints e adattività per griglie/liste (phone/tablet/desktop) [done]
+- Migliorare padding/spacing in base allo schermo [done]
 
 5) TrainingBuilder (UI/UX)
-- Consolidare dialog, form e serie su widget condivisi (`RangeControllers`, form fields) [done]
-- Ottimizzare bulk operations UX (etichette, help, conferme) [ongoing]
+- Consolidare dialog, form e serie su widget condivisi (`SeriesHeader`, `KpiBadge`, form fields) [done]
+- Ottimizzare bulk operations UX (etichette, help, conferme) [todo]
 - Aggiungere skeleton nei contenuti pesanti [todo]
 
 6) Viewer (UI/UX)
@@ -42,8 +44,8 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
 - Grid/list responsive per esercizi/superset [done]
 
 7) MaxRMDashboard & ExerciseDashboard
-- Unificare card, grafici e filtri, introdurre skeleton/shimmer [todo]
-- Migliorare azioni contestuali (MenuAnchor) e Semantics [todo]
+- Unificare card e KPI con `AppCard`/`KpiBadge`, introdurre skeleton/shimmer [ongoing]
+- Migliorare azioni contestuali (MenuAnchor) e Semantics [ongoing]
 
 8) Nutrition
 - Migrazione menu → `MenuAnchor` (view_diet_plans_screen, food_list) [done]
@@ -63,12 +65,12 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
  - Integration test (emulatore Firestore) per CRUD completo [todo]
 
 12) Auth (Registrazione/Login)
-- Rewamp completo UI/UX schermate `auth_screen.dart` e `auth_form.dart` [todo]
-- Adozione Material 3: FilledButton, TextField con helper/validation live, toggle visibilità password [todo]
-- AutofillHints, password manager, validazioni accessibili (Semantics, errorText, focus) [todo]
-- SSO coerente con `auth_buttons.dart` (Apple/Google) usando `MenuAnchor`/sheet, stato di loading/errori unificati [todo]
-- Link legali e consensi (privacy/terms) allineati al tema e a11y [todo]
-- Layout responsive (phone/tablet/desktop) con spaziatura dinamica e illustrazioni leggere [todo]
+- Rewamp completo UI/UX schermate `auth_screen.dart` e `auth_form.dart` [done]
+- Adozione Material 3: FilledButton, TextField con helper/validation live, toggle visibilità password [done]
+- AutofillHints, password manager, validazioni accessibili (Semantics, errorText, focus) [done]
+- SSO coerente con `auth_buttons.dart` (Apple/Google) usando `MenuAnchor`/sheet, stato di loading/errori unificati [ongoing]
+- Link legali e consensi (privacy/terms) allineati al tema e a11y [done]
+- Layout responsive (phone/tablet/desktop) con spaziatura dinamica e illustrazioni leggere [ongoing]
 - Telemetria minima su errori (no PII) [todo]
 
 ## Stato rapido
@@ -100,7 +102,7 @@ Rewamp UI/UX massivo e modulare dell’intera app (TrainingBuilder, Viewer, MaxR
 ## Timeline suggerita (indicativa)
 - Set A: Fix superset e skeleton principali [done]
 - Set B: Migrazioni MenuAnchor residue + A11y pass [ongoing]
-- Set C: Auth (UI/UX), bottom sheet iOS/Android [next]
-- Set D: Dashboard (MaxRM/Exercise), rifiniture e test [next]
+- Set C: Auth (UI/UX), bottom sheet iOS/Android [ongoing]
+- Set D: Dashboard (MaxRM/Exercise), rifiniture e test [ongoing]
 
 
