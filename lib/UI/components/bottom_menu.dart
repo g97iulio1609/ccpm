@@ -46,17 +46,17 @@ class BottomMenu extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: height ?? MediaQuery.of(context).size.height * 0.85,
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radii.xl),
       ),
-      decoration: BoxDecoration(
+      child: Material(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radii.xl),
-        ),
-      ),
-      child: Column(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: height ?? MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle
@@ -172,6 +172,8 @@ class BottomMenu extends StatelessWidget {
             ),
           ],
         ],
+          ),
+        ),
       ),
     );
   }

@@ -65,11 +65,12 @@ class ExerciseDialog extends HookConsumerWidget {
           icon: exercise == null ? Icons.add : Icons.check,
           onPressed: () {
             final newExercise = Exercise(
-              id: exercise?.id ?? '',
+              id: exercise?.id, // lascia null per nuovi esercizi
               exerciseId: selectedExerciseId.value,
               name: exerciseNameController.text,
               type: selectedExerciseType.value,
               variant: variantController.text,
+              // l'ordine verrà assegnato dal servizio in base alla posizione
               order: exercise?.order ?? 0,
               series: exercise?.series ?? [],
               weekProgressions: exercise?.weekProgressions ?? [],

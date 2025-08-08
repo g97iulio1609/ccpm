@@ -349,7 +349,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
       widget.currentSeriesGroup?.length ?? widget.exercise.series.length,
     );
 
-    // Se stiamo modificando serie esistenti, manteniamo gli ID originali
+    // Se stiamo modificando serie esistenti, manteniamo gli ID e l'ordine
     if (widget.currentSeriesGroup != null) {
       for (var i = 0; i < updatedSeries.length; i++) {
         updatedSeries[i] = updatedSeries[i].copyWith(
@@ -364,14 +364,10 @@ class _SeriesDialogState extends State<SeriesDialog> {
               : i,
         );
       }
-      Navigator.pop(context, {
-        'action': 'update',
-        'series': updatedSeries,
-        'originalGroup': widget.currentSeriesGroup,
-      });
-    } else {
-      Navigator.pop(context, {'action': 'add', 'series': updatedSeries});
     }
+
+    // Ritorna direttamente la lista attesa dal chiamante
+    Navigator.pop(context, updatedSeries);
   }
 }
 

@@ -148,10 +148,14 @@ class WorkoutController {
           content: DropdownButtonFormField<int>(
             value: null,
             items: List.generate(
-              program.weeks.length,
+              program.weeks.length + 1,
               (index) => DropdownMenuItem(
                 value: index,
-                child: Text('Week ${index + 1}'),
+                child: Text(
+                  index < program.weeks.length
+                      ? 'Week ${index + 1}'
+                      : 'Nuova Settimana',
+                ),
               ),
             ),
             onChanged: (value) {

@@ -522,11 +522,11 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     int workoutIndex,
     BuildContext context,
   ) async {
-    await _trainingBusinessService.copyWorkout(
+    await _workoutController.copyWorkout(
       program,
       sourceWeekIndex,
       workoutIndex,
-      null,
+      context,
     );
     _emit();
   }

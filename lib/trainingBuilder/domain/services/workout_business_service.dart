@@ -61,8 +61,8 @@ class WorkoutBusinessService {
     final sourceWorkout = program.weeks[sourceWeekIndex].workouts[workoutIndex];
     final copiedWorkout = ModelUtils.copyWorkout(sourceWorkout);
 
-    if (destinationWeekIndex != null &&
-        destinationWeekIndex < program.weeks.length) {
+  if (destinationWeekIndex != null &&
+    destinationWeekIndex < program.weeks.length) {
       final destinationWeek = program.weeks[destinationWeekIndex];
       final existingWorkoutIndex = destinationWeek.workouts.indexWhere(
         (workout) => workout.order == sourceWorkout.order,
@@ -78,13 +78,17 @@ class WorkoutBusinessService {
         destinationWeek.workouts.add(copiedWorkout);
       }
     } else {
-      // Crea nuove settimane se necessario
-      while (program.weeks.length <=
-          (destinationWeekIndex ?? program.weeks.length)) {
+      // Se la destinazione è null, copia nella stessa settimana sorgente
+      if (destinationWeekIndex == null) {
+        program.weeks[sourceWeekIndex].workouts.add(copiedWorkout);
+        return;
+      }
+
+      // Destinazione oltre il numero attuale di settimane -> aggiungi solo il necessario
+      while (program.weeks.length <= destinationWeekIndex) {
         _addWeekToProgram(program);
       }
-      final targetWeekIndex = destinationWeekIndex ?? program.weeks.length - 1;
-      program.weeks[targetWeekIndex].workouts.add(copiedWorkout);
+      program.weeks[destinationWeekIndex].workouts.add(copiedWorkout);
     }
   }
 

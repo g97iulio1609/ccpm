@@ -56,9 +56,9 @@ class ValidationUtils {
 
   /// Validates exercise data
   static bool isValidExercise(Exercise exercise) {
-    return exercise.name.isNotEmpty &&
-        exercise.type.isNotEmpty &&
-        exercise.order > 0;
+  // Nota: l'ordine viene assegnato dal business service in fase di aggiunta.
+  // Non blocchiamo la validazione se order è 0 durante la creazione.
+  return exercise.name.isNotEmpty && exercise.type.isNotEmpty;
   }
 
   /// Validates series data

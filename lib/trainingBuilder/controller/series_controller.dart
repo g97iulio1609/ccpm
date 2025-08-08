@@ -44,6 +44,7 @@ class SeriesController {
     final seriesList = await _showSeriesDialog(
       context,
       exercise,
+      program.athleteId,
       weekIndex,
       null,
       exercise.type,
@@ -73,6 +74,7 @@ class SeriesController {
   Future<List<Series>?> _showSeriesDialog(
     BuildContext context,
     Exercise exercise,
+    String athleteId,
     int weekIndex,
     List<Series>? currentSeriesGroup,
     String? exerciseType,
@@ -84,7 +86,7 @@ class SeriesController {
       context: context,
       builder: (context) => SeriesDialog(
         exerciseRecordService: exerciseRecordService,
-        athleteId: exercise.exerciseId ?? '',
+        athleteId: athleteId,
         exerciseId: exercise.exerciseId ?? '',
         weekIndex: weekIndex,
         exercise: exercise,
@@ -120,6 +122,7 @@ class SeriesController {
     final updatedSeries = await _showSeriesDialog(
       context,
       exercise,
+      program.athleteId,
       weekIndex,
       currentSeriesGroup,
       exercise.type,

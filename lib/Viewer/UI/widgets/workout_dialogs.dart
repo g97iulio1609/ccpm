@@ -278,7 +278,7 @@ class WorkoutDialogs {
             .getWeightNotifier(exercise['id']) ??
         ValueNotifier<double>(0.0);
 
-    final result = await showDialog<Map<String, dynamic>>(
+  final result = await showDialog<dynamic>(
       context: context,
       builder: (context) => SeriesDialog(
         exerciseRecordService: ref.read(
@@ -297,9 +297,15 @@ class WorkoutDialogs {
       ),
     );
 
-    if (result != null && context.mounted) {
+  if (result != null && context.mounted) {
       try {
-        final List<Series> updatedSeries = result['series'] as List<Series>;
+    // Supporta sia il nuovo ritorno (List<Series>) che il vecchio (Map con chiave 'series')
+    final List<Series> updatedSeries = result is List<Series>
+      ? result
+      : (result is Map<String, dynamic>
+        ? (result['series'] as List<Series>)
+        : <Series>[]);
+    if (updatedSeries.isEmpty) return;
         await ref
             .read(workout_provider.workoutServiceProvider)
             .applySeriesChanges(exercise, updatedSeries);
