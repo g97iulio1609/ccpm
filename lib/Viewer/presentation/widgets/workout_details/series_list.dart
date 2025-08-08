@@ -113,7 +113,11 @@ class _SeriesRow extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onTap,
-            child: _pill(context, label: '${series.reps}', icon: Icons.repeat),
+            child: _pill(
+              context,
+              label: _formatRepsRange(series.reps, series.maxReps),
+              icon: Icons.repeat,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -124,7 +128,7 @@ class _SeriesRow extends StatelessWidget {
             onTap: onTap,
             child: _pill(
               context,
-              label: _formatWeight(series.weight),
+              label: _formatWeightRange(series.weight, series.maxWeight),
               icon: Icons.fitness_center,
             ),
           ),
@@ -169,14 +173,19 @@ class _SeriesRow extends StatelessWidget {
     );
   }
 
-  String _formatWeight(dynamic weight) {
-    if (weight == null) return '-';
-    if (weight is int || weight is double) {
-      final num w = weight as num;
-      final str = (w % 1 == 0) ? w.toInt().toString() : w.toStringAsFixed(1);
-      return '$str kg';
+  String _formatRepsRange(int reps, int? maxReps) {
+    if (maxReps != null && maxReps > reps) {
+      return '$reps-$maxReps';
     }
-    return '$weight kg';
+    return '$reps';
+  }
+
+  String _formatWeightRange(num weight, double? maxWeight) {
+    String fmt(num v) => (v % 1 == 0) ? v.toInt().toString() : v.toStringAsFixed(1);
+    if (maxWeight != null && maxWeight > weight) {
+      return '${fmt(weight)}-${fmt(maxWeight)} kg';
+    }
+    return '${fmt(weight)} kg';
   }
 
   Widget _pill(
