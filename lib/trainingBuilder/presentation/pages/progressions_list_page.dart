@@ -5,7 +5,9 @@ import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/models/progression_view_model.dart';
 import 'package:alphanessone/trainingBuilder/controllers/progression_controllers.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
-import 'package:alphanessone/trainingBuilder/services/progression_business_service.dart';
+import 'package:alphanessone/trainingBuilder/services/progression_business_service_optimized.dart';
+import 'package:alphanessone/shared/widgets/page_scaffold.dart';
+import 'package:alphanessone/shared/widgets/empty_state.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/progression_table_widget.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
 import 'package:alphanessone/Main/app_theme.dart';
@@ -36,18 +38,20 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _initializeControllers());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _initializeControllers(),
+    );
   }
 
   void _initializeControllers() {
     if (widget.exercise == null) return;
 
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = ProgressionBusinessService.buildWeekProgressions(
-      programController.program.weeks,
-      widget.exercise!,
-    );
+    final weekProgressions =
+        ProgressionBusinessServiceOptimized.buildWeekProgressions(
+          programController.program.weeks,
+          widget.exercise!,
+        );
 
     ref
         .read(progressionControllersProvider.notifier)
@@ -67,10 +71,11 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
-    final weekProgressions = ProgressionBusinessService.buildWeekProgressions(
-      programController.program.weeks,
-      widget.exercise!,
-    );
+    final weekProgressions =
+        ProgressionBusinessServiceOptimized.buildWeekProgressions(
+          programController.program.weeks,
+          widget.exercise!,
+        );
 
     if (controllers.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -102,15 +107,17 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
 
   void _addSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = ProgressionBusinessService.buildWeekProgressions(
-      programController.program.weeks,
-      widget.exercise!,
+    final weekProgressions =
+        ProgressionBusinessServiceOptimized.buildWeekProgressions(
+          programController.program.weeks,
+          widget.exercise!,
+        );
+    final controllersNotifier = ref.read(
+      progressionControllersProvider.notifier,
     );
-    final controllersNotifier =
-        ref.read(progressionControllersProvider.notifier);
 
     try {
-      ProgressionBusinessService.addSeriesGroup(
+      ProgressionBusinessServiceOptimized.addSeriesGroup(
         weekIndex: weekIndex,
         sessionIndex: sessionIndex,
         groupIndex: groupIndex,
@@ -131,13 +138,14 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
 
   void _removeSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
     final programController = ref.read(trainingProgramControllerProvider);
-    final weekProgressions = ProgressionBusinessService.buildWeekProgressions(
-      programController.program.weeks,
-      widget.exercise!,
-    );
+    final weekProgressions =
+        ProgressionBusinessServiceOptimized.buildWeekProgressions(
+          programController.program.weeks,
+          widget.exercise!,
+        );
 
     try {
-      ProgressionBusinessService.removeSeriesGroup(
+      ProgressionBusinessServiceOptimized.removeSeriesGroup(
         weekIndex: weekIndex,
         sessionIndex: sessionIndex,
         groupIndex: groupIndex,
@@ -158,10 +166,11 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     final programController = ref.read(trainingProgramControllerProvider);
 
     try {
-      final weekProgressions = ProgressionBusinessService.buildWeekProgressions(
-        programController.program.weeks,
-        widget.exercise!,
-      );
+      final weekProgressions =
+          ProgressionBusinessServiceOptimized.buildWeekProgressions(
+            programController.program.weeks,
+            widget.exercise!,
+          );
 
       // Validate parameters before update
       if (!_validateUpdateParams(params, weekProgressions)) {
@@ -169,7 +178,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
         return;
       }
 
-      ProgressionBusinessService.updateSeries(
+      ProgressionBusinessServiceOptimized.updateSeries(
         params: params,
         weekProgressions: weekProgressions,
       );
@@ -188,7 +197,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
 
   /// Validates update parameters
   bool _validateUpdateParams(
-      SeriesUpdateParams params, List<List<WeekProgression>> weekProgressions) {
+    SeriesUpdateParams params,
+    List<List<WeekProgression>> weekProgressions,
+  ) {
     if (params.weekIndex < 0 ||
         params.sessionIndex < 0 ||
         params.groupIndex < 0) {
@@ -213,14 +224,17 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
       final programController = ref.read(trainingProgramControllerProvider);
 
       final updatedWeekProgressions =
-          ProgressionBusinessService.buildWeekProgressions(
-        programController.program.weeks,
-        widget.exercise!,
-      );
+          ProgressionBusinessServiceOptimized.buildWeekProgressions(
+            programController.program.weeks,
+            widget.exercise!,
+          );
 
-      // Validate indices before accessing
-      if (!ProgressionBusinessService.isValidIndex(
-          updatedWeekProgressions, params.weekIndex, params.sessionIndex)) {
+      // Validate indices before accessing (local validation)
+      if (params.weekIndex < 0 ||
+          params.weekIndex >= updatedWeekProgressions.length ||
+          params.sessionIndex < 0 ||
+          params.sessionIndex >=
+              updatedWeekProgressions[params.weekIndex].length) {
         return;
       }
 
@@ -231,8 +245,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
       // Get the first series as representative if available
       if (session.series.isNotEmpty) {
         final firstSeries = session.series.first;
-        final representativeSeries =
-            firstSeries.copyWith(sets: session.series.length);
+        final representativeSeries = firstSeries.copyWith(
+          sets: session.series.length,
+        );
 
         controllers.updateControllers(
           params.weekIndex,
@@ -253,14 +268,14 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
 
     try {
       final updatedWeekProgressions =
-          ProgressionBusinessService.createUpdatedWeekProgressions(
-        controllers,
-        (text) => int.tryParse(text) ?? 0,
-        (text) => double.tryParse(text) ?? 0.0,
-      );
+          ProgressionBusinessServiceOptimized.createUpdatedWeekProgressions(
+            controllers,
+            (text) => int.tryParse(text) ?? 0,
+            (text) => double.tryParse(text) ?? 0.0,
+          );
 
       // Validate before saving
-      if (!ProgressionBusinessService.validateProgression(
+      if (!ProgressionBusinessServiceOptimized.validateProgression(
         exercise: widget.exercise!,
         weekProgressions: updatedWeekProgressions,
       )) {
@@ -284,7 +299,9 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     }
   }
 
-  void _updateProgressionsWithNewSeries(List<List<WeekProgression>> weekProgressions) {
+  void _updateProgressionsWithNewSeries(
+    List<List<WeekProgression>> weekProgressions,
+  ) {
     ref
         .read(trainingProgramControllerProvider)
         .updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
@@ -329,30 +346,31 @@ class _ProgressionsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: viewModel.colorScheme.surface,
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.all(AppTheme.spacing.lg),
-                child: ProgressionTableWidget(
-                  viewModel: viewModel,
-                  onAddSeriesGroup: onAddSeriesGroup,
-                  onRemoveSeriesGroup: onRemoveSeriesGroup,
-                  onUpdateSeries: onUpdateSeries,
-                ),
-              ),
+    return PageScaffold(
+      colorScheme: viewModel.colorScheme,
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(AppTheme.spacing.lg),
+          sliver: SliverToBoxAdapter(
+            child: ProgressionTableWidget(
+              viewModel: viewModel,
+              onAddSeriesGroup: onAddSeriesGroup,
+              onRemoveSeriesGroup: onRemoveSeriesGroup,
+              onUpdateSeries: onUpdateSeries,
             ),
           ),
-          _SaveButton(
-            onSave: onSave,
-            colorScheme: viewModel.colorScheme,
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.lg),
+            child: _SaveButton(
+              onSave: onSave,
+              colorScheme: viewModel.colorScheme,
+            ),
           ),
-          SizedBox(height: AppTheme.spacing.lg),
-        ],
-      ),
+        ),
+        SliverToBoxAdapter(child: SizedBox(height: AppTheme.spacing.lg)),
+      ],
     );
   }
 }
@@ -362,10 +380,7 @@ class _SaveButton extends StatelessWidget {
   final VoidCallback onSave;
   final ColorScheme colorScheme;
 
-  const _SaveButton({
-    required this.onSave,
-    required this.colorScheme,
-  });
+  const _SaveButton({required this.onSave, required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
@@ -375,9 +390,7 @@ class _SaveButton extends StatelessWidget {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: const Text(
         'Salva',
@@ -393,10 +406,15 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return PageScaffold(
+      colorScheme: colorScheme,
+      slivers: const [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ],
     );
   }
 }
@@ -409,25 +427,19 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            SizedBox(height: AppTheme.spacing.md),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
+    final colorScheme = Theme.of(context).colorScheme;
+    return PageScaffold(
+      colorScheme: colorScheme,
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: EmptyState(
+            icon: Icons.error_outline,
+            title: 'Dati non disponibili',
+            subtitle: message,
+          ),
         ),
-      ),
+      ],
     );
   }
 }

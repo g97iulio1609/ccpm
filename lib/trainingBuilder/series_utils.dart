@@ -2,6 +2,7 @@ import 'package:flutter/material.dart'; // Per TextEditingController e ValueNoti
 
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/shared/shared.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 
 // Utility per calcoli relativi alle serie di allenamento.
@@ -126,8 +127,6 @@ class SeriesUtils {
     },
   };
 
-
-
   // Formatta un double in stringa, omettendo i decimali se sono zero.
   // Es: 10.0 -> "10", 10.5 -> "10.5", 10.53 -> "10.53" (con precisione 2)
   static String _formatDouble(double value, {int precision = 2}) {
@@ -140,8 +139,6 @@ class SeriesUtils {
     return value.toStringAsFixed(precision);
   }
 
-
-
   /// Ottiene la percentuale del massimale (1RM) basata su RPE e numero di ripetizioni.
   static double getRPEPercentage(double rpe, int reps) {
     // Assicura che RPE e reps siano nei limiti della tabella.
@@ -150,8 +147,6 @@ class SeriesUtils {
     // Restituisce la percentuale o 1.0 (100%) come fallback se non trovato.
     return _rpeTable[rpeInt]?[repsClamped] ?? 1.0;
   }
-
-
 
   /// Calcola l'intensità percentuale basata sul peso sollevato e il massimale.
   static double calculateIntensityFromWeight(double weight, double maxWeight) {
@@ -200,25 +195,19 @@ class SeriesUtils {
       debugPrint('UserID o ExerciseID mancanti per getLatestMaxWeight.');
       return 0.0;
     }
-    double latestMaxWeight = 0.0;
     try {
-      final records = await exerciseRecordService
-          .getExerciseRecords(userId: userId, exerciseId: exerciseId)
-          .first;
-      if (records.isNotEmpty) {
-        // Ordina i record per data decrescente per assicurarsi di ottenere il più recente
-        records.sort((a, b) => b.date.compareTo(a.date));
-        latestMaxWeight = records.first.maxWeight.toDouble();
-      }
+      final value = await ExerciseService.getLatestMaxWeight(
+        exerciseRecordService,
+        userId,
+        exerciseId,
+      );
+      return value.toDouble().clamp(0.0, double.maxFinite);
     } catch (error, stackTrace) {
       debugPrint(
-        'Errore durante il recupero del massimale per exerciseId $exerciseId, userId $userId: $error\n$stackTrace',
+        'Errore durante il recupero del massimale (delegato) per exerciseId $exerciseId, userId $userId: $error\n$stackTrace',
       );
+      return 0.0;
     }
-    return latestMaxWeight.clamp(
-      0.0,
-      double.maxFinite,
-    ); // Assicura che non sia negativo
   }
 
   /// Aggiorna il controller del peso e il notifier basandosi sull'intensità inserita.
@@ -237,11 +226,15 @@ class SeriesUtils {
       return;
     }
 
-    final calculatedWeight = WeightCalculationService.calculateWeightFromIntensity(
-      latestMaxWeight,
-      intensity,
+    final calculatedWeight =
+        WeightCalculationService.calculateWeightFromIntensity(
+          latestMaxWeight,
+          intensity,
+        );
+    final roundedWeight = WeightCalculationService.roundWeight(
+      calculatedWeight,
+      exerciseType,
     );
-    final roundedWeight = WeightCalculationService.roundWeight(calculatedWeight, exerciseType);
 
     weightController.text = _formatDouble(roundedWeight);
     weightNotifier.value = roundedWeight;
@@ -288,7 +281,10 @@ class SeriesUtils {
         latestMaxWeight > 0) {
       final percentage = getRPEPercentage(rpe, reps);
       final calculatedWeight = latestMaxWeight * percentage;
-      final roundedWeight = WeightCalculationService.roundWeight(calculatedWeight, exerciseType);
+      final roundedWeight = WeightCalculationService.roundWeight(
+        calculatedWeight,
+        exerciseType,
+      );
 
       weightController.text = _formatDouble(roundedWeight);
       weightNotifier.value = roundedWeight;
@@ -363,30 +359,19 @@ class SeriesUtils {
     final exerciseId = exercise.exerciseId;
     final athleteId = program.athleteId;
 
-    if (exerciseId != null && exerciseId.isNotEmpty && athleteId.isNotEmpty) {
-      final latestMaxWeight = await getLatestMaxWeight(
-        exerciseRecordService,
-        athleteId,
-        exerciseId,
-      );
-      // Note: Cannot directly assign to final field 'series'.
-      // This method should return the updated exercise or use a different approach.
-      exercise.series
-          .map(
-            (series) =>
-                _calculateWeight(series, exercise.type, latestMaxWeight),
-          )
-          .toList();
-    } else {
-      debugPrint(
-        "ID Esercizio ($exerciseId) o ID Atleta ($athleteId) mancante/non valido. Pesi non aggiornati da DB.",
-      );
-      // Note: Cannot directly assign to final field 'series'.
-      // This method should return the updated exercise or use a different approach.
-      exercise.series
-          .map((series) => _calculateWeight(series, exercise.type, 0.0))
-          .toList();
-    }
+    final latestMaxWeight =
+        (exerciseId != null && exerciseId.isNotEmpty && athleteId.isNotEmpty)
+        ? await getLatestMaxWeight(exerciseRecordService, athleteId, exerciseId)
+        : 0.0;
+
+    // Restituisce nuove istanze di Series e riassegna in modo immutabile
+    final updatedSeries = exercise.series
+        .map((s) => _calculateWeight(s, exercise.type, latestMaxWeight))
+        .toList();
+
+    final updatedExercise = exercise.copyWith(series: updatedSeries);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
   }
 
   /// Logica interna per calcolare e impostare peso, intensità e RPE di una singola serie.
@@ -414,11 +399,15 @@ class SeriesUtils {
     if (intensityText.isNotEmpty) {
       final intensityValue = double.tryParse(intensityText);
       if (intensityValue != null && intensityValue > 0) {
-        final calculatedW = WeightCalculationService.calculateWeightFromIntensity(
-          currentMaxWeight,
-          intensityValue,
+        final calculatedW =
+            WeightCalculationService.calculateWeightFromIntensity(
+              currentMaxWeight,
+              intensityValue,
+            );
+        final newWeight = WeightCalculationService.roundWeight(
+          calculatedW,
+          exerciseType,
         );
-        final newWeight = WeightCalculationService.roundWeight(calculatedW, exerciseType);
         final newIntensity = _formatDouble(
           calculateIntensityFromWeight(newWeight, currentMaxWeight),
         );
@@ -444,7 +433,10 @@ class SeriesUtils {
       if (rpeValue != null && rpeValue >= 2 && rpeValue <= 10) {
         final percentage = getRPEPercentage(rpeValue, reps);
         final calculatedW = currentMaxWeight * percentage;
-        final newWeight = WeightCalculationService.roundWeight(calculatedW, exerciseType);
+        final newWeight = WeightCalculationService.roundWeight(
+          calculatedW,
+          exerciseType,
+        );
         final newIntensity = _formatDouble(
           calculateIntensityFromWeight(newWeight, currentMaxWeight),
         );
@@ -459,7 +451,10 @@ class SeriesUtils {
 
     // Priorità 3: Calcolo basato sul Peso
     if (series.weight > 0) {
-      final newWeight = WeightCalculationService.roundWeight(series.weight, exerciseType);
+      final newWeight = WeightCalculationService.roundWeight(
+        series.weight,
+        exerciseType,
+      );
       final newIntensity = _formatDouble(
         calculateIntensityFromWeight(newWeight, currentMaxWeight),
       );
@@ -528,14 +523,23 @@ class SeriesUtils {
         0.0,
         200.0,
       );
-      minW = WeightCalculationService.calculateWeightFromIntensity(currentMax, minIntensity);
-      maxW = WeightCalculationService.calculateWeightFromIntensity(currentMax, maxIntensity);
+      minW = WeightCalculationService.calculateWeightFromIntensity(
+        currentMax,
+        minIntensity,
+      );
+      maxW = WeightCalculationService.calculateWeightFromIntensity(
+        currentMax,
+        maxIntensity,
+      );
     } else if (parts.isNotEmpty && parts[0].trim().isNotEmpty) {
       final intensity = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(
         0.0,
         200.0,
       );
-      minW = maxW = WeightCalculationService.calculateWeightFromIntensity(currentMax, intensity);
+      minW = maxW = WeightCalculationService.calculateWeightFromIntensity(
+        currentMax,
+        intensity,
+      );
     }
     final orderedMinWeight = minW <= maxW ? minW : maxW;
     final orderedMaxWeight = minW <= maxW ? maxW : minW;

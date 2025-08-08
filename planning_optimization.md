@@ -19,6 +19,20 @@ Unificare e rifattorizzare i moduli TrainingBuilder e Viewer seguendo KISS, DRY,
 - `SuperSetController` con metodi non completati per immutabilità (nota di refactor pending).
 - Viewer ha doppioni: `UI/workout_details*.dart` vs versione modulare e note di migrazione; esiste anche una pagina molto grande in `presentation/pages/workout_details_page.dart` da smontare in widget modulari.
 
+Completato:
+- Spostato `reorder_dialog.dart` in `trainingBuilder/shared/widgets/` e aggiornati i call‑site.
+- Create e applicate UI condivise: `shared/widgets/page_scaffold.dart` e `shared/widgets/empty_state.dart`.
+  - Applicato a: `trainingBuilder/presentation/pages/workouts_page.dart`, `weeks_page.dart`, `exercises_page.dart` e `Viewer/presentation/pages/workout_details_page.dart` (loading/error/empty).
+- Migrazione pagine legacy → modulari:
+  - `List/workout_list.dart` → `presentation/pages/workouts_page.dart` (legacy rimosso)
+  - `List/week_list.dart` → `presentation/pages/weeks_page.dart`
+  - `List/exercises_list.dart` → `presentation/pages/exercises_page.dart`
+- Consolidamento dialog esercizi: introdotto `presentation/widgets/dialogs/exercise_management_dialogs.dart` e rimosse varianti duplicate legacy.
+- SuperSet: aggiornato `super_set_controller.dart` per mutazioni immutabili con `copyWith` (add/remove esercizio, cleanup superset vuoti).
+- DRY MaxWeight: unificato su `ExerciseService.getLatestMaxWeight`; `SeriesUtils.getLatestMaxWeight` ora delega a `ExerciseService`.
+- Series: `SeriesUtils.updateSeriesWeights` ora ritorna nuove `Series` e riassegna immutabilmente l’`exercise` nel `program`.
+- Pulizia duplicati controller/DI: rimossi `dependency_injection.dart` e i controller `*_refactored.dart` non referenziati; mantenuto un unico `controller/exercise_controller.dart`.
+
 ## Linee guida di consolidamento
 
 - Tenere solo le versioni sotto `presentation/*` per UI (pagine, widget, dialog, form).
@@ -26,6 +40,8 @@ Unificare e rifattorizzare i moduli TrainingBuilder e Viewer seguendo KISS, DRY,
 - Unificare i servizi “Max Weight” in un’unica API e aggiornare i call-site.
 - Completare la gestione dei Superset con `copyWith` e riassegnazioni immutabili.
 - Estrarre componenti UI condivisi: `PageScaffold`, `EmptyState`, pulsanti azione coerenti, `ReorderDialog` sotto `shared/widgets/`.
+
+Stato: linee guida sopra implementate parzialmente (vedi sezione “Completato”).
 
 ## Nuova struttura cartelle (proposta)
 
@@ -95,25 +111,25 @@ Unificare e rifattorizzare i moduli TrainingBuilder e Viewer seguendo KISS, DRY,
 
 ## Sequenza operativa (fasi)
 
-1) Struttura e spostamenti
-- Creare cartelle target; spostare versioni refactor in `presentation/*` e `shared/*`;
-- Aggiornare import e referenze (Builder e Viewer).
+1) Struttura e spostamenti — Fatto (prima tranche)
+- Cartelle/UI condivise create; refusi legacy sostituiti con `presentation/*` e `shared/*`.
+- Import e referenze aggiornati nelle pagine principali.
 
-2) Pulizia duplicati
-- Eliminare legacy (`List/*`, `UI/*`, `dialogs/*` duplicati) dopo che tutti i call-site puntano ai nuovi percorsi.
+2) Pulizia duplicati — Fatto (prima tranche)
+- Rimossi `List/*` coperti da `presentation/pages/*`, dialog legacy duplicati, `dependency_injection.dart`, controller `*_refactored.dart` non usati.
 
-3) Consolidamento logica
-- Unificare servizio “Max Weight” e aggiornare utilizzi;
-- Completare Superset con `copyWith` immutabile;
-- Centralizzare `updateSeries` in un unico punto logico.
+3) Consolidamento logica — In corso
+- MaxWeight unificato e call-site aggiornati.
+- Superset immutabili implementati.
+- `updateSeriesWeights` reso immutabile; prossima estrazione verso `domain/services/*` dove opportuno.
 
-4) UI/UX
-- Introdurre `PageScaffold` ed `EmptyState` condivisi; allineare pulsanti e FAB; rifinire spacing/gradient.
+4) UI/UX — In corso
+- `PageScaffold`/`EmptyState` applicati a settimane, allenamenti, esercizi e viewer workout details.
+- Prossimo: applicazione a progressioni e altre schermate residue.
 
-5) Qualità
-- Eseguire `flutter analyze` e fixare import non usati;
-- Verificare test UI esistenti (es. `test/ui/*`) e aggiungere smoke test minimi per nuove pagine;
-- Valutare CI locale (lint + test) per regressioni.
+5) Qualità — In corso
+- `flutter analyze` su file modificati: verde.
+- Prossimo: passata globale + aggiornamento test UI.
 
 ## Criteri di accettazione
 
@@ -131,8 +147,71 @@ Unificare e rifattorizzare i moduli TrainingBuilder e Viewer seguendo KISS, DRY,
 
 ## Prossimi step immediati
 
-- Spostare `reorder_dialog.dart` in `shared/widgets` e aggiornare tutti i call-site.
-- Migrare `List/exercises_list.dart` verso `presentation/pages/exercises_page.dart` e rimuovere duplicati.
-- Unificare API “Max Weight” ed aggiornare `series_list_widget` e i dialog.
-- Completare metodi Superset con `copyWith`.
-- Passata di `flutter analyze` e correzione warning.
+- Applicare `PageScaffold`/`EmptyState` a `presentation/pages/progressions_list_page.dart` e consolidare la UI.
+- Consolidare Progression: sostituire gradualmente `ProgressionBusinessService` con `ProgressionBusinessServiceOptimized` e aggiornare call‑site.
+- Estrarre ulteriormente la logica serie (range, reorder) in `domain/services/*` e snellire `SeriesController`.
+- Passata `flutter analyze` globale e fix import non usati.
+
+## Milestones (checklist)
+
+- [x] Spostamenti/Struttura iniziale
+  - [x] Spostare `reorder_dialog.dart` in `trainingBuilder/shared/widgets/` e aggiornare i call‑site
+  - [x] Migrare `List/week_list.dart` → `presentation/pages/weeks_page.dart`
+  - [x] Migrare `List/workout_list.dart` → `presentation/pages/workouts_page.dart`
+  - [x] Migrare `List/exercises_list.dart` → `presentation/pages/exercises_page.dart`
+  - [x] Consolidare dialog esercizi in `presentation/widgets/dialogs/exercise_management_dialogs.dart`
+
+- [x] UI/UX condivisa
+  - [x] Creare `shared/widgets/page_scaffold.dart`
+  - [x] Creare `shared/widgets/empty_state.dart`
+  - [x] Applicare a `workouts_page.dart`
+  - [x] Applicare a `weeks_page.dart`
+  - [x] Applicare a `exercises_page.dart`
+  - [x] Applicare a `Viewer/presentation/pages/workout_details_page.dart` (loading/error/empty)
+  - [ ] Applicare a `presentation/pages/progressions_list_page.dart`
+
+- [x] DRY/Logica
+  - [x] Unificare MaxWeight su `ExerciseService.getLatestMaxWeight`
+  - [x] Delegare `SeriesUtils.getLatestMaxWeight` a `ExerciseService`
+  - [x] Rendere `SeriesUtils.updateSeriesWeights` immutabile (nuove `Series` e riassegnazione `exercise`)
+  - [x] Refactor Superset con `copyWith` (add/remove esercizio, cleanup vuoti)
+  - [x] Estrarre range/reorder serie in `domain/services/*` per snellire `SeriesController` (aggiunto `domain/services/series_business_service.dart` e integrato in `SeriesController`)
+
+- [x] Pulizia Duplicati/Obsoleti
+  - [x] Rimuovere `List/*` sostituiti
+  - [x] Rimuovere dialog duplicati legacy
+  - [x] Rimuovere `dependency_injection.dart` non referenziato
+  - [x] Rimuovere controller `*_refactored.dart` non usati
+  - [x] Consolidare `controller/exercise_controller.dart` come unica fonte
+
+- [ ] Progressioni
+  - [x] Sostituire `ProgressionBusinessService` con `ProgressionBusinessServiceOptimized`
+  - [x] Aggiornare call‑site in `progressions_list_page.dart`
+  - [x] Applicare `PageScaffold`/`EmptyState` alla pagina progressioni
+
+- [ ] Qualità/Regressioni
+  - [x] Passata `flutter analyze` globale e fix warning/import
+  - [ ] Aggiornare/aggiungere smoke test UI (test/ui/*)
+  - [ ] Valutare CI locale (lint + test)
+
+## Step rimanenti (dettaglio)
+
+- [x] Progressioni – rimozione wrapper legacy
+  - [x] Aggiornare import in `exercise_options_dialog.dart` da `List/progressions_list.dart` a `presentation/pages/progressions_list_page.dart`
+  - [x] Rimuovere `lib/trainingBuilder/List/progressions_list.dart`
+
+- [x] Serie – immutabilità e DRY
+  - [x] Refactor `presentation/widgets/lists/series_list_widget.dart` per evitare `exercise.series.remove/add` diretti (usare `SeriesBusinessService` + `TrainingProgramController.updateSeries`)
+  - [x] Refactor `domain/services/exercise_business_service.dart` per evitare `exercise.series.add` in place
+  - [x] Sostituire `SeriesController._updateSeriesOrders` con `SeriesBusinessService.recalculateOrders` e riassegnazione immutabile
+
+- [ ] Allineamento struttura dialog
+  - [x] Spostare `trainingBuilder/dialog/series_dialog.dart` → `trainingBuilder/presentation/widgets/dialogs/series_dialog.dart`
+  - [x] Aggiornare tutti gli import referenti al nuovo path (aggiunto re-export e aggiornati controller/call-site)
+
+- [x] Rimozioni legacy
+  - [x] Rimuovere `lib/trainingBuilder/List/exercises_list.dart`
+  - [x] Rimuovere `lib/trainingBuilder/List/series_list.dart`
+  - [x] Rimuovere `lib/trainingBuilder/List/week_list.dart`
+  - [x] Rimuovere `services/progression_business_service.dart` se non più referenziato
+  - [x] Rimuovere file `.DS_Store` sotto `trainingBuilder/`

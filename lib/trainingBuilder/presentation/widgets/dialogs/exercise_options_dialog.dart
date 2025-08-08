@@ -4,7 +4,7 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/shared/shared.dart';
 
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
-import 'package:alphanessone/trainingBuilder/List/progressions_list.dart';
+import 'package:alphanessone/trainingBuilder/presentation/pages/progressions_list_page.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -304,7 +304,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
     Navigator.push<Exercise>(
       context,
       MaterialPageRoute(
-        builder: (context) => ProgressionsList(
+        builder: (context) => ProgressionsListPage(
           exerciseId: exercise.exerciseId!,
           exercise: exercise,
           latestMaxWeight: latestMaxWeight,

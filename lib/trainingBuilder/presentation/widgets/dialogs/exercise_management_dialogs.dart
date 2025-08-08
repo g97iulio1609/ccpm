@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/shared/shared.dart';
-import '../services/exercise_service.dart';
-import '../../Main/app_theme.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+
+// Include anche i dialog bulk già consolidati
+export 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/bulk_series_dialog.dart'
+    show BulkSeriesSelectionDialog, BulkSeriesConfigurationDialog;
 
 /// Dialog per aggiornare il Max RM di un esercizio
 class UpdateMaxRMDialog extends StatefulWidget {
@@ -47,10 +50,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
     if (repetitions > 1) {
       final weight = double.tryParse(maxWeightController.text) ?? 0;
       if (weight > 0) {
-        final calculatedMaxWeight = ExerciseService.calculateMaxRM(
-          weight,
-          repetitions,
-        );
+        final calculatedMaxWeight = weight / (1.0278 - (0.0278 * repetitions));
         maxWeightController.text = calculatedMaxWeight.toStringAsFixed(1);
         repetitionsController.text = '1';
       }

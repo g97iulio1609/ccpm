@@ -7,8 +7,8 @@ export 'package:alphanessone/trainingBuilder/controllers/progression_controllers
 // Models
 export 'package:alphanessone/trainingBuilder/models/progression_view_model.dart';
 
-// Services
-export 'package:alphanessone/trainingBuilder/services/progression_business_service.dart';
+// Services (optimized)
+export 'package:alphanessone/trainingBuilder/services/progression_business_service_optimized.dart';
 
 // Pages
 export 'package:alphanessone/trainingBuilder/presentation/pages/progressions_list_page.dart';
@@ -17,7 +17,3 @@ export 'package:alphanessone/trainingBuilder/presentation/pages/progressions_lis
 export 'package:alphanessone/trainingBuilder/presentation/widgets/progression_field_widgets.dart';
 export 'package:alphanessone/trainingBuilder/presentation/widgets/progression_table_widget.dart';
 export 'package:alphanessone/trainingBuilder/presentation/widgets/week_row_widget.dart';
-
-// Backward compatibility
-export 'package:alphanessone/trainingBuilder/List/progressions_list.dart'
-    show ProgressionsList, formatNumber;

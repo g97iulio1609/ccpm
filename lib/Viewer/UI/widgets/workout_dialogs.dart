@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
-import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
+import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/series_dialog.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
@@ -19,8 +19,9 @@ class WorkoutDialogs {
     String? existingNote,
   ]) async {
     if (!context.mounted) return;
-    final TextEditingController noteController =
-        TextEditingController(text: existingNote);
+    final TextEditingController noteController = TextEditingController(
+      text: existingNote,
+    );
     final colorScheme = Theme.of(context).colorScheme;
 
     return showDialog(
@@ -29,9 +30,9 @@ class WorkoutDialogs {
         backgroundColor: colorScheme.surface,
         title: Text(
           'Note per $exerciseName',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurface,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
         ),
         content: TextField(
           controller: noteController,
@@ -85,9 +86,7 @@ class WorkoutDialogs {
               }
               if (context.mounted) Navigator.of(context).pop();
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: colorScheme.primary),
             child: Text(
               'Salva',
               style: TextStyle(color: colorScheme.onPrimary),
@@ -114,8 +113,8 @@ class WorkoutDialogs {
       final reps = int.tryParse(repsController.text);
 
       if (weight != null && reps != null && reps > 0) {
-        calculatedMaxWeight.value =
-            (weight / (1.0278 - 0.0278 * reps)).roundToDouble();
+        calculatedMaxWeight.value = (weight / (1.0278 - 0.0278 * reps))
+            .roundToDouble();
       } else {
         calculatedMaxWeight.value = null;
       }
@@ -193,9 +192,13 @@ class WorkoutDialogs {
               if (maxWeight != null && weight != null) {
                 await ref
                     .read(workout_provider.workoutServiceProvider)
-                    .updateMaxWeight(exercise, maxWeight, userId,
-                        repetitions: 1,
-                        keepCurrentWeights: keepWeightSwitch.value);
+                    .updateMaxWeight(
+                      exercise,
+                      maxWeight,
+                      userId,
+                      repetitions: 1,
+                      keepCurrentWeights: keepWeightSwitch.value,
+                    );
 
                 Navigator.pop(context);
               }
@@ -213,8 +216,9 @@ class WorkoutDialogs {
     Map<String, dynamic> currentExercise,
     String userId,
   ) {
-    final exerciseRecordService =
-        ref.read(app_providers.exerciseRecordServiceProvider);
+    final exerciseRecordService = ref.read(
+      app_providers.exerciseRecordServiceProvider,
+    );
 
     showDialog(
       context: context,
@@ -248,27 +252,28 @@ class WorkoutDialogs {
     List<Map<String, dynamic>> series,
     String userId,
   ) async {
-    final List<Series> seriesList =
-        series.map((s) => Series.fromMap(s)).toList();
+    final List<Series> seriesList = series
+        .map((s) => Series.fromMap(s))
+        .toList();
     final originalExerciseId =
         seriesList.first.originalExerciseId ?? exercise['id'];
 
     final recordsStream = ref
         .read(app_providers.exerciseRecordServiceProvider)
-        .getExerciseRecords(
-          userId: userId,
-          exerciseId: originalExerciseId,
-        )
-        .map((records) => records.isNotEmpty
-            ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
-            : null);
+        .getExerciseRecords(userId: userId, exerciseId: originalExerciseId)
+        .map(
+          (records) => records.isNotEmpty
+              ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
+              : null,
+        );
 
     final latestRecord = await recordsStream.first;
     num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
 
     final colorScheme = Theme.of(context).colorScheme;
 
-    final weightNotifier = ref
+    final weightNotifier =
+        ref
             .read(workout_provider.workoutServiceProvider)
             .getWeightNotifier(exercise['id']) ??
         ValueNotifier<double>(0.0);
@@ -276,14 +281,17 @@ class WorkoutDialogs {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => SeriesDialog(
-        exerciseRecordService:
-            ref.read(app_providers.exerciseRecordServiceProvider),
+        exerciseRecordService: ref.read(
+          app_providers.exerciseRecordServiceProvider,
+        ),
         athleteId: userId,
         exerciseId: exercise['id'],
         exerciseType: exercise['type'] ?? 'weight',
         weekIndex: 0,
         exercise: Exercise.fromMap(exercise),
-        currentSeriesGroup: seriesList.map((s) => Series.fromMap(s.toMap())).toList(),
+        currentSeriesGroup: seriesList
+            .map((s) => Series.fromMap(s.toMap()))
+            .toList(),
         latestMaxWeight: latestMaxWeight.toDouble(),
         weightNotifier: weightNotifier,
       ),
@@ -334,8 +342,9 @@ class WorkoutDialogs {
     final maxWeight = seriesData['maxWeight'];
 
     final String repsTarget = maxReps != null ? "$reps-$maxReps" : "$reps";
-    final String weightTarget =
-        maxWeight != null ? "$weight-$maxWeight" : "$weight";
+    final String weightTarget = maxWeight != null
+        ? "$weight-$maxWeight"
+        : "$weight";
 
     showDialog(
       context: context,
@@ -343,9 +352,9 @@ class WorkoutDialogs {
         backgroundColor: colorScheme.surface,
         title: Text(
           'Inserisci ripetizioni e peso',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurface,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -354,14 +363,15 @@ class WorkoutDialogs {
             Text(
               'Obiettivo ripetizioni: ${repsTarget}R',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: repsController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],
@@ -378,14 +388,15 @@ class WorkoutDialogs {
             Text(
               'Obiettivo peso: ${weightTarget}Kg',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: weightController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],
@@ -423,17 +434,11 @@ class WorkoutDialogs {
               if (reps != null || weight != null) {
                 ref
                     .read(workout_provider.workoutServiceProvider)
-                    .updateSeriesData(
-                      seriesData['exerciseId'],
-                      seriesData,
-                    );
+                    .updateSeriesData(seriesData['exerciseId'], seriesData);
               }
               Navigator.pop(context);
             },
-            child: Text(
-              'Salva',
-              style: TextStyle(color: colorScheme.primary),
-            ),
+            child: Text('Salva', style: TextStyle(color: colorScheme.primary)),
           ),
         ],
       ),

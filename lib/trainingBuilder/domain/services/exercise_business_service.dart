@@ -1,4 +1,5 @@
-import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, ExerciseRepository;
+import 'package:alphanessone/shared/shared.dart'
+    hide ValidationUtils, ModelUtils, ExerciseRepository;
 import '../../../ExerciseRecords/exercise_record_services.dart';
 import '../../../shared/services/weight_calculation_service.dart';
 import '../../shared/utils/validation_utils.dart' as local_validation_utils;
@@ -8,16 +9,15 @@ import '../../utility_functions.dart';
 /// Business service per le operazioni sugli esercizi
 /// Segue il principio Single Responsibility
 class ExerciseBusinessService {
-
   final ExerciseRecordService _exerciseRecordService;
   final WeightCalculationService _weightCalculationService;
 
   ExerciseBusinessService({
     required ExerciseRecordService exerciseRecordService,
-  })  : _exerciseRecordService = exerciseRecordService,
-        _weightCalculationService = WeightCalculationService(
-          exerciseRecordService: exerciseRecordService,
-        );
+  }) : _exerciseRecordService = exerciseRecordService,
+       _weightCalculationService = WeightCalculationService(
+         exerciseRecordService: exerciseRecordService,
+       );
 
   // Getter pubblico per permettere l'accesso dall'esterno
   ExerciseRecordService get exerciseRecordService => _exerciseRecordService;
@@ -193,12 +193,13 @@ class ExerciseBusinessService {
             final exercise = workout.exercises[i];
             if (exercise.exerciseId == exerciseId) {
               // Ottieni l'esercizio aggiornato dal servizio
-              final updatedExercise = await _weightCalculationService.updateExerciseWeights(
-                exercise,
-                program.athleteId,
-                exerciseId,
-                exerciseType,
-              );
+              final updatedExercise = await _weightCalculationService
+                  .updateExerciseWeights(
+                    exercise,
+                    program.athleteId,
+                    exerciseId,
+                    exerciseType,
+                  );
               // Sostituisci l'esercizio nella lista con quello aggiornato
               workout.exercises[i] = updatedExercise;
             }
@@ -223,12 +224,13 @@ class ExerciseBusinessService {
           final exercise = workout.exercises[i];
           if (exercise.exerciseId == exerciseId) {
             // Ottieni l'esercizio aggiornato dal servizio
-            final updatedExercise = await _weightCalculationService.updateExerciseWeights(
-              exercise,
-              program.athleteId,
-              exerciseId,
-              exerciseType,
-            );
+            final updatedExercise = await _weightCalculationService
+                .updateExerciseWeights(
+                  exercise,
+                  program.athleteId,
+                  exerciseId,
+                  exerciseType,
+                );
             // Sostituisci l'esercizio nella lista con quello aggiornato
             workout.exercises[i] = updatedExercise;
             return; // Esce dopo aver trovato e aggiornato l'esercizio
@@ -374,7 +376,11 @@ class ExerciseBusinessService {
       weightDone: 0.0,
     );
 
-    exercise.series.add(newSeries);
+    // Immutabile: aggiorna la lista serie tramite copyWith
+    final updated = List<Series>.from(exercise.series)..add(newSeries);
+    final updatedExercise = exercise.copyWith(series: updated);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
   }
 
   /// Valida tutti gli esercizi di un workout
@@ -416,8 +422,6 @@ class ExerciseBusinessService {
   }
 
   // Metodi privati helper
-
-
 
   void _trackExerciseForDeletion(TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {

@@ -280,5 +280,3 @@ class ReorderDialogState extends State<ReorderDialog> {
     );
   }
 }
-
-

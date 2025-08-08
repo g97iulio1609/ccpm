@@ -1,14 +1,13 @@
-import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../controller/training_program_controller.dart';
-import '../dialog/reorder_dialog.dart';
+import 'package:go_router/go_router.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
+import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
+import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
+import 'package:alphanessone/shared/widgets/empty_state.dart';
 
-/// Widget for displaying and managing week list
 class TrainingProgramWeekList extends ConsumerWidget {
   final String programId;
   final String userId;
@@ -23,9 +22,7 @@ class TrainingProgramWeekList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final program = ref.watch(trainingProgramStateProvider);
-    final weeks = program.weeks;
-
+    final weeks = controller.program.weeks;
     return _WeekListView(
       controller: controller,
       programId: programId,
@@ -35,7 +32,6 @@ class TrainingProgramWeekList extends ConsumerWidget {
   }
 }
 
-/// Separated widget for week list view following SRP
 class _WeekListView extends StatefulWidget {
   final TrainingProgramController controller;
   final String programId;
@@ -56,10 +52,24 @@ class _WeekListView extends StatefulWidget {
 class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
   @override
   Widget build(BuildContext context) {
+    final weeks = widget.controller.program.weeks;
+    if (weeks.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.lg),
+        child: EmptyState(
+          icon: Icons.calendar_today_outlined,
+          title: 'Nessuna settimana disponibile',
+          subtitle: 'Aggiungi la prima settimana per iniziare',
+          onPrimaryAction: widget.controller.addWeek,
+          primaryActionLabel: 'Aggiungi settimana',
+        ),
+      );
+    }
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: widget.controller.program.weeks.length,
+      itemCount: weeks.length,
       itemBuilder: (context, index) => Container(
         margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
         child: _buildWeekCard(context, index),
@@ -88,11 +98,14 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
   }
 
   void _navigateToWeek(int index) {
-    context.go('/user_programs/training_program/week', extra: {
-      'userId': widget.userId,
-      'programId': widget.programId,
-      'weekIndex': index
-    });
+    context.go(
+      '/user_programs/training_program/week',
+      extra: {
+        'userId': widget.userId,
+        'programId': widget.programId,
+        'weekIndex': index,
+      },
+    );
   }
 
   void _showWeekOptions(BuildContext context, int index) {
@@ -158,7 +171,6 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
   }
 }
 
-/// Content widget for week card to improve separation of concerns
 class _WeekCardContent extends StatelessWidget {
   final int weekNumber;
   final ThemeData theme;
@@ -217,10 +229,7 @@ class _WeekCardContent extends StatelessWidget {
 
   Widget _buildOptionsButton() {
     return IconButton(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant,
-      ),
+      icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
       onPressed: onOptionsPressed,
     );
   }

@@ -10,7 +10,10 @@ import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/bulk_s
 import 'package:alphanessone/trainingBuilder/presentation/widgets/lists/series_list_widget.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/exercise_options_dialog.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/shared/widgets/page_scaffold.dart';
+import 'package:alphanessone/shared/widgets/empty_state.dart';
 
 class ExercisesPage extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -35,32 +38,35 @@ class ExercisesPage extends ConsumerWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.all(AppTheme.spacing.md),
-                sliver: isListMode
+    return PageScaffold(
+      colorScheme: colorScheme,
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(AppTheme.spacing.md),
+          sliver: exercises.isEmpty
+              ? SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyState(
+                    icon: Icons.fitness_center_outlined,
+                    title: 'Nessun esercizio disponibile',
+                    subtitle: 'Aggiungi il primo esercizio per iniziare',
+                    onPrimaryAction: () => controller.addExercise(
+                      weekIndex,
+                      workoutIndex,
+                      context,
+                    ),
+                    primaryActionLabel: 'Aggiungi esercizio',
+                  ),
+                )
+              : (isListMode
                     ? _buildListView(context, exercises, exerciseRecordService)
-                    : _buildGridView(context, exercises, exerciseRecordService),
-              ),
-            ],
-          ),
+                    : _buildGridView(
+                        context,
+                        exercises,
+                        exerciseRecordService,
+                      )),
         ),
-      ),
+      ],
     );
   }
 
@@ -129,8 +135,9 @@ class ExercisesPage extends ConsumerWidget {
         .toList();
 
     return FutureBuilder<num>(
-      future: _getLatestMaxWeight(
+      future: ExerciseService.getLatestMaxWeight(
         exerciseRecordService,
+        controller.program.athleteId,
         exercise.exerciseId ?? '',
       ),
       builder: (context, snapshot) {
@@ -177,22 +184,7 @@ class ExercisesPage extends ConsumerWidget {
     );
   }
 
-  Future<num> _getLatestMaxWeight(
-    dynamic exerciseRecordService,
-    String exerciseId,
-  ) async {
-    if (exerciseId.isEmpty) return 0;
-
-    try {
-      final record = await exerciseRecordService.getLatestExerciseRecord(
-        userId: controller.program.athleteId,
-        exerciseId: exerciseId,
-      );
-      return record?.maxWeight ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
+  // Max weight unified via ExerciseService.getLatestMaxWeight
 
   void _navigateToExerciseDetails(
     BuildContext context,

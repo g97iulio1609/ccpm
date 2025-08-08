@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../controller/training_program_controller.dart';
-import '../dialog/reorder_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/shared/widgets/page_scaffold.dart';
+import 'package:alphanessone/shared/widgets/empty_state.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
+import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
+import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 
-/// Widget for displaying and managing workout list
+/// Pagina per visualizzare e gestire la lista degli allenamenti (workouts)
 class TrainingProgramWorkoutListPage extends StatefulWidget {
   final TrainingProgramController controller;
   final int weekIndex;
@@ -23,7 +25,8 @@ class TrainingProgramWorkoutListPage extends StatefulWidget {
 }
 
 class _TrainingProgramWorkoutListPageState
-    extends State<TrainingProgramWorkoutListPage> with TrainingListMixin {
+    extends State<TrainingProgramWorkoutListPage>
+    with TrainingListMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -32,80 +35,57 @@ class _TrainingProgramWorkoutListPageState
     final screenSize = MediaQuery.of(context).size;
     final isCompact = screenSize.width < 600;
 
-    // Use SafeArea to prevent UI blocking on mobile devices
-    return SafeArea(
-      child: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.all(
-                isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg),
-            sliver: workouts.isEmpty
-                ? _buildEmptyState(theme, colorScheme, isCompact)
-                : _buildWorkoutsList(workouts, theme, colorScheme, isCompact),
+    return PageScaffold(
+      colorScheme: colorScheme,
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(
+            isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg,
           ),
-        ],
-      ),
+          sliver: workouts.isEmpty
+              ? _buildEmptyState(theme, colorScheme, isCompact)
+              : _buildWorkoutsList(workouts, theme, colorScheme, isCompact),
+        ),
+      ],
     );
   }
 
   Widget _buildEmptyState(
-      ThemeData theme, ColorScheme colorScheme, bool isCompact) {
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isCompact,
+  ) {
     return SliverFillRemaining(
       hasScrollBody: false,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withAlpha(76),
-                borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-              ),
-              child: Icon(
-                Icons.fitness_center_outlined,
-                size: isCompact ? 48 : 64,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            SizedBox(height: AppTheme.spacing.lg),
-            Text(
-              'Nessun allenamento disponibile',
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: AppTheme.spacing.sm),
-            Text(
-              'Aggiungi il primo allenamento per iniziare',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      child: EmptyState(
+        icon: Icons.fitness_center_outlined,
+        title: 'Nessun allenamento disponibile',
+        subtitle: 'Aggiungi il primo allenamento per iniziare',
       ),
     );
   }
 
-  Widget _buildWorkoutsList(List<dynamic> workouts, ThemeData theme,
-      ColorScheme colorScheme, bool isCompact) {
+  Widget _buildWorkoutsList(
+    List<dynamic> workouts,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isCompact,
+  ) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: isCompact ? AppTheme.spacing.sm : AppTheme.spacing.md,
-            ),
-            child: _buildWorkoutCard(
-                context, index, theme, colorScheme, isCompact),
-          );
-        },
-        childCount: workouts.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: isCompact ? AppTheme.spacing.sm : AppTheme.spacing.md,
+          ),
+          child: _buildWorkoutCard(
+            context,
+            index,
+            theme,
+            colorScheme,
+            isCompact,
+          ),
+        );
+      }, childCount: workouts.length),
     );
   }
 
@@ -121,7 +101,8 @@ class _TrainingProgramWorkoutListPageState
       onTap: () => _navigateToWorkout(index),
       child: Padding(
         padding: EdgeInsets.all(
-            isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg),
+          isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg,
+        ),
         child: _WorkoutCardContent(
           index: index,
           theme: theme,
@@ -134,12 +115,15 @@ class _TrainingProgramWorkoutListPageState
   }
 
   void _navigateToWorkout(int index) {
-    context.go('/user_programs/training_program/week/workout', extra: {
-      'userId': widget.controller.program.athleteId,
-      'programId': widget.controller.program.id,
-      'weekIndex': widget.weekIndex,
-      'workoutIndex': index
-    });
+    context.go(
+      '/user_programs/training_program/week/workout',
+      extra: {
+        'userId': widget.controller.program.athleteId,
+        'programId': widget.controller.program.id,
+        'weekIndex': widget.weekIndex,
+        'workoutIndex': index,
+      },
+    );
   }
 
   void _showWorkoutOptions(BuildContext context, int index) {
@@ -157,11 +141,8 @@ class _TrainingProgramWorkoutListPageState
       BottomMenuItem(
         title: 'Copia Allenamento',
         icon: Icons.content_copy_outlined,
-        onTap: () => widget.controller.copyWorkout(
-          widget.weekIndex,
-          index,
-          context,
-        ),
+        onTap: () =>
+            widget.controller.copyWorkout(widget.weekIndex, index, context),
       ),
       BottomMenuItem(
         title: 'Riordina Allenamenti',
@@ -184,7 +165,10 @@ class _TrainingProgramWorkoutListPageState
 
   void _showReorderDialog() {
     final workoutNames = widget
-        .controller.program.weeks[widget.weekIndex].workouts
+        .controller
+        .program
+        .weeks[widget.weekIndex]
+        .workouts
         .map((workout) => 'Workout ${workout.order}')
         .toList();
 
@@ -192,8 +176,11 @@ class _TrainingProgramWorkoutListPageState
       context: context,
       builder: (context) => ReorderDialog(
         items: workoutNames,
-        onReorder: (oldIndex, newIndex) => widget.controller
-            .reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
+        onReorder: (oldIndex, newIndex) => widget.controller.reorderWorkouts(
+          widget.weekIndex,
+          oldIndex,
+          newIndex,
+        ),
       ),
     );
   }
@@ -211,7 +198,6 @@ class _TrainingProgramWorkoutListPageState
   }
 }
 
-/// Content widget for workout card to improve separation of concerns
 class _WorkoutCardContent extends StatelessWidget {
   final int index;
   final ThemeData theme;
@@ -231,15 +217,13 @@ class _WorkoutCardContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Use LayoutBuilder to ensure proper constraints handling
         return Row(
           children: [
             _buildWorkoutIcon(),
             SizedBox(
-                width: isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg),
-            Expanded(
-              child: _buildWorkoutTitle(),
+              width: isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg,
             ),
+            Expanded(child: _buildWorkoutTitle()),
             _buildOptionsButton(),
           ],
         );
@@ -256,7 +240,8 @@ class _WorkoutCardContent extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withAlpha(76),
         borderRadius: BorderRadius.circular(
-            isCompact ? AppTheme.radii.sm : AppTheme.radii.md),
+          isCompact ? AppTheme.radii.sm : AppTheme.radii.md,
+        ),
       ),
       child: Center(
         child: FittedBox(
@@ -300,7 +285,8 @@ class _WorkoutCardContent extends StatelessWidget {
         ),
         onPressed: onOptionsPressed,
         padding: EdgeInsets.all(
-            isCompact ? AppTheme.spacing.xs : AppTheme.spacing.sm),
+          isCompact ? AppTheme.spacing.xs : AppTheme.spacing.sm,
+        ),
         splashRadius: isCompact ? 20 : 24,
       ),
     );

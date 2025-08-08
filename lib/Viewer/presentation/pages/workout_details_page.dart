@@ -8,6 +8,8 @@ import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/section_header.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/exercise_timer_bottom_sheet.dart';
 import 'package:alphanessone/UI/components/series_header.dart';
+import 'package:alphanessone/shared/widgets/page_scaffold.dart';
+import 'package:alphanessone/shared/widgets/empty_state.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
   final String programId;
@@ -60,75 +62,52 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
     // Se è in caricamento, mostra un indicatore di progresso
     if (state.isLoading) {
-      return Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: ListView.builder(
-          padding: EdgeInsets.all(AppTheme.spacing.md),
-          itemCount: 6,
-          itemBuilder: (context, index) => const SkeletonCard(),
-        ),
+      return PageScaffold(
+        colorScheme: colorScheme,
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.all(AppTheme.spacing.md),
+            sliver: SliverList.builder(
+              itemCount: 6,
+              itemBuilder: (context, index) => const SkeletonCard(),
+            ),
+          ),
+        ],
       );
     }
 
     // Se c'è un errore, mostralo
     if (state.error != null) {
-      return Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, color: colorScheme.error, size: 48),
-              SizedBox(height: AppTheme.spacing.md),
-              Text(
-                'Errore durante il caricamento',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
-              ),
-              SizedBox(height: AppTheme.spacing.sm),
-              Text(
-                state.error!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: AppTheme.spacing.lg),
-              FilledButton.icon(
-                onPressed: () => notifier.refreshWorkout(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Riprova'),
-              ),
-            ],
+      return PageScaffold(
+        colorScheme: colorScheme,
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              icon: Icons.error_outline,
+              title: 'Errore durante il caricamento',
+              subtitle: state.error!,
+              onPrimaryAction: () => notifier.refreshWorkout(),
+              primaryActionLabel: 'Riprova',
+            ),
           ),
-        ),
+        ],
       );
     }
 
     // Se non ci sono esercizi, mostra un messaggio
     if (state.workout == null || state.workout!.exercises.isEmpty) {
-      return Scaffold(
-        backgroundColor: colorScheme.surface,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.fitness_center,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                size: 48,
-              ),
-              SizedBox(height: AppTheme.spacing.md),
-              Text(
-                'Nessun esercizio trovato',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
-              ),
-            ],
+      return PageScaffold(
+        colorScheme: colorScheme,
+        slivers: const [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              icon: Icons.fitness_center,
+              title: 'Nessun esercizio trovato',
+            ),
           ),
-        ),
+        ],
       );
     }
 

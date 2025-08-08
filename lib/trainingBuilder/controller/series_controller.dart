@@ -1,6 +1,8 @@
-import 'package:alphanessone/trainingBuilder/dialog/series_dialog.dart';
+import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/series_dialog.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/series_utils.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
+import 'package:alphanessone/trainingBuilder/domain/services/series_business_service.dart';
 import 'package:flutter/material.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 
@@ -31,7 +33,7 @@ class SeriesController extends ChangeNotifier {
     final originalExerciseId = exercise.exerciseId;
     debugPrint('Original Exercise ID: $originalExerciseId');
 
-    final latestMaxWeight = await SeriesUtils.getLatestMaxWeight(
+    final latestMaxWeight = await ExerciseService.getLatestMaxWeight(
       exerciseRecordService,
       program.athleteId,
       originalExerciseId ?? '',
@@ -134,17 +136,18 @@ class SeriesController extends ChangeNotifier {
           }
         }
 
-        // Replace old series with updated ones
-        exercise.series.replaceRange(
-          startIndex,
-          startIndex + currentSeriesGroup.length,
-          updatedSeries,
-        );
-
-        // Update series order
-        for (int i = 0; i < exercise.series.length; i++) {
-          exercise.series[i] = exercise.series[i].copyWith(order: i + 1);
-        }
+        // Sostituzione immutabile e ricalcolo order via business service
+        final List<Series> newSeriesList = List<Series>.from(exercise.series)
+          ..removeRange(startIndex, startIndex + currentSeriesGroup.length)
+          ..insertAll(startIndex, updatedSeries);
+        final List<Series> recalculated =
+            SeriesBusinessService.recalculateOrders(newSeriesList);
+        final updatedExercise = exercise.copyWith(series: recalculated);
+        program
+                .weeks[weekIndex]
+                .workouts[workoutIndex]
+                .exercises[exerciseIndex] =
+            updatedExercise;
 
         await SeriesUtils.updateSeriesWeights(
           program,
@@ -262,9 +265,13 @@ class SeriesController extends ChangeNotifier {
         .weeks[weekIndex]
         .workouts[workoutIndex]
         .exercises[exerciseIndex];
-    for (int i = startIndex; i < exercise.series.length; i++) {
-      exercise.series[i] = exercise.series[i].copyWith(order: i + 1);
-    }
+    final recalculated = SeriesBusinessService.recalculateOrders(
+      exercise.series,
+      startIndex: startIndex,
+    );
+    final updatedExercise = exercise.copyWith(series: recalculated);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
   }
 
   void reorderSeries(
@@ -297,15 +304,14 @@ class SeriesController extends ChangeNotifier {
       newIndex -= 1;
     }
 
-    final series = exercise.series.removeAt(oldIndex);
-    exercise.series.insert(newIndex, series);
-    _updateSeriesOrders(
-      program,
-      weekIndex,
-      workoutIndex,
-      exerciseIndex,
+    final List<Series> reordered = SeriesBusinessService.reorderSeries(
+      exercise.series,
+      oldIndex,
       newIndex,
     );
+    final updatedExercise = exercise.copyWith(series: reordered);
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
+        updatedExercise;
     notifyListeners();
   }
 
@@ -370,33 +376,19 @@ class SeriesController extends ChangeNotifier {
     }
 
     final series = exercise.series[seriesIndex];
-    Series updatedSeries;
-    switch (field) {
-      case 'reps':
-        updatedSeries = series.copyWith(reps: value, maxReps: maxValue);
-        break;
-      case 'sets':
-        updatedSeries = series.copyWith(sets: value, maxSets: maxValue);
-        break;
-      case 'intensity':
-        updatedSeries = series.copyWith(
-          intensity: value,
-          maxIntensity: maxValue,
-        );
-        break;
-      case 'rpe':
-        updatedSeries = series.copyWith(rpe: value, maxRpe: maxValue);
-        break;
-      case 'weight':
-        updatedSeries = series.copyWith(weight: value, maxWeight: maxValue);
-        break;
-      default:
-        debugPrint('Invalid field: $field');
-        return;
-    }
+    final updatedSeries = SeriesBusinessService.updateRangeField(
+      series,
+      field: field,
+      value: value,
+      maxValue: maxValue,
+    );
 
     final updatedExercise = exercise.copyWith(
-      series: List<Series>.from(exercise.series)..[seriesIndex] = updatedSeries,
+      series: SeriesBusinessService.replaceAt(
+        exercise.series,
+        seriesIndex,
+        updatedSeries,
+      ),
     );
     program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
         updatedExercise;

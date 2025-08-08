@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
-import 'package:alphanessone/trainingBuilder/dialog/reorder_dialog.dart';
+import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
 import '../cards/series_card.dart';
 import 'package:alphanessone/UI/components/button.dart';
 
@@ -162,8 +162,9 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Elimina Gruppo Serie'),
-        content:
-            const Text('Sei sicuro di voler eliminare questo gruppo di serie?'),
+        content: const Text(
+          'Sei sicuro di voler eliminare questo gruppo di serie?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -171,11 +172,19 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
           ),
           TextButton(
             onPressed: () {
-              // Rimuovi le serie dal controller
-              for (var series in seriesGroup) {
-                widget.exercise.series.remove(series);
-              }
-              _updateSeriesList();
+              // Immutabile: crea nuova lista senza le serie del gruppo
+              final updated = widget.exercise.series
+                  .where((s) => !seriesGroup.contains(s))
+                  .toList();
+              ref
+                  .read(trainingProgramControllerProvider.notifier)
+                  .updateSeries(
+                    widget.weekIndex,
+                    widget.workoutIndex,
+                    widget.exerciseIndex,
+                    updated,
+                  );
+              setState(() {});
               Navigator.pop(context);
             },
             child: const Text('Elimina'),
@@ -187,16 +196,26 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
 
   void _duplicateSeriesGroup(List<Series> seriesGroup) {
     final duplicatedSeries = seriesGroup
-        .map((series) => series.copyWith(
-              serieId: DateTime.now().millisecondsSinceEpoch.toString(),
-              order: widget.exercise.series.length +
-                  seriesGroup.indexOf(series) +
-                  1,
-            ))
+        .map(
+          (series) => series.copyWith(
+            serieId: DateTime.now().millisecondsSinceEpoch.toString(),
+            order:
+                widget.exercise.series.length + seriesGroup.indexOf(series) + 1,
+          ),
+        )
         .toList();
 
-    widget.exercise.series.addAll(duplicatedSeries);
-    _updateSeriesList();
+    final updated = List<Series>.from(widget.exercise.series)
+      ..addAll(duplicatedSeries);
+    ref
+        .read(trainingProgramControllerProvider.notifier)
+        .updateSeries(
+          widget.weekIndex,
+          widget.workoutIndex,
+          widget.exerciseIndex,
+          updated,
+        );
+    setState(() {});
   }
 
   void _addNewSeries() {
@@ -260,18 +279,19 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
     );
 
     if (index != -1) {
-      widget.exercise.series[index] = updatedSeries;
-      _updateSeriesList();
+      final updated = List<Series>.from(widget.exercise.series);
+      updated[index] = updatedSeries;
+      ref
+          .read(trainingProgramControllerProvider.notifier)
+          .updateSeries(
+            widget.weekIndex,
+            widget.workoutIndex,
+            widget.exerciseIndex,
+            updated,
+          );
+      setState(() {});
     }
   }
 
-  void _updateSeriesList() {
-    widget.controller.updateSeries(
-      widget.weekIndex,
-      widget.workoutIndex,
-      widget.exerciseIndex,
-      widget.exercise.series,
-    );
-    setState(() {});
-  }
+  // removed: no longer needed after immutability refactor
 }

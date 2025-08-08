@@ -67,9 +67,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          border: Border.all(
-            color: colorScheme.outline.withAlpha(26),
-          ),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -94,8 +92,10 @@ class _SeriesDialogState extends State<SeriesDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close,
-                        color: colorScheme.onSurfaceVariant.withAlpha(128)),
+                    icon: Icon(
+                      Icons.close,
+                      color: colorScheme.onSurfaceVariant.withAlpha(128),
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -284,9 +284,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withAlpha(26),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            border: Border.all(
-              color: colorScheme.outline.withAlpha(26),
-            ),
+            border: Border.all(color: colorScheme.outline.withAlpha(26)),
           ),
           child: TextField(
             controller: controller,
@@ -312,15 +310,14 @@ class _SeriesDialogState extends State<SeriesDialog> {
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(26),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(26),
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(26)),
             ),
             child: TextField(
               controller: maxController,
               focusNode: maxFocusNode,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
@@ -349,7 +346,8 @@ class _SeriesDialogState extends State<SeriesDialog> {
 
   void _handleSubmit() {
     final updatedSeries = _formController.createSeries(
-        widget.currentSeriesGroup?.length ?? widget.exercise.series.length);
+      widget.currentSeriesGroup?.length ?? widget.exercise.series.length,
+    );
 
     // Se stiamo modificando serie esistenti, manteniamo gli ID originali
     if (widget.currentSeriesGroup != null) {
@@ -372,10 +370,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
         'originalGroup': widget.currentSeriesGroup,
       });
     } else {
-      Navigator.pop(context, {
-        'action': 'add',
-        'series': updatedSeries,
-      });
+      Navigator.pop(context, {'action': 'add', 'series': updatedSeries});
     }
   }
 }
@@ -476,8 +471,9 @@ class SeriesFormController {
   void updateMaxWeightFromMaxIntensity() {
     final maxIntensity = double.tryParse(maxIntensityController.text) ?? 0.0;
     if (maxIntensity > 0) {
-      final maxWeight =
-          (latestMaxWeight * maxIntensity / 100).toStringAsFixed(1);
+      final maxWeight = (latestMaxWeight * maxIntensity / 100).toStringAsFixed(
+        1,
+      );
       maxWeightController.text = maxWeight;
     }
   }
@@ -485,8 +481,8 @@ class SeriesFormController {
   void updateMaxIntensityFromMaxWeight() {
     final maxWeight = double.tryParse(maxWeightController.text) ?? 0.0;
     if (maxWeight > 0 && latestMaxWeight > 0) {
-      final maxIntensity =
-          ((maxWeight / latestMaxWeight) * 100).toStringAsFixed(1);
+      final maxIntensity = ((maxWeight / latestMaxWeight) * 100)
+          .toStringAsFixed(1);
       maxIntensityController.text = maxIntensity;
     }
   }
@@ -513,11 +509,37 @@ class SeriesFormController {
     if (currentSeriesGroup != null) {
       for (int i = 0; i < currentSeriesGroup!.length && i < sets; i++) {
         var existingSeries = currentSeriesGroup![i];
-        newSeries.add(Series(
-          id: existingSeries.id,
-          serieId: existingSeries.serieId,
-          originalExerciseId: existingSeries.originalExerciseId,
-          exerciseId: existingSeries.exerciseId,
+        newSeries.add(
+          Series(
+            id: existingSeries.id,
+            serieId: existingSeries.serieId,
+            originalExerciseId: existingSeries.originalExerciseId,
+            exerciseId: existingSeries.exerciseId,
+            reps: reps,
+            maxReps: maxReps,
+            sets: 1,
+            intensity: intensity,
+            maxIntensity: maxIntensity.isNotEmpty ? maxIntensity : null,
+            rpe: rpe,
+            maxRpe: maxRpe.isNotEmpty ? maxRpe : null,
+            weight: weight,
+            maxWeight: maxWeight,
+            order: i,
+            done: existingSeries.done,
+            repsDone: existingSeries.repsDone,
+            weightDone: existingSeries.weightDone,
+          ),
+        );
+      }
+    }
+
+    // Poi aggiungiamo le nuove serie se necessario
+    for (int i = (currentSeriesGroup?.length ?? 0); i < sets; i++) {
+      newSeries.add(
+        Series(
+          serieId: generateRandomId(16),
+          exerciseId: originalExerciseId ?? '',
+          originalExerciseId: originalExerciseId,
           reps: reps,
           maxReps: maxReps,
           sets: 1,
@@ -528,33 +550,11 @@ class SeriesFormController {
           weight: weight,
           maxWeight: maxWeight,
           order: i,
-          done: existingSeries.done,
-          repsDone: existingSeries.repsDone,
-          weightDone: existingSeries.weightDone,
-        ));
-      }
-    }
-
-    // Poi aggiungiamo le nuove serie se necessario
-    for (int i = (currentSeriesGroup?.length ?? 0); i < sets; i++) {
-      newSeries.add(Series(
-        serieId: generateRandomId(16),
-        exerciseId: originalExerciseId ?? '',
-        originalExerciseId: originalExerciseId,
-        reps: reps,
-        maxReps: maxReps,
-        sets: 1,
-        intensity: intensity,
-        maxIntensity: maxIntensity.isNotEmpty ? maxIntensity : null,
-        rpe: rpe,
-        maxRpe: maxRpe.isNotEmpty ? maxRpe : null,
-        weight: weight,
-        maxWeight: maxWeight,
-        order: i,
-        done: false,
-        repsDone: 0,
-        weightDone: 0.0,
-      ));
+          done: false,
+          repsDone: 0,
+          weightDone: 0.0,
+        ),
+      );
     }
 
     return newSeries;
