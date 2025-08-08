@@ -8,6 +8,8 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/skeleton.dart';
 
 import 'meal_selection_dialog.dart'; // Assicurati che questo dialog esista
 
@@ -247,7 +249,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                       style: GoogleFonts.roboto(fontSize: 16),
                     ),
                   ),
-                  ElevatedButton(
+                  FilledButton(
                     onPressed: _pickStartDate,
                     child: Text('Select Date', style: GoogleFonts.roboto()),
                   ),
@@ -287,9 +289,13 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                 itemCount: _days.length,
                 itemBuilder: (context, dayIndex) {
                   final day = _days[dayIndex];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ExpansionTile(
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: AppCard(
+                      background: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(38),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: EdgeInsets.zero,
                       title: Text(
                         '${day.dayOfWeek} (${day.mealIds.length} Meals Selected)',
                         style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
@@ -306,9 +312,10 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                               future: mealsService.getMealById(userId, mealId), // Usa l'userId corretto
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const ListTile(
-                                    title: Text('Loading...'),
-                                  );
+                                    return const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                      child: SkeletonCard(height: 72),
+                                    );
                                 } else if (snapshot.hasError) {
                                   return const ListTile(
                                     title: Text('Error loading meal'),
@@ -342,13 +349,14 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                         // Bottone per selezionare nuovi pasti
                         Align(
                           alignment: Alignment.centerRight,
-                          child: TextButton.icon(
+                            child: FilledButton.icon(
                             onPressed: () => _selectMeals(dayIndex),
                             icon: const Icon(Icons.add),
-                            label: Text('Select Meals', style: GoogleFonts.roboto()),
+                              label: Text('Select Meals', style: GoogleFonts.roboto()),
                           ),
                         ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -356,12 +364,8 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
               const SizedBox(height: 24),
 
               // Bottone di salvataggio
-              ElevatedButton(
+              FilledButton(
                 onPressed: _saveDietPlan,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-                ),
                 child: Text(
                   isEditing ? 'Update & Apply Diet Plan' : 'Save & Apply Diet Plan',
                   style: GoogleFonts.roboto(fontSize: 18),

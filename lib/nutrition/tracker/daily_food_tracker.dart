@@ -5,6 +5,7 @@ import '../services/meals_services.dart';
 import 'food_list.dart';
 import '../models/meals_model.dart' as meals;
 import '../../Main/app_theme.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 import '../../UI/app_bar_custom.dart';
 import '../../models/user_model.dart';
 import '../../providers/providers.dart';
@@ -134,12 +135,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
             if (_shouldShowUserSelector())
               Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.md),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                    boxShadow: AppTheme.elevations.small,
-                  ),
+                child: AppCard(
+                  background: colorScheme.surfaceContainerHighest.withAlpha(38),
                   child: UserTypeAheadField(
                     controller: _userSearchController,
                     focusNode: _userSearchFocusNode,
@@ -257,15 +254,10 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      margin: EdgeInsets.all(AppTheme.spacing.md),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(AppTheme.spacing.lg),
+    return Padding(
+      padding: EdgeInsets.all(AppTheme.spacing.md),
+      child: AppCard(
+        background: colorScheme.surfaceContainerHighest.withAlpha(38),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
