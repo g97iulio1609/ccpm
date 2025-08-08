@@ -40,24 +40,21 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isListMode = screenWidth < 600;
 
-    // Determina il numero di colonne in base alla larghezza dello schermo (responsive)
-    final crossAxisCount = isListMode
-        ? 1
-        : screenWidth >= 1600
-        ? 4
-        : screenWidth >= 1200
-        ? 3
-        : 2;
+    // Determina max extent in base alla larghezza dello schermo (responsive)
     final padding = AppTheme.spacing.md;
     final spacing = AppTheme.spacing.md;
-    // Calcolo dinamico dell'aspect ratio per evitare card "invisibili" su desktop
-    final tileWidth = (screenWidth - (padding * 2) - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+    // Calcolo dinamico d'aspetto: usa MaxCrossAxisExtent per gestione robusta desktop/tablet
+    final maxExtent = screenWidth >= 1600
+        ? 520.0
+        : screenWidth >= 1200
+            ? 480.0
+            : 420.0;
     final desiredTileHeight = screenWidth >= 1600
         ? 420.0
         : screenWidth >= 1200
             ? 460.0
             : 520.0;
-    final computedChildAspectRatio = tileWidth / desiredTileHeight;
+    final computedChildAspectRatio = maxExtent / desiredTileHeight;
 
     // Se è in caricamento, mostra un indicatore di progresso
     if (state.isLoading) {
@@ -172,11 +169,10 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               onRefresh: () => notifier.refreshWorkout(),
               child: GridView.builder(
                 padding: EdgeInsets.all(padding),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: maxExtent,
                   crossAxisSpacing: spacing,
                   mainAxisSpacing: spacing,
-                  // Aspect ratio dinamico per avere un'altezza sufficiente
                   childAspectRatio: computedChildAspectRatio,
                 ),
                 itemCount: groupedExercises.length,
