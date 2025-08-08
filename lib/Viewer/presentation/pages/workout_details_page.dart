@@ -179,33 +179,38 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             )
           : RefreshIndicator(
               onRefresh: () => notifier.refreshWorkout(),
-              child: GridView.builder(
-                padding: EdgeInsets.all(padding),
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: maxCrossAxisExtent,
-                  crossAxisSpacing: spacing,
-                  mainAxisSpacing: spacing,
-                  mainAxisExtent: mainAxisExtent,
-                ),
-                itemCount: groupedExercises.length,
-                key: PageStorageKey('workout_exercises_${widget.workoutId}'),
-                itemBuilder: (context, index) {
-                  final entry = groupedExercises.entries.elementAt(index);
-                  final superSetId = entry.key;
-                  final exercises = entry.value;
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: GridView.builder(
+                  key: ValueKey<bool>(_compactLayout),
+                  padding: EdgeInsets.all(padding),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: maxCrossAxisExtent,
+                    crossAxisSpacing: spacing,
+                    mainAxisSpacing: spacing,
+                    mainAxisExtent: mainAxisExtent,
+                  ),
+                  itemCount: groupedExercises.length,
+                  itemBuilder: (context, index) {
+                    final entry = groupedExercises.entries.elementAt(index);
+                    final superSetId = entry.key;
+                    final exercises = entry.value;
 
-                  return Semantics(
-                    container: true,
-                    label: 'Scheda esercizio',
-                    child: superSetId == null || superSetId.isEmpty
-                        ? _buildSingleExerciseCard(exercises.first, context)
-                        : _buildSuperSetCard(
-                            superSetExercises: exercises,
-                            context: context,
-                            isListMode: false,
-                          ),
-                  );
-                },
+                    return Semantics(
+                      container: true,
+                      label: 'Scheda esercizio',
+                      child: superSetId == null || superSetId.isEmpty
+                          ? _buildSingleExerciseCard(exercises.first, context)
+                          : _buildSuperSetCard(
+                              superSetExercises: exercises,
+                              context: context,
+                              isListMode: false,
+                            ),
+                    );
+                  },
+                ),
               ),
             ),
     );
@@ -255,6 +260,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
     return AppCard(
       header: _buildExerciseName(exercise, context),
+      background: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withAlpha(38),
       child: Column(
         children: [
           if (isListMode)
