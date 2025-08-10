@@ -8,6 +8,8 @@ class SeriesCard extends StatelessWidget {
   final num maxWeight;
   final String exerciseName;
   final bool isExpanded;
+  // When false, the card will not render its internal expanded content block.
+  final bool showExpandedContent;
   final VoidCallback? onExpansionChanged;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
@@ -20,6 +22,7 @@ class SeriesCard extends StatelessWidget {
     required this.maxWeight,
     required this.exerciseName,
     this.isExpanded = false,
+    this.showExpandedContent = true,
     this.onExpansionChanged,
     this.onEdit,
     this.onDelete,
@@ -43,7 +46,8 @@ class SeriesCard extends StatelessWidget {
       child: Column(
         children: [
           _buildHeader(context, theme, colorScheme),
-          if (isExpanded) _buildExpandedContent(context, theme, colorScheme),
+          if (isExpanded && showExpandedContent)
+            _buildExpandedContent(context, theme, colorScheme),
         ],
       ),
     );
