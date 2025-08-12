@@ -108,8 +108,11 @@ class _SeriesRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-  final done = _isStrictlyDone(series);
-  final attempted = series.hasExecutionData && !done;
+    final done = _isStrictlyDone(series);
+    final attempted = series.hasExecutionData && !done;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 480;
+    
     return Row(
       children: [
         SizedBox(
@@ -139,7 +142,7 @@ class _SeriesRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: isCompact ? 4 : 8),
         Expanded(
           flex: 2,
           child: InkWell(
@@ -152,9 +155,9 @@ class _SeriesRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: isCompact ? 4 : 8),
         Expanded(
-          flex: 3,
+          flex: 5,
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onTap,
@@ -165,7 +168,7 @@ class _SeriesRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: isCompact ? 4 : 8),
         Expanded(
           flex: 3,
           child: InkWell(
@@ -223,9 +226,9 @@ class _SeriesRow extends StatelessWidget {
   String _formatWeightRange(num weight, double? maxWeight) {
     String fmt(num v) => (v % 1 == 0) ? v.toInt().toString() : v.toStringAsFixed(1);
     if (maxWeight != null && maxWeight > weight) {
-      return '${fmt(weight)}-${fmt(maxWeight)} kg';
+      return '${fmt(weight)}-${fmt(maxWeight)}kg';
     }
-    return '${fmt(weight)} kg';
+    return '${fmt(weight)}kg';
   }
 
   Widget _pill(
@@ -234,8 +237,14 @@ class _SeriesRow extends StatelessWidget {
     required IconData icon,
   }) {
     final cs = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 480;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 4 : 8, 
+        vertical: isCompact ? 4 : 6
+      ),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
@@ -243,16 +252,21 @@ class _SeriesRow extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: cs.onSurfaceVariant),
-          const SizedBox(width: 6),
+          if (!isCompact) ...[
+            Icon(icon, size: 14, color: cs.onSurfaceVariant),
+            const SizedBox(width: 6),
+          ],
           Flexible(
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: cs.onSurface),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: cs.onSurface,
+                fontSize: isCompact ? 12 : null,
+              ),
             ),
           ),
         ],
