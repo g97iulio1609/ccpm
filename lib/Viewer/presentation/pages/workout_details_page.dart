@@ -42,7 +42,6 @@ class WorkoutDetailsPage extends ConsumerStatefulWidget {
 }
 
 class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
-  bool _compactLayout = false;
   @override
   Widget build(BuildContext context) {
     // Osserviamo lo stato dal WorkoutDetailsNotifier
@@ -52,26 +51,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
 
     final colorScheme = Theme.of(context).colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Forza la modalità lista praticamente sempre per stabilizzare il rendering
-    final isListMode = screenWidth < 10000;
+  // Stabilizziamo il rendering: per ora usiamo sempre la LISTA in tutte le larghezze
+  // per evitare calcoli incoerenti che causano layout error su desktop.
 
     // Deprecated: calcolo colonne non più usato (si usa maxCrossAxisExtent)
-    final padding = AppTheme.spacing.md;
-    final spacing = AppTheme.spacing.md;
-    // Griglia moderna: usa maxCrossAxisExtent + mainAxisExtent (Flutter 3.10+)
-    final maxCrossAxisExtent = screenWidth >= 1600
-        ? 420.0
-        : screenWidth >= 1200
-        ? 380.0
-        : screenWidth >= 900
-        ? 340.0
-        : 320.0;
-    final mainAxisExtent = screenWidth >= 1600
-        ? 460.0
-        : screenWidth >= 1200
-        ? 500.0
-        : 540.0;
+  final padding = AppTheme.spacing.md;
+  final spacing = AppTheme.spacing.md;
 
     // Se è in caricamento, mostra un indicatore di progresso
     if (state.isLoading) {
@@ -129,92 +114,109 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final groupedExercises = groupExercisesBySuperSet(exercises);
 
     // Mostra gli esercizi in una lista o griglia
+  Widget buildListBody() => RefreshIndicator(
+          onRefresh: () => notifier.refreshWorkout(),
+          child: Semantics(
+            container: true,
+            label: 'Dettagli allenamento, lista esercizi',
+            child: ListView.builder(
+              padding: EdgeInsets.all(padding),
+              itemCount: groupedExercises.length,
+              itemBuilder: (context, index) {
+                final entry = groupedExercises.entries.elementAt(index);
+                final exercises = entry.value;
+                return Padding(
+                  padding: EdgeInsets.only(bottom: spacing),
+                  child: exercises.length == 1
+                      ? _buildSingleExerciseCard(
+                          exercises.first,
+                          context,
+                          isListMode: true,
+                        )
+                      : _buildSuperSetCard(
+                          superSetExercises: exercises,
+                          context: context,
+                          isListMode: true,
+                        ),
+                );
+              },
+            ),
+          ),
+        );
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      floatingActionButton: isListMode
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => setState(() => _compactLayout = !_compactLayout),
-              icon: Icon(
-                _compactLayout ? Icons.unfold_more : Icons.unfold_less,
-              ),
-              label: Text(_compactLayout ? 'Estesa' : 'Compatta'),
-              tooltip: 'Cambia densità card',
-            ),
-      body: isListMode
-          ? RefreshIndicator(
-              onRefresh: () => notifier.refreshWorkout(),
-              child: Semantics(
-                container: true,
-                label: 'Dettagli allenamento, lista esercizi',
-                child: ListView.builder(
-                  padding: EdgeInsets.all(padding),
-                  itemCount: groupedExercises.length,
-                  itemBuilder: (context, index) {
-                    final entry = groupedExercises.entries.elementAt(index);
-                    final exercises = entry.value;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          // Soglia per passare alla griglia desktop/tablet
+          const gridThreshold = 1200.0;
+          if (width < gridThreshold) {
+            return buildListBody();
+          }
 
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: spacing),
-                      child: exercises.length == 1
-                          ? _buildSingleExerciseCard(exercises.first, context)
-                          : _buildSuperSetCard(
-                              superSetExercises: exercises,
-                              context: context,
-                              isListMode: true,
-                            ),
-                    );
-                  },
-                ),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: () => notifier.refreshWorkout(),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: GridView.builder(
-                  key: ValueKey<bool>(_compactLayout),
-                  padding: EdgeInsets.all(padding),
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: maxCrossAxisExtent,
-                    crossAxisSpacing: spacing,
-                    mainAxisSpacing: spacing,
-                    mainAxisExtent: mainAxisExtent,
-                  ),
-                  itemCount: groupedExercises.length,
-                  itemBuilder: (context, index) {
-                    final entry = groupedExercises.entries.elementAt(index);
-                    final exercises = entry.value;
+      // Griglia stabile con card a altezza nota. Niente Expanded nelle card.
+      final bool ultraWide = width >= 1800;
+      final bool veryWide = width >= 1600 && width < 1800;
+      final double cardHeight = ultraWide
+        ? 480.0
+        : veryWide
+          ? 500.0
+          : (width >= 1400 ? 520.0 : 540.0);
+      final double crossAxisExtent = ultraWide
+        ? 320.0
+        : veryWide
+          ? 340.0
+          : (width >= 1400 ? 360.0 : 380.0);
+      final double gridSpacing = (veryWide || ultraWide)
+        ? AppTheme.spacing.sm
+        : spacing;
 
-                    return Semantics(
-                      container: true,
-                      label: 'Scheda esercizio',
-                      child: exercises.length == 1
-                          ? _buildSingleExerciseCard(exercises.first, context)
-                          : _buildSuperSetCard(
-                              superSetExercises: exercises,
-                              context: context,
-                              isListMode: false,
-                            ),
-                    );
-                  },
-                ),
+          return RefreshIndicator(
+            onRefresh: () => notifier.refreshWorkout(),
+      child: GridView.builder(
+              padding: EdgeInsets.all(padding),
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: crossAxisExtent,
+                mainAxisExtent: cardHeight,
+        crossAxisSpacing: gridSpacing,
+        mainAxisSpacing: gridSpacing,
               ),
+              itemCount: groupedExercises.length,
+              itemBuilder: (context, index) {
+                final entry = groupedExercises.entries.elementAt(index);
+                final exercises = entry.value;
+                final child = exercises.length == 1
+                    ? _buildSingleExerciseCard(
+                        exercises.first,
+                        context,
+                        isListMode: false,
+                      )
+                    : _buildSuperSetCard(
+                        superSetExercises: exercises,
+                        context: context,
+                        isListMode: false,
+                      );
+                return Semantics(container: true, label: 'Scheda esercizio', child: child);
+              },
             ),
+          );
+        },
+      ),
     );
   }
 
   // Raggruppamento estratto in grouping.dart
 
-  Widget _buildSingleExerciseCard(Exercise exercise, BuildContext context) {
+  Widget _buildSingleExerciseCard(
+    Exercise exercise,
+    BuildContext context, {
+    required bool isListMode,
+  }) {
     final series = exercise.series;
     final firstNotDoneSeriesIndex = _findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
     final allSeriesCompleted = series.every((serie) => serie.isCompleted);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isListMode = screenWidth < 600;
 
     return AppCard(
       header: ExerciseHeader(

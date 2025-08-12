@@ -50,10 +50,10 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
         leading: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withAlpha(76),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(leadingIcon, color: colorScheme.primary, size: 24),
+          child: Icon(leadingIcon, color: colorScheme.onPrimaryContainer, size: 24),
         ),
         items: items,
       ),
@@ -70,8 +70,19 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: AppTheme.elevations.small,
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,

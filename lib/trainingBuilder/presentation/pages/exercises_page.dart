@@ -35,16 +35,15 @@ class ExercisesPage extends ConsumerWidget {
     final exerciseRecordService = usersService.exerciseRecordService;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 900;
-    final isListDefault = screenWidth < 600;
-    final layout = ValueNotifier<String>(isListDefault ? 'list' : 'grid');
-    final density = ValueNotifier<String>(isCompact ? 'compact' : 'detail');
+  final screenWidth = MediaQuery.of(context).size.width;
+  // Breakpoints responsivi
+  final bool useGrid = screenWidth >= 900;
+  final bool compact = screenWidth < 700; // mobile stretto => compatto
 
     return PageScaffold(
       colorScheme: colorScheme,
       slivers: [
-        // Header con SegmentedButton (layout + densità) e CTA aggiungi
+        // Header con titolo contestuale e CTA aggiungi (layout/densità automatici)
         SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.only(
@@ -56,58 +55,22 @@ class ExercisesPage extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Wrap(
-                    spacing: AppTheme.spacing.md,
-                    runSpacing: AppTheme.spacing.sm,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ValueListenableBuilder<String>(
-                        valueListenable: layout,
-                        builder: (context, value, _) {
-                          return SegmentedButton<String>(
-                            segments: const [
-                              ButtonSegment(
-                                value: 'list',
-                                icon: Icon(Icons.view_list),
-                                label: Text('Lista'),
-                              ),
-                              ButtonSegment(
-                                value: 'grid',
-                                icon: Icon(Icons.grid_view),
-                                label: Text('Griglia'),
-                              ),
-                            ],
-                            selected: {value},
-                            onSelectionChanged: (s) => layout.value = s.first,
-                          );
-                        },
+                      Text(
+                        'Esercizi',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      ValueListenableBuilder<String>(
-                        valueListenable: density,
-                        builder: (context, value, _) {
-                          return SegmentedButton<String>(
-                            segments: const [
-                              ButtonSegment(
-                                value: 'compact',
-                                icon: Icon(Icons.compress),
-                                label: Text('Compatta'),
-                              ),
-                              ButtonSegment(
-                                value: 'detail',
-                                icon: Icon(Icons.unfold_more),
-                                label: Text('Dettaglio'),
-                              ),
-                            ],
-                            selected: {value},
-                            onSelectionChanged: (s) => density.value = s.first,
-                          );
-                        },
-                      ),
+                      // Sottotitolo rimosso su richiesta (niente dicitura vista compatta/dettagliata)
                     ],
                   ),
                 ),
                 SizedBox(
-                  width: 260,
+                  width: 220,
                   child: AppButton(
                     label: 'Aggiungi Esercizio',
                     icon: Icons.add_circle_outline,
@@ -142,24 +105,19 @@ class ExercisesPage extends ConsumerWidget {
                     primaryActionLabel: 'Aggiungi esercizio',
                   ),
                 )
-              : ValueListenableBuilder<String>(
-                  valueListenable: layout,
-                  builder: (context, value, _) {
-                    return value == 'list'
-                        ? _buildListView(
-                            context,
-                            exercises,
-                            exerciseRecordService,
-                            density.value,
-                          )
-                        : _buildGridView(
-                            context,
-                            exercises,
-                            exerciseRecordService,
-                            density.value,
-                          );
-                  },
-                ),
+              : (useGrid
+                  ? _buildGridView(
+                      context,
+                      exercises,
+                      exerciseRecordService,
+                      compact ? 'compact' : 'detail',
+                    )
+                  : _buildListView(
+                      context,
+                      exercises,
+                      exerciseRecordService,
+                      compact ? 'compact' : 'detail',
+                    )),
         ),
       ],
     );
@@ -198,7 +156,8 @@ class ExercisesPage extends ConsumerWidget {
     dynamic exerciseRecordService,
     String density,
   ) {
-    return SliverGrid(
+  final isCompact = density == 'compact';
+  return SliverGrid(
       delegate: SliverChildBuilderDelegate((context, index) {
         if (index == exercises.length) {
           return _buildAddExerciseButton(context);
@@ -211,10 +170,10 @@ class ExercisesPage extends ConsumerWidget {
         );
       }, childCount: exercises.length + 1),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: density == 'compact' ? 480 : 600,
-        mainAxisSpacing: AppTheme.spacing.md,
-        crossAxisSpacing: AppTheme.spacing.md,
-        mainAxisExtent: density == 'compact' ? 440 : 520,
+    maxCrossAxisExtent: isCompact ? 420 : 560,
+    mainAxisSpacing: AppTheme.spacing.md,
+    crossAxisSpacing: AppTheme.spacing.md,
+    mainAxisExtent: isCompact ? 420 : 520,
       ),
     );
   }

@@ -49,7 +49,7 @@ class _WeekListView extends StatefulWidget {
 }
 
 class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
-  String _layout = 'list';
+  // Layout automatico in base alla larghezza schermo
 
   @override
   Widget build(BuildContext context) {
@@ -67,37 +67,12 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
       );
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final useGrid = screenWidth >= 900;
     return Column(
       children: [
-        Padding(
-          padding: EdgeInsets.only(
-            top: AppTheme.spacing.md,
-            right: AppTheme.spacing.lg,
-            left: AppTheme.spacing.lg,
-            bottom: AppTheme.spacing.sm,
-          ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
-                  value: 'list',
-                  icon: Icon(Icons.view_list),
-                  label: Text('Lista'),
-                ),
-                ButtonSegment(
-                  value: 'grid',
-                  icon: Icon(Icons.grid_view),
-                  label: Text('Griglia'),
-                ),
-              ],
-              selected: {_layout},
-              onSelectionChanged: (s) => setState(() => _layout = s.first),
-            ),
-          ),
-        ),
-        // Evita di inserire un widget non-sliver dentro gerarchie di slivers a valle
-        (_layout == 'list' ? _buildList(weeks) : _buildGrid(weeks)),
+        // Layout automatico: nessun selettore manuale
+        useGrid ? _buildGrid(weeks) : _buildList(weeks),
       ],
     );
   }

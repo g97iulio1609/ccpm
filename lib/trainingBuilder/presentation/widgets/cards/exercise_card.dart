@@ -34,8 +34,19 @@ class ExerciseCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: AppTheme.elevations.small,
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -58,9 +69,17 @@ class ExerciseCard extends StatelessWidget {
                   SizedBox(
                     height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md,
                   ),
-                  // Usa altezza fissa e scroll interno gestito dal widget delle serie,
-                  // evitando che la card venga tagliata dal layout a griglia
-                  SizedBox(height: dense ? 220 : 280, child: seriesWidget!),
+                  // In lista (schermi stretti) lascia espandere il contenuto naturalmente;
+                  // in griglia (schermi larghi) vincola un'altezza per evitare tagli.
+                  Builder(
+                    builder: (context) {
+                      final isWide = MediaQuery.of(context).size.width >= 900;
+                      final double? h = isWide ? (dense ? 220 : 280) : null;
+                      return h != null
+                          ? SizedBox(height: h, child: seriesWidget!)
+                          : seriesWidget!;
+                    },
+                  ),
                 ],
                 if (isInSuperSet) ...[
                   SizedBox(
@@ -89,13 +108,13 @@ class ExerciseCard extends StatelessWidget {
             vertical: AppTheme.spacing.xs,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withAlpha(76),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
           ),
           child: Text(
             exercise.type,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: colorScheme.primary,
+              color: colorScheme.onPrimaryContainer,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -154,18 +173,18 @@ class ExerciseCard extends StatelessWidget {
         vertical: AppTheme.spacing.xs,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withAlpha(77),
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.group_work, size: 18, color: colorScheme.secondary),
+          Icon(Icons.group_work, size: 18, color: colorScheme.onSecondaryContainer),
           SizedBox(width: AppTheme.spacing.xs),
           Text(
             'Superset',
             style: theme.textTheme.labelMedium?.copyWith(
-              color: colorScheme.secondary,
+              color: colorScheme.onSecondaryContainer,
               fontWeight: FontWeight.w600,
             ),
           ),

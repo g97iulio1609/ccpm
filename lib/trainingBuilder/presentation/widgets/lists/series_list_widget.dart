@@ -7,6 +7,7 @@ import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
 import '../cards/series_card.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import '../forms/series_form_fields.dart';
 
 class SeriesListWidget extends ConsumerStatefulWidget {
   final Exercise exercise;
@@ -38,25 +39,29 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final groupedSeries = _groupSeries(widget.exercise.series);
+    final isWide = MediaQuery.of(context).size.width >= 900;
 
-    return Column(
-      children: [
-        if (groupedSeries.isNotEmpty)
-          Expanded(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: groupedSeries.length,
-              itemBuilder: (context, index) {
-                final seriesGroup = groupedSeries[index];
-                final key =
-                    'series_group_${index}_${seriesGroup.first.serieId}';
-                final isExpanded = _expansionStates[key] ?? false;
+    final listView = ListView.builder(
+      shrinkWrap: !isWide,
+      physics: isWide ? null : const NeverScrollableScrollPhysics(),
+      itemCount: groupedSeries.length,
+      itemBuilder: (context, index) {
+        final seriesGroup = groupedSeries[index];
+        final key = 'series_group_${index}_${seriesGroup.first.serieId}';
+        final isExpanded = _expansionStates[key] ?? false;
 
-                return SeriesCard(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header card con badge del numero di serie nel gruppo
+            Stack(
+              children: [
+                SeriesCard(
                   series: seriesGroup.first,
                   maxWeight: widget.latestMaxWeight,
                   exerciseName: widget.exercise.name,
                   isExpanded: isExpanded,
+                  showExpandedContent: false,
                   onExpansionChanged: () {
                     setState(() {
                       _expansionStates[key] = !isExpanded;
@@ -67,10 +72,33 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
                   onDuplicate: () => _duplicateSeriesGroup(seriesGroup),
                   onSeriesUpdated: (updatedSeries) =>
                       _updateSeries(updatedSeries),
-                );
-              },
+                ),
+                Positioned(
+                  right: 48, // lascia spazio all'icona espandi/menu
+                  top: 10,
+                  child: _GroupCountBadge(count: seriesGroup.length),
+                ),
+              ],
             ),
-          ),
+            if (isExpanded)
+              Padding(
+                padding: EdgeInsets.only(top: AppTheme.spacing.xs),
+                child: _GroupedSeriesExpanded(
+                  group: seriesGroup,
+                  maxWeight: widget.latestMaxWeight,
+                  exerciseName: widget.exercise.name,
+                  onSeriesUpdated: (updated) => _updateSeries(updated),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+
+    return Column(
+      children: [
+        if (groupedSeries.isNotEmpty)
+          isWide ? Expanded(child: listView) : listView,
         SizedBox(height: AppTheme.spacing.md),
         _buildActionButtons(theme, colorScheme),
       ],
@@ -295,4 +323,107 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
   }
 
   // removed: no longer needed after immutability refactor
+}
+
+class _GroupCountBadge extends StatelessWidget {
+  final int count;
+  const _GroupCountBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.sm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: cs.secondaryContainer.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        '$count serie',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: cs.onSecondaryContainer,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _GroupedSeriesExpanded extends StatelessWidget {
+  final List<Series> group;
+  final num maxWeight;
+  final String exerciseName;
+  final ValueChanged<Series> onSeriesUpdated;
+
+  const _GroupedSeriesExpanded({
+    required this.group,
+    required this.maxWeight,
+    required this.exerciseName,
+    required this.onSeriesUpdated,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: ListView.separated(
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        itemCount: group.length,
+        separatorBuilder: (_, __) => Divider(
+          height: 1,
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+        itemBuilder: (context, idx) {
+          final s = group[idx];
+          return Padding(
+            padding: EdgeInsets.all(AppTheme.spacing.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${idx + 1}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: cs.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacing.md),
+                Expanded(
+                  child: SeriesFormFields(
+                    series: s,
+                    maxWeight: maxWeight,
+                    exerciseName: exerciseName,
+                    onSeriesUpdated: onSeriesUpdated,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 }

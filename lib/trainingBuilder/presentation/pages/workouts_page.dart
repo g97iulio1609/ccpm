@@ -26,8 +26,7 @@ class TrainingProgramWorkoutListPage extends StatefulWidget {
 class _TrainingProgramWorkoutListPageState
     extends State<TrainingProgramWorkoutListPage>
     with TrainingListMixin {
-  String _layout = 'list'; // 'list' | 'grid'
-  String _density = 'detail'; // 'compact' | 'detail'
+  // Layout e densità ora sono automatici in base ai breakpoints
 
   @override
   Widget build(BuildContext context) {
@@ -51,14 +50,14 @@ class _TrainingProgramWorkoutListPageState
       );
     }
     final workouts = widget.controller.program.weeks[widget.weekIndex].workouts;
-    final screenSize = MediaQuery.of(context).size;
-    final isNarrow = screenSize.width < 900;
-    final isCompactDensity = _density == 'compact' || isNarrow;
+  final screenSize = MediaQuery.of(context).size;
+  final bool useGrid = screenSize.width >= 900;
+  final bool isCompactDensity = screenSize.width < 700;
 
     return PageScaffold(
       colorScheme: colorScheme,
       slivers: [
-        // Header con SegmentedButton per layout e densità
+        // Header semplificato: titolo e sottotitolo con info layout
         SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.only(
@@ -67,43 +66,17 @@ class _TrainingProgramWorkoutListPageState
               left: AppTheme.spacing.lg,
               bottom: AppTheme.spacing.md,
             ),
-            child: Wrap(
-              spacing: AppTheme.spacing.md,
-              runSpacing: AppTheme.spacing.sm,
-              crossAxisAlignment: WrapCrossAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(
-                      value: 'list',
-                      icon: Icon(Icons.view_list),
-                      label: Text('Lista'),
-                    ),
-                    ButtonSegment(
-                      value: 'grid',
-                      icon: Icon(Icons.grid_view),
-                      label: Text('Griglia'),
-                    ),
-                  ],
-                  selected: {_layout},
-                  onSelectionChanged: (s) => setState(() => _layout = s.first),
+                Text(
+                  'Allenamenti',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(
-                      value: 'compact',
-                      icon: Icon(Icons.compress),
-                      label: Text('Compatta'),
-                    ),
-                    ButtonSegment(
-                      value: 'detail',
-                      icon: Icon(Icons.unfold_more),
-                      label: Text('Dettaglio'),
-                    ),
-                  ],
-                  selected: {_density},
-                  onSelectionChanged: (s) => setState(() => _density = s.first),
-                ),
+                // Sottotitolo rimosso su richiesta (niente dicitura vista compatta/dettagliata)
               ],
             ),
           ),
@@ -114,7 +87,7 @@ class _TrainingProgramWorkoutListPageState
           ),
           sliver: workouts.isEmpty
               ? _buildEmptyState(theme, colorScheme, isCompactDensity)
-              : (_layout == 'list'
+              : (useGrid
                     ? _buildWorkoutsList(
                         workouts,
                         theme,
@@ -182,10 +155,10 @@ class _TrainingProgramWorkoutListPageState
         return _buildWorkoutCard(context, index, theme, colorScheme, isCompact);
       }, childCount: workouts.length),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: isCompact ? 400 : 520,
-        mainAxisSpacing: AppTheme.spacing.md,
-        crossAxisSpacing: AppTheme.spacing.md,
-        mainAxisExtent: isCompact ? 120 : 140,
+  maxCrossAxisExtent: isCompact ? 420 : 560,
+  mainAxisSpacing: AppTheme.spacing.md,
+  crossAxisSpacing: AppTheme.spacing.md,
+  mainAxisExtent: isCompact ? 120 : 140,
       ),
     );
   }
