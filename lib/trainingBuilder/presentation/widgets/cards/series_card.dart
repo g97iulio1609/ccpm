@@ -206,7 +206,7 @@ class SeriesCard extends StatelessWidget {
 
   String _formatRange(String minValue, String? maxValue) {
     if (maxValue != null && maxValue != minValue && maxValue.isNotEmpty) {
-      return '$minValue-$maxValue';
+      return '$minValue~$maxValue';
     }
     return minValue;
   }
