@@ -150,7 +150,7 @@ class _SeriesRow extends StatelessWidget {
             onTap: onTap,
             child: _pill(
               context,
-              label: _formatRepsRange(series.reps, series.maxReps),
+              label: _formatRepsRange(context, series.reps, series.maxReps),
               icon: Icons.repeat,
             ),
           ),
@@ -163,7 +163,7 @@ class _SeriesRow extends StatelessWidget {
             onTap: onTap,
             child: _pill(
               context,
-              label: _formatWeightRange(series.weight, series.maxWeight),
+              label: _formatWeightRange(context, series.weight, series.maxWeight),
               icon: Icons.fitness_center,
             ),
           ),
@@ -216,19 +216,27 @@ class _SeriesRow extends StatelessWidget {
     );
   }
 
-  String _formatRepsRange(int reps, int? maxReps) {
+  String _formatRepsRange(BuildContext context, int reps, int? maxReps) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isVeryCompact = screenWidth < 360;
+    
     if (maxReps != null && maxReps > reps) {
-      return '$reps-$maxReps';
+      return isVeryCompact ? '$reps~$maxReps' : '$reps-$maxReps';
     }
     return '$reps';
   }
 
-  String _formatWeightRange(num weight, double? maxWeight) {
+  String _formatWeightRange(BuildContext context, num weight, double? maxWeight) {
     String fmt(num v) => (v % 1 == 0) ? v.toInt().toString() : v.toStringAsFixed(1);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isVeryCompact = screenWidth < 360;
+    
     if (maxWeight != null && maxWeight > weight) {
-      return '${fmt(weight)}-${fmt(maxWeight)}kg';
+      return isVeryCompact 
+        ? '${fmt(weight)}~${fmt(maxWeight)}' 
+        : '${fmt(weight)}-${fmt(maxWeight)}kg';
     }
-    return '${fmt(weight)}kg';
+    return '${fmt(weight)}${isVeryCompact ? '' : 'kg'}';
   }
 
   Widget _pill(
@@ -239,15 +247,16 @@ class _SeriesRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 480;
+    final isVeryCompact = screenWidth < 360;
     
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 4 : 8, 
-        vertical: isCompact ? 4 : 6
+        horizontal: isVeryCompact ? 2 : (isCompact ? 4 : 8), 
+        vertical: isVeryCompact ? 3 : (isCompact ? 4 : 6)
       ),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
       ),
       child: Row(
@@ -261,11 +270,14 @@ class _SeriesRow extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              overflow: TextOverflow.ellipsis,
+              overflow: TextOverflow.clip,
+              maxLines: 1,
+              softWrap: false,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: cs.onSurface,
-                fontSize: isCompact ? 12 : null,
+                fontSize: isVeryCompact ? 10 : (isCompact ? 12 : null),
+                letterSpacing: isVeryCompact ? -0.2 : null,
               ),
             ),
           ),
