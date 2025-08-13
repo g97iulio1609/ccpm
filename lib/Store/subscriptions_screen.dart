@@ -479,6 +479,19 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
           builder: (context, setState) {
             return AppDialog(
               title: const Text('Regala Abbonamento'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Annulla'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _createGiftSubscription(selectedDays);
+                  },
+                  child: Text('Regala'),
+                ),
+              ],
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -507,19 +520,6 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                   ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Annulla'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    await _createGiftSubscription(selectedDays);
-                  },
-                  child: Text('Regala'),
-                ),
-              ],
             );
           },
         );

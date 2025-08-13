@@ -48,6 +48,7 @@ class UserProfileState extends ConsumerState<UserProfile>
   DateTime? _birthdate;
   bool _isLoading = true;
   String? _role;
+  bool _twoFactorEnabled = false;
 
   @override
   void initState() {
@@ -334,6 +335,8 @@ class UserProfileState extends ConsumerState<UserProfile>
                       _buildFitnessDataCard(glass),
                       SizedBox(height: AppTheme.spacing.xl),
                       _buildSubscriptionsCard(),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildSecurityCard(glass),
                     ],
                   );
 
@@ -529,6 +532,26 @@ class UserProfileState extends ConsumerState<UserProfile>
             child: const Text('Reset password via email'),
           ),
           const SizedBox(height: 20),
+          Row(
+            children: [
+              Switch(
+                value: _twoFactorEnabled,
+                onChanged: (v) {
+                  setState(() => _twoFactorEnabled = v);
+                  // Hook 2FA: qui potresti aprire un AppDialog per QR/OTP
+                },
+              ),
+              const SizedBox(width: 8),
+              const Text('Abilita 2FA (placeholder)'),
+            ],
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: _logoutAllDevices,
+            icon: const Icon(Icons.logout),
+            label: const Text('Logout da tutti i dispositivi'),
+          ),
+          const SizedBox(height: 12),
           if (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' ||
               widget.userId != null)
             ElevatedButton(
@@ -564,6 +587,31 @@ class UserProfileState extends ConsumerState<UserProfile>
       leadingIcon: Icons.subscriptions_outlined,
       child: SubscriptionsScreen(
         userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid,
+      ),
+    );
+  }
+
+  Widget _buildSecurityCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Sicurezza',
+      leadingIcon: Icons.security_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              const Text('Stato 2FA: placeholder'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Consiglio: abilita la verifica in due passaggi per proteggere il tuo account.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
       ),
     );
   }
@@ -662,6 +710,18 @@ class UserProfileState extends ConsumerState<UserProfile>
       _showSnackBar('Email di reset inviata a $email', Colors.green);
     } catch (e) {
       _showSnackBar('Errore invio reset password: $e', Colors.red);
+    }
+  }
+
+  Future<void> _logoutAllDevices() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        _showSnackBar('Logout effettuato da questo dispositivo. (Placeholder multi-device)', Colors.green);
+        context.go('/');
+      }
+    } catch (e) {
+      _showSnackBar('Errore logout: $e', Colors.red);
     }
   }
 
