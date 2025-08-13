@@ -325,10 +325,11 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                                   const SizedBox(width: 8),
                                   Text(
                                     'Premium',
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: colorScheme.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -507,7 +508,9 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               ),
             ),
             const SizedBox(height: 24),
-            ..._products.map((product) => _buildProductCard(product, glassEnabled)),
+            ..._products.map(
+              (product) => _buildProductCard(product, glassEnabled),
+            ),
           ],
         ),
       ),

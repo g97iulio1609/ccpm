@@ -16,6 +16,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/Main/app_theme.dart';
 
 const Map<int, String> genderMap = {0: 'Altro', 1: 'Maschio', 2: 'Femmina'};
 
@@ -45,6 +46,7 @@ class UserProfileState extends ConsumerState<UserProfile>
   int? _selectedGender;
   DateTime? _birthdate;
   bool _isLoading = true;
+  String? _role;
 
   @override
   void initState() {
@@ -78,6 +80,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         _birthdate = userProfileData['birthdate'] != null
             ? (userProfileData['birthdate'] as Timestamp).toDate()
             : null;
+        _role = (userProfileData['role'] as String?)?.toUpperCase();
       }
     } catch (e) {
       _showSnackBar('Errore nel caricamento del profilo: $e', Colors.red);
@@ -288,55 +291,88 @@ class UserProfileState extends ConsumerState<UserProfile>
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? Center(
-                  child: CircularProgressIndicator(color: colorScheme.primary),
-                )
-              : Column(
-                  children: [
-                    _buildHeader(theme),
-                    AppCard(
-                      glass: glassEnabled,
-                      child: TabBar(
-                        controller: _tabController,
-                        labelColor: colorScheme.primary,
-                        unselectedLabelColor: colorScheme.onSurfaceVariant,
-                        indicatorColor: colorScheme.primary,
-                        tabs: const [
-                          Tab(text: 'Info'),
-                          Tab(text: 'Account'),
-                          Tab(text: 'Fitness'),
-                          Tab(text: 'Abbonamenti'),
-                        ],
-                      ),
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(color: colorScheme.primary),
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 1000;
+                  final columnGap = AppTheme.spacing.xl;
+                  final glass = glassEnabled;
+
+                  final tabBar = AppCard(
+                    glass: glass,
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: colorScheme.primary,
+                      unselectedLabelColor: colorScheme.onSurfaceVariant,
+                      indicatorColor: colorScheme.primary,
+                      tabs: const [
+                        Tab(text: 'Info'),
+                        Tab(text: 'Account'),
+                        Tab(text: 'Fitness'),
+                        Tab(text: 'Abbonamenti'),
+                      ],
                     ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildPersonalInfoTab(),
-                          _buildAccountSettingsTab(),
-                          _buildFitnessDataTab(),
-                          _buildSubscriptionsTab(),
-                        ],
-                      ),
+                  );
+
+                  final leftCol = Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPersonalInfoCard(glass),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildAccountSettingsCard(glass),
+                    ],
+                  );
+
+                  final rightCol = Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildFitnessDataCard(glass),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildSubscriptionsCard(),
+                    ],
+                  );
+
+                  return Padding(
+                    padding: EdgeInsets.all(AppTheme.spacing.xl),
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverToBoxAdapter(child: _buildHeader(theme)),
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: AppTheme.spacing.lg),
+                        ),
+                        SliverToBoxAdapter(child: tabBar),
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: AppTheme.spacing.lg),
+                        ),
+                        SliverToBoxAdapter(
+                          child: isWide
+                              ? Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(child: leftCol),
+                                    SizedBox(width: columnGap),
+                                    Expanded(child: rightCol),
+                                  ],
+                                )
+                              : Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    leftCol,
+                                    SizedBox(height: columnGap),
+                                    rightCol,
+                                  ],
+                                ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-        ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -360,6 +396,26 @@ class UserProfileState extends ConsumerState<UserProfile>
                   color: theme.colorScheme.onSurface,
                 ),
               ),
+              if (_role != null && _role!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withAlpha(76),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                  ),
+                  child: Text(
+                    _role!,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
               if (_controllers['email']?.text != null &&
                   _controllers['email']!.text.isNotEmpty) ...[
                 const SizedBox(height: 4),
@@ -416,90 +472,77 @@ class UserProfileState extends ConsumerState<UserProfile>
     );
   }
 
-  Widget _buildPersonalInfoTab() {
-    final glassEnabled = ref.watch(uiGlassEnabledProvider);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildPersonalInfoCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Informazioni personali',
+      leadingIcon: Icons.person_outline,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppCard(
-            glass: glassEnabled,
-            title: 'Informazioni personali',
-            leadingIcon: Icons.person_outline,
-            child: Column(
-              children: [
-                _buildEditableField('nome', _controllers['name']),
-                _buildEditableField('cognome', _controllers['surname']),
-                _buildBirthdayField(),
-                _buildGenderDropdown(),
-                _buildEditableField('email', _controllers['email']),
-                _buildEditableField('telefono', _controllers['phone']),
-              ],
-            ),
-          ),
+          _buildEditableField('nome', _controllers['name']),
+          _buildEditableField('cognome', _controllers['surname']),
+          _buildBirthdayField(),
+          _buildGenderDropdown(),
+          _buildEditableField('email', _controllers['email']),
+          _buildEditableField('telefono', _controllers['phone']),
         ],
       ),
     );
   }
 
-  Widget _buildAccountSettingsTab() {
-    final glassEnabled = ref.watch(uiGlassEnabledProvider);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: AppCard(
-        glass: glassEnabled,
-        title: 'Impostazioni account',
-        leadingIcon: Icons.settings_outlined,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildEditableField('username', _controllers['username']),
-            const SizedBox(height: 20),
+  Widget _buildAccountSettingsCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Impostazioni account',
+      leadingIcon: Icons.settings_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildEditableField('username', _controllers['username']),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              // Implementa la logica per cambiare la password
+            },
+            child: const Text('Cambia Password'),
+          ),
+          const SizedBox(height: 20),
+          if (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' ||
+              widget.userId != null)
             ElevatedButton(
-              onPressed: () {
-                // Implementa la logica per cambiare la password
-              },
-              child: const Text('Cambia Password'),
+              onPressed: _showDeleteConfirmationDialog,
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Elimina Account'),
             ),
-            const SizedBox(height: 20),
-            if (ref.read(usersServiceProvider).getCurrentUserRole() ==
-                    'admin' ||
-                widget.userId != null)
-              ElevatedButton(
-                onPressed: _showDeleteConfirmationDialog,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Elimina Account'),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildFitnessDataTab() {
-    final glassEnabled = ref.watch(uiGlassEnabledProvider);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: AppCard(
-        glass: glassEnabled,
-        title: 'Dati fitness',
-        leadingIcon: Icons.fitness_center_outlined,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildEditableField('altezza', _controllers['height']),
-            _buildEditableField('peso', _controllers['weight']),
-            _buildEditableField('grassoCorpo', _controllers['bodyFat']),
-          ],
-        ),
+  Widget _buildFitnessDataCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Dati fitness',
+      leadingIcon: Icons.fitness_center_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildEditableField('altezza', _controllers['height']),
+          _buildEditableField('peso', _controllers['weight']),
+          _buildEditableField('grassoCorpo', _controllers['bodyFat']),
+        ],
       ),
     );
   }
 
-  Widget _buildSubscriptionsTab() {
-    return SubscriptionsScreen(
-      userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid,
+  Widget _buildSubscriptionsCard() {
+    return AppCard(
+      glass: ref.watch(uiGlassEnabledProvider),
+      title: 'Abbonamenti',
+      leadingIcon: Icons.subscriptions_outlined,
+      child: SubscriptionsScreen(
+        userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid,
+      ),
     );
   }
 

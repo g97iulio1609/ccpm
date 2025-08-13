@@ -477,9 +477,9 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
+            return AppDialog(
               title: const Text('Regala Abbonamento'),
-              content: Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('Seleziona la durata dell\'abbonamento:'),
