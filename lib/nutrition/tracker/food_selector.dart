@@ -7,7 +7,7 @@ import 'food_autocomplete.dart';
 import 'package:go_router/go_router.dart';
 import '../../Main/app_theme.dart';
 import '../../UI/components/button.dart';
-import '../../UI/components/card.dart';
+import '../../UI/components/app_card.dart';
 import '../../UI/components/input.dart';
 import '../../UI/components/badge.dart';
 

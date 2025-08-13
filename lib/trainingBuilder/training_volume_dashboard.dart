@@ -5,6 +5,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 class TrainingVolumeDashboard extends ConsumerStatefulWidget {
   final String programId;
@@ -49,53 +52,74 @@ class TrainingVolumeDashboardState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: DropdownButton<String>(
-                value: selectedExercise,
-                items: exerciseVolumes.keys.map((String exercise) {
-                  return DropdownMenuItem<String>(
-                    value: exercise,
-                    child: Text(exercise),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedExercise = newValue;
-                  });
-                },
-                isExpanded: true,
-                hint: const Text('Seleziona un esercizio'),
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
+
+    final content = SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: DropdownButton<String>(
+              value: selectedExercise,
+              items: exerciseVolumes.keys.map((String exercise) {
+                return DropdownMenuItem<String>(
+                  value: exercise,
+                  child: Text(exercise),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedExercise = newValue;
+                });
+              },
+              isExpanded: true,
+              hint: const Text('Seleziona un esercizio'),
+            ),
+          ),
+          if (selectedExercise != null) ...[
+            Expanded(
+              flex: 2,
+              child: _buildExerciseVolumeCard(
+                context,
+                selectedExercise!,
+                exerciseVolumes[selectedExercise!]!,
               ),
             ),
-            if (selectedExercise != null) ...[
-              Expanded(
-                flex: 2,
-                child: _buildExerciseVolumeCard(
-                  context,
-                  selectedExercise!,
-                  exerciseVolumes[selectedExercise!]!,
-                ),
+            Expanded(
+              flex: 3,
+              child: _buildDetailedStatsTable(
+                context,
+                selectedExercise!,
+                detailedStats[selectedExercise!]!,
               ),
-              Expanded(
-                flex: 3,
-                child: _buildDetailedStatsTable(
-                  context,
-                  selectedExercise!,
-                  detailedStats[selectedExercise!]!,
-                ),
-              ),
-            ] else
-              const Expanded(
-                child: Center(child: Text('Nessun esercizio selezionato')),
-              ),
-          ],
-        ),
+            ),
+          ] else
+            const Expanded(
+              child: Center(child: Text('Nessun esercizio selezionato')),
+            ),
+        ],
       ),
+    );
+
+    return Scaffold(
+      backgroundColor: cs.surface,
+      body: glassEnabled
+          ? GlassLite(padding: EdgeInsets.zero, radius: 0, child: content)
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cs.surface,
+                    cs.surfaceContainerHighest.withAlpha(128),
+                  ],
+                ),
+              ),
+              child: content,
+            ),
     );
   }
 
@@ -108,79 +132,67 @@ class TrainingVolumeDashboardState
     final minY = volumeData.reduce((a, b) => a < b ? a : b);
     final yInterval = ((maxY - minY) / 5).ceilToDouble();
 
-    final colorScheme = Theme.of(context).colorScheme;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOutCubic,
+    return AppCard(
+      glass: true,
       margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(38),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(exerciseName, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            Expanded(
-              child: LineChart(
-                LineChartData(
-                  gridData: const FlGridData(show: true),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        interval: yInterval,
-                        getTitlesWidget: (value, meta) {
-                          return Text(value.toInt().toString());
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          return Text('W${value.toInt() + 1}');
-                        },
-                        reservedSize: 30,
-                      ),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(exerciseName, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 16),
+          Expanded(
+            child: LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      interval: yInterval,
+                      getTitlesWidget: (value, meta) {
+                        return Text(value.toInt().toString());
+                      },
                     ),
                   ),
-                  borderData: FlBorderData(show: true),
-                  minX: 0,
-                  maxX: volumeData.length.toDouble() - 1,
-                  minY: minY,
-                  maxY: maxY,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: volumeData.asMap().entries.map((entry) {
-                        return FlSpot(entry.key.toDouble(), entry.value);
-                      }).toList(),
-                      isCurved: true,
-                      color: Colors.blue,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                      belowBarData: BarAreaData(show: false),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        return Text('W${value.toInt() + 1}');
+                      },
+                      reservedSize: 30,
                     ),
-                  ],
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
+                borderData: FlBorderData(show: true),
+                minX: 0,
+                maxX: volumeData.length.toDouble() - 1,
+                minY: minY,
+                maxY: maxY,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: volumeData.asMap().entries.map((entry) {
+                      return FlSpot(entry.key.toDouble(), entry.value);
+                    }).toList(),
+                    isCurved: true,
+                    color: Colors.blue,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -190,19 +202,9 @@ class TrainingVolumeDashboardState
     String exerciseName,
     List<List<ExerciseStats>> detailedStats,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOutCubic,
+    return AppCard(
+      glass: true,
       margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(38),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
-        ],
-      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: SingleChildScrollView(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/glass.dart';
 
 class IconButtonWithBackground extends StatelessWidget {
   final IconData icon;
@@ -28,44 +29,50 @@ class IconButtonWithBackground extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: isGradient
-            ? LinearGradient(colors: [color, color.withAlpha(204)])
-            : null,
-        color: isGradient ? null : color.withAlpha(26),
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: isOutlined
-            ? Border.all(color: color.withAlpha(76), width: 1.5)
-            : null,
-        boxShadow: isGradient
-            ? [
-                BoxShadow(
-                  color: color.withAlpha(51),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: Tooltip(
-          message: tooltip ?? '',
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            child: Padding(
-              padding: padding,
-              child: Icon(
-                icon,
-                color: isGradient ? colorScheme.surface : color,
-                size: size,
-              ),
+    final content = Material(
+      color: Colors.transparent,
+      child: Tooltip(
+        message: tooltip ?? '',
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          child: Padding(
+            padding: padding,
+            child: Icon(
+              icon,
+              color: isGradient ? colorScheme.surface : color,
+              size: size,
             ),
           ),
         ),
       ),
+    );
+
+    if (isGradient) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [color, color.withAlpha(204)]),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          boxShadow: [
+            BoxShadow(
+              color: color.withAlpha(51),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: content,
+      );
+    }
+
+    return GlassLite(
+      padding: EdgeInsets.zero,
+      radius: AppTheme.radii.lg,
+      tint: color.withAlpha(32),
+      border: isOutlined
+          ? Border.all(color: color.withAlpha(76), width: 1.5)
+          : null,
+      child: content,
     );
   }
 

@@ -6,6 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/badge.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/Main/route_metadata.dart';
 
 class CustomDrawer extends ConsumerWidget {
   const CustomDrawer({
@@ -46,114 +50,144 @@ class CustomDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final menuItems = _getMenuItems(userRole);
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
+    final menuItems = _getTopLevelMenuItems(userRole);
+
+    final childShell = SafeArea(
+      child: Column(
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                // Menu Items
+                SliverPadding(
+                  padding: EdgeInsets.all(AppTheme.spacing.lg),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      ...menuItems.map(
+                        (menuItem) => _buildMenuItem(
+                          context,
+                          menuItem,
+                          userRole,
+                          theme,
+                          colorScheme,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildSecondaryGroups(
+                        context,
+                        theme,
+                        colorScheme,
+                        userRole,
+                      ),
+                    ]),
+                  ),
+                ),
+
+                // Current Program Section (glass look)
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.lg,
+                    vertical: AppTheme.spacing.md,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GlassLite(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.md,
+                            vertical: AppTheme.spacing.xs,
+                          ),
+                          child: Text(
+                            'Programma Corrente',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.spacing.md),
+                        GlassLite(
+                          padding: EdgeInsets.zero,
+                          child: _buildCurrentProgram(
+                            context,
+                            theme,
+                            colorScheme,
+                            glassEnabled,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // User Profile / Logout section coerente con glass
+          Padding(
+            padding: EdgeInsets.only(
+              left: AppTheme.spacing.lg,
+              right: AppTheme.spacing.lg,
+              bottom: AppTheme.spacing.lg,
+            ),
+            child: AppCard(
+              glass: true,
+              glassTint: colorScheme.surface.withAlpha(172),
+              glassBlur: 16,
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _buildUserProfile(context, ref, theme, colorScheme),
+                  Divider(color: colorScheme.outline.withAlpha(38), height: 1),
+                  _buildLogoutButton(context, theme, colorScheme),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
     return Drawer(
       elevation: 0,
-      backgroundColor: colorScheme.surface,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: CustomScrollView(
-                  slivers: [
-                    // Menu Items
-                    SliverPadding(
-                      padding: EdgeInsets.all(AppTheme.spacing.lg),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          ...menuItems.map(
-                            (menuItem) => _buildMenuItem(
-                              context,
-                              menuItem,
-                              userRole,
-                              theme,
-                              colorScheme,
-                            ),
-                          ),
-                        ]),
-                      ),
-                    ),
-
-                    // Current Program Section
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.lg,
-                        vertical: AppTheme.spacing.md,
-                      ),
-                      sliver: SliverToBoxAdapter(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: AppTheme.spacing.md,
-                                vertical: AppTheme.spacing.xs,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer.withAlpha(
-                                  76,
-                                ),
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.radii.full,
-                                ),
-                              ),
-                              child: Text(
-                                'Programma Corrente',
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: AppTheme.spacing.md),
-                            _buildCurrentProgram(context, theme, colorScheme),
-                          ],
-                        ),
-                      ),
-                    ),
+      backgroundColor: Colors.transparent,
+      child: glassEnabled
+          ? GlassLite(
+              padding: EdgeInsets.zero,
+              radius: 0,
+              blur: 16,
+              tint: colorScheme.brightness == Brightness.dark
+                  ? colorScheme.surface.withAlpha(172)
+                  : colorScheme.surface.withAlpha(212),
+              border: Border.all(
+                color: colorScheme.outline.withAlpha(38),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withAlpha(20),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+              child: childShell,
+            )
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest.withAlpha(128),
                   ],
+                  stops: const [0.0, 1.0],
                 ),
               ),
-
-              // User Profile Section
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  border: Border(
-                    top: BorderSide(color: colorScheme.outline.withAlpha(25)),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow.withAlpha(13),
-                      blurRadius: 8,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildUserProfile(context, ref, theme, colorScheme),
-                    _buildLogoutButton(context, theme, colorScheme),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+              child: childShell,
+            ),
     );
   }
 
@@ -173,9 +207,12 @@ class CustomDrawer extends ConsumerWidget {
       margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: isSelected
-            ? colorScheme.primaryContainer.withAlpha(76)
+            ? colorScheme.surfaceContainerHighest.withAlpha(128)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        border: isSelected
+            ? Border.all(color: colorScheme.outline.withAlpha(38))
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -193,7 +230,7 @@ class CustomDrawer extends ConsumerWidget {
                   padding: EdgeInsets.all(AppTheme.spacing.sm),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? colorScheme.primary.withAlpha(51)
+                        ? colorScheme.primary.withAlpha(38)
                         : colorScheme.surfaceContainerHighest.withAlpha(76),
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
@@ -210,9 +247,7 @@ class CustomDrawer extends ConsumerWidget {
                   child: Text(
                     menuItem,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.onSurface,
+                      color: colorScheme.onSurface,
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w500,
@@ -234,10 +269,68 @@ class CustomDrawer extends ConsumerWidget {
     );
   }
 
+  Widget _buildSecondaryGroups(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String userRole,
+  ) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final groups = <String, List<String>>{
+      'Nutrizione': ['Diet Plans', 'Meals Preferiti', 'Food Management'],
+      'Impostazioni': ['Impostazioni AI'],
+      if (userRole == 'admin' || userRole == 'coach')
+        'Admin': ['Gestione Utenti'],
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: groups.entries.map((entry) {
+        return Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md),
+            childrenPadding: EdgeInsets.only(
+              left: AppTheme.spacing.lg,
+              right: AppTheme.spacing.md,
+              bottom: AppTheme.spacing.sm,
+            ),
+            leading: Icon(Icons.folder, color: colorScheme.onSurfaceVariant),
+            title: Text(
+              entry.key,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            children: entry.value.map((label) {
+              final route = _getRouteForMenuItem(label, userRole, userId);
+              return ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.md,
+                  vertical: AppTheme.spacing.xs,
+                ),
+                leading: Icon(
+                  _getIconForMenuItem(label),
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                title: Text(label, style: theme.textTheme.bodyMedium),
+                onTap: route != null ? () => _navigateTo(context, route) : null,
+              );
+            }).toList(),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildCurrentProgram(
     BuildContext context,
     ThemeData theme,
     ColorScheme colorScheme,
+    bool glassEnabled,
   ) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
@@ -248,13 +341,9 @@ class CustomDrawer extends ConsumerWidget {
         if (snapshot.hasData && snapshot.data!.exists) {
           final programId = snapshot.data!.get('currentProgram') as String?;
           if (programId != null) {
-            return Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                border: Border.all(color: colorScheme.outline.withAlpha(25)),
-                boxShadow: AppTheme.elevations.small,
-              ),
+            return AppCard(
+              glass: glassEnabled,
+              padding: EdgeInsets.zero,
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('weeks')
@@ -523,6 +612,7 @@ class CustomDrawer extends ConsumerWidget {
       'Food Management': '/food_management',
       'Calcolatore Macronutrienti': '/macros_selector',
       'Misurazioni': '/measurements',
+      'Diet Plans': '/food_tracker/view_diet_plans',
       'Meals Preferiti': '/mymeals',
       'Abbonamenti': '/subscriptions',
       'Impostazioni AI': '/settings/ai',
@@ -532,64 +622,56 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   IconData _getIconForMenuItem(String menuItem) {
-    final icons = {
-      'Coaching': Icons.school,
-      'Association': Icons.people,
-      'I Miei Allenamenti': Icons.fitness_center,
-      'Galleria Allenamenti': Icons.collections_bookmark,
-      'Esercizi': Icons.sports,
-      'Massimali': Icons.trending_up,
-      'Profilo Utente': Icons.person,
-      'Gestione Utenti': Icons.supervised_user_circle,
-      'Fabbisogno Calorico': Icons.local_dining,
-      'Calcolatore Macronutrienti': Icons.calculate,
-      'Food Tracker': Icons.restaurant_menu,
-      'Food Management': Icons.fastfood,
-      'Misurazioni': Icons.straighten,
-      'Meals Preferiti': Icons.favorite,
-      'Abbonamenti': Icons.subscriptions,
-      'Impostazioni AI': Icons.smart_toy,
-      'Chat AI': Icons.chat,
-    };
-    return icons[menuItem] ?? Icons.menu;
+    final route = _getRouteForMenuItem(
+      menuItem,
+      userRole,
+      FirebaseAuth.instance.currentUser?.uid,
+    );
+    if (route != null) {
+      final meta = RouteMetadata.resolveByCurrentPath(route);
+      if (meta != null) return meta.icon;
+    }
+    // Fallback locale minimale per etichette non mappate
+    switch (menuItem) {
+      case 'I Miei Allenamenti':
+        return Icons.fitness_center;
+      case 'Food Tracker':
+        return Icons.restaurant_menu;
+      case 'Misurazioni':
+        return Icons.straighten;
+      case 'Massimali':
+        return Icons.trending_up;
+      case 'Esercizi':
+        return Icons.sports;
+      case 'Abbonamenti':
+        return Icons.subscriptions;
+      case 'Profilo Utente':
+        return Icons.person;
+      default:
+        return Icons.menu;
+    }
   }
 
-  List<String> _getMenuItems(String userRole) {
-    final adminItems = [
+  List<String> _getTopLevelMenuItems(String userRole) {
+    // Limitiamo a 5-7 voci principali
+    final admin = [
       'Coaching',
-      'Association',
       'I Miei Allenamenti',
-      'Abbonamenti',
-      'Galleria Allenamenti',
-      'Esercizi',
-      'Massimali',
-      'Profilo Utente',
-      'Gestione Utenti',
-      'Fabbisogno Calorico',
-      'Calcolatore Macronutrienti',
-      'Food Tracker',
-      'Food Management',
-      'Misurazioni',
-      'Meals Preferiti',
-      'Chat AI',
-      'Impostazioni AI',
-    ];
-    final clientItems = [
-      'I Miei Allenamenti',
-      'Association',
-      'Abbonamenti',
-      'Esercizi',
-      'Massimali',
-      'Profilo Utente',
-      'Fabbisogno Calorico',
-      'Calcolatore Macronutrienti',
       'Food Tracker',
       'Misurazioni',
-      'Chat AI',
-      'Impostazioni AI',
+      'Massimali',
+      'Esercizi',
+      'Abbonamenti',
+      'Profilo Utente',
     ];
-    return (userRole == 'admin' || userRole == 'coach')
-        ? adminItems
-        : clientItems;
+    final client = [
+      'I Miei Allenamenti',
+      'Food Tracker',
+      'Misurazioni',
+      'Massimali',
+      'Esercizi',
+      'Profilo Utente',
+    ];
+    return (userRole == 'admin' || userRole == 'coach') ? admin : client;
   }
 }

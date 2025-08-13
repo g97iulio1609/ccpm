@@ -1,6 +1,6 @@
 import 'package:alphanessone/UI/components/badge.dart';
 import 'package:alphanessone/UI/components/button.dart';
-import 'package:alphanessone/UI/components/card.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/checkbox.dart';
 import 'package:alphanessone/UI/components/column.dart';
 import 'package:alphanessone/UI/components/input.dart';

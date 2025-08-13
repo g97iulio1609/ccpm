@@ -1,8 +1,11 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'dart:ui' as ui;
 import 'auth_service.dart';
 import 'auth_form.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 class AuthScreen extends HookConsumerWidget {
   const AuthScreen({super.key});
@@ -15,33 +18,18 @@ class AuthScreen extends HookConsumerWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient con Pattern
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.colorScheme.surface,
-                  theme.colorScheme.surfaceContainerHighest,
-                ],
-              ),
-            ),
-            child: const AnimatedGridPattern(),
-          ),
+          const _AuthBackground(),
 
           // Content
           Center(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.xl),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo Section
                     _buildLogoSection(theme),
-                    const SizedBox(height: 48),
-                    // Auth Container
+                    SizedBox(height: AppTheme.spacing.xxl),
                     _buildAuthContainer(theme, authService),
                   ],
                 ),
@@ -93,7 +81,7 @@ class AuthScreen extends HookConsumerWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Begin your journey',
+          'Inizia il tuo percorso',
           style: theme.textTheme.titleMedium?.copyWith(
             color: theme.colorScheme.onSurface.withAlpha(179),
             letterSpacing: 0.5,
@@ -104,30 +92,105 @@ class AuthScreen extends HookConsumerWidget {
   }
 
   Widget _buildAuthContainer(ThemeData theme, AuthService authService) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 400),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withAlpha(179),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: theme.colorScheme.primary.withAlpha(26),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(26),
-            blurRadius: 40,
-            offset: const Offset(0, 10),
-          ),
-        ],
+    return GlassLite(
+      radius: AppTheme.radii.xl,
+      padding: EdgeInsets.all(AppTheme.spacing.xl),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: AuthForm(authService: authService),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: AuthForm(authService: authService),
+    );
+  }
+}
+
+class _AuthBackground extends ConsumerWidget {
+  const _AuthBackground();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final mq = MediaQuery.of(context);
+    final bool reduceMotion = mq.disableAnimations || mq.accessibleNavigation;
+    final bool glassEnabled = ref.watch(uiGlassEnabledProvider);
+
+    return Stack(
+      children: [
+        // Base gradient coerente con le altre schermate
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [cs.surface, cs.surfaceContainerHighest.withAlpha(128)],
+              stops: const [0.0, 1.0],
+            ),
+          ),
+        ),
+        // Accenti radiali soft (primary)
+        Positioned(
+          top: -80,
+          left: -60,
+          child: _RadialAccent(color: cs.primary, diameter: 280, opacity: 0.18),
+        ),
+        // Accenti radiali soft (secondary)
+        Positioned(
+          bottom: -100,
+          right: -80,
+          child: _RadialAccent(
+            color: cs.secondary,
+            diameter: 340,
+            opacity: 0.14,
+          ),
+        ),
+        // Velo glass "lite" che ammorbidisce gli accenti se abilitato
+        if (glassEnabled && !reduceMotion)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(color: cs.surface.withAlpha(26)),
+                ),
+              ),
+            ),
+          ),
+        // Pattern animato molto lieve, disattivato se l'utente preferisce meno motion
+        if (!reduceMotion)
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 600),
+            opacity: 0.7,
+            child: const AnimatedGridPattern(),
+          ),
+      ],
+    );
+  }
+}
+
+class _RadialAccent extends StatelessWidget {
+  final Color color;
+  final double diameter;
+  final double opacity;
+
+  const _RadialAccent({
+    required this.color,
+    required this.diameter,
+    this.opacity = 0.15,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: diameter,
+        height: diameter,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: opacity),
+              Colors.transparent,
+            ],
           ),
         ),
       ),

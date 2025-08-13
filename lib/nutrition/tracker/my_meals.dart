@@ -1,5 +1,5 @@
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/UI/components/card.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/badge.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/Main/app_theme.dart';
@@ -239,18 +239,6 @@ class FavouriteDays extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Giorni Preferiti',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
-      ),
       body: FutureBuilder<List<meals.FavoriteDay>>(
         future: mealsService.getFavoriteDays(userId),
         builder: (context, snapshot) {

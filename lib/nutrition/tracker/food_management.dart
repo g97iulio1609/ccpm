@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import '../services/food_services.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 final foodServiceProvider = Provider<FoodService>((ref) {
   return FoodService(FirebaseFirestore.instance);
@@ -16,6 +18,9 @@ class FoodManagement extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final foodService = ref.read(foodServiceProvider);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     final importPagesController = useTextEditingController(text: '10');
     final importDelayController = useTextEditingController(text: '60');
@@ -154,215 +159,245 @@ class FoodManagement extends HookConsumerWidget {
       ).showSnackBar(const SnackBar(content: Text('Normalization completed')));
     }
 
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Text(
-              'Import Foods',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    final Widget childContent = Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Text(
+            'Import Foods',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
             ),
-            const SizedBox(height: 16),
-            FutureBuilder<int>(
-              future: foodService.getTotalFoodsCount(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return const Text('Error loading food count');
-                } else {
-                  return Text(
-                    'Total foods: ${snapshot.data}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+          ),
+          const SizedBox(height: 16),
+          FutureBuilder<int>(
+            future: foodService.getTotalFoodsCount(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text(
+                  'Error loading food count',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: cs.error),
+                );
+              } else {
+                return Text(
+                  'Total foods: ${snapshot.data}',
+                  style: theme.textTheme.titleLarge,
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView(
+              children: [
+                MultiSelectDialogField(
+                  items: categories
+                      .map((e) => MultiSelectItem<String>(e, e))
+                      .toList(),
+                  title: Text(
+                    'Categories',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: cs.onSurface,
                     ),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView(
-                children: [
-                  MultiSelectDialogField(
-                    items: categories
-                        .map((e) => MultiSelectItem<String>(e, e))
-                        .toList(),
-                    title: const Text(
-                      "Categories",
-                      style: TextStyle(color: Colors.white),
+                  ),
+                  selectedColor: cs.primary,
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    border: Border.all(
+                      color: cs.outline.withAlpha(51),
+                      width: 1,
                     ),
-                    selectedColor: Theme.of(context).primaryColor,
+                  ),
+                  buttonIcon: Icon(Icons.arrow_drop_down, color: cs.onSurface),
+                  buttonText: Text(
+                    'Select Categories',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  onConfirm: (results) {
+                    selectedCategories.value = results.cast<String>();
+                  },
+                  itemsTextStyle: TextStyle(color: cs.onSurface),
+                  chipDisplay: MultiSelectChipDisplay(
+                    textStyle: TextStyle(color: cs.onPrimary),
+                    chipColor: cs.primary,
                     decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: const BorderRadius.all(Radius.circular(4)),
-                      border: Border.all(color: Colors.grey, width: 1),
-                    ),
-                    buttonIcon: const Icon(
-                      Icons.arrow_drop_down,
-                      color: Colors.white,
-                    ),
-                    buttonText: const Text(
-                      "Select Categories",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    onConfirm: (results) {
-                      selectedCategories.value = results.cast<String>();
-                    },
-                    itemsTextStyle: const TextStyle(
-                      color: Colors.white,
-                    ), // Added text style
-                    chipDisplay: MultiSelectChipDisplay(
-                      textStyle: const TextStyle(color: Colors.white),
-                      chipColor: Theme.of(context).primaryColor,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white),
-                      ),
+                      border: Border.all(color: cs.primary),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedLanguage.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Language',
-                      labelStyle: TextStyle(color: Colors.white),
-                      border: OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey),
-                      ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedLanguage.value,
+                  decoration: InputDecoration(
+                    labelText: 'Language',
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                    border: const OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: cs.outline.withAlpha(51)),
                     ),
-                    dropdownColor: Colors.black,
-                    style: const TextStyle(color: Colors.white),
-                    onChanged: (String? newValue) {
-                      selectedLanguage.value = newValue!;
-                    },
-                    items: languages.map<DropdownMenuItem<String>>((
-                      String value,
-                    ) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
                   ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedCountry.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Country',
-                      labelStyle: TextStyle(color: Colors.white),
-                      border: OutlineInputBorder(),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey),
-                      ),
+                  dropdownColor: cs.surface,
+                  style: TextStyle(color: cs.onSurface),
+                  onChanged: (String? newValue) {
+                    selectedLanguage.value = newValue!;
+                  },
+                  items: languages.map<DropdownMenuItem<String>>((
+                    String value,
+                  ) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedCountry.value,
+                  decoration: InputDecoration(
+                    labelText: 'Country',
+                    labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                    border: const OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: cs.outline.withAlpha(51)),
                     ),
-                    dropdownColor: Colors.black,
-                    style: const TextStyle(color: Colors.white),
-                    onChanged: (String? newValue) {
-                      selectedCountry.value = newValue!;
-                    },
-                    items: countries.map<DropdownMenuItem<String>>((
-                      String value,
-                    ) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: importPagesController,
-                          decoration: const InputDecoration(
-                            labelText: 'Number of Pages',
-                            labelStyle: TextStyle(color: Colors.white),
-                            border: OutlineInputBorder(),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey),
+                  dropdownColor: cs.surface,
+                  style: TextStyle(color: cs.onSurface),
+                  onChanged: (String? newValue) {
+                    selectedCountry.value = newValue!;
+                  },
+                  items: countries.map<DropdownMenuItem<String>>((
+                    String value,
+                  ) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: importPagesController,
+                        decoration: InputDecoration(
+                          labelText: 'Number of Pages',
+                          labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                          border: const OutlineInputBorder(),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: cs.outline.withAlpha(51),
                             ),
                           ),
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white),
                         ),
+                        keyboardType: TextInputType.number,
+                        style: TextStyle(color: cs.onSurface),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: importDelayController,
-                          decoration: const InputDecoration(
-                            labelText: 'Delay (seconds)',
-                            labelStyle: TextStyle(color: Colors.white),
-                            border: OutlineInputBorder(),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: importDelayController,
+                        decoration: InputDecoration(
+                          labelText: 'Delay (seconds)',
+                          labelStyle: TextStyle(color: cs.onSurfaceVariant),
+                          border: const OutlineInputBorder(),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: cs.outline.withAlpha(51),
                             ),
                           ),
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white),
                         ),
+                        keyboardType: TextInputType.number,
+                        style: TextStyle(color: cs.onSurface),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: startImport,
-                        child: const Text('Start Import'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: startImport,
+                      child: const Text('Start Import'),
+                    ),
+                    ElevatedButton(
+                      onPressed: stopImport,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cs.error,
                       ),
-                      ElevatedButton(
-                        onPressed: stopImport,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                      child: const Text('Stop Import'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: updateTranslations,
+                  child: const Text('Update Translations'),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: normalizeNames,
+                  child: const Text('Normalize Names'),
+                ),
+                const SizedBox(height: 24),
+                StreamBuilder<Map<String, int>>(
+                  stream: foodService.importProgressStream,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Text(
+                        'No import progress',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
                         ),
-                        child: const Text('Stop Import'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: updateTranslations,
-                    child: const Text('Update Translations'),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: normalizeNames,
-                    child: const Text('Normalize Names'),
-                  ),
-                  const SizedBox(height: 24),
-                  StreamBuilder<Map<String, int>>(
-                    stream: foodService.importProgressStream,
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Text(
-                          'No import progress',
-                          style: TextStyle(color: Colors.white),
+                      );
+                    }
+                    final progress = snapshot.data!;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: progress.entries.map((entry) {
+                        return Text(
+                          '${entry.key}: ${entry.value} products imported',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                          ),
                         );
-                      }
-                      final progress = snapshot.data!;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: progress.entries.map((entry) {
-                          return Text(
-                            '${entry.key}: ${entry.value} products imported',
-                            style: const TextStyle(color: Colors.white),
-                          );
-                        }).toList(),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+
+    return Scaffold(
+      backgroundColor: cs.surface,
+      body: glassEnabled
+          ? GlassLite(padding: EdgeInsets.zero, radius: 0, child: childContent)
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    cs.surface,
+                    cs.surfaceContainerHighest.withAlpha(128),
+                  ],
+                ),
+              ),
+              child: childContent,
+            ),
     );
   }
 }

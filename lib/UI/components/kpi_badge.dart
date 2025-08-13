@@ -11,8 +11,9 @@ class KpiBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final background = (color ?? colorScheme.primary).withAlpha(76);
-    final foreground = color ?? colorScheme.primary;
+    final base = color ?? colorScheme.primary;
+    final background = base.withAlpha(76);
+    final foreground = base.computeLuminance() > 0.5 ? Colors.black : base;
 
     return Container(
       padding: EdgeInsets.symmetric(

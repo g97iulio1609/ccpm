@@ -1,11 +1,13 @@
 // app_bar_custom.dart
 
 import 'package:alphanessone/Viewer/providers/training_program_provider.dart';
+import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_ui;
 import 'package:alphanessone/exerciseManager/exercises_manager.dart';
 import 'package:alphanessone/ExerciseRecords/maxrmdashboard.dart';
 import 'package:alphanessone/measurements/measurements.dart';
 import 'package:alphanessone/nutrition/models/meals_model.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +22,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:alphanessone/Store/in_app_purchase_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/snackbar.dart';
+import 'package:alphanessone/Main/route_metadata.dart';
+import 'package:alphanessone/UI/components/glass.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
@@ -56,54 +60,16 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   }
 
   String _getTitleForRoute(String currentPath) {
+    final meta = RouteMetadata.resolveByCurrentPath(currentPath);
+    if (meta != null) return meta.title;
     if (currentPath.contains('/workout_details/')) {
-      return ref.watch(currentWorkoutNameProvider);
+      return ref.watch(workout_ui.currentWorkoutNameProvider);
     } else if (currentPath.contains('/week_details/')) {
       return ref.watch(currentWeekNameProvider);
     } else if (currentPath.contains('/maxrmdashboard/exercise_stats')) {
       return ref.watch(currentMaxRMExerciseNameProvider);
     }
-
-    switch (currentPath) {
-      case '/programs_screen':
-        return 'Coaching';
-      case '/user_programs':
-        return 'I Miei Allenamenti';
-      case '/exercises_list':
-        return 'Esercizi';
-      case '/subscriptions':
-        return 'Abbonamenti';
-      case '/maxrmdashboard':
-        return 'Massimali';
-      case '/user_profile':
-        return 'Profilo Utente';
-      case '/training_program':
-        return 'Programma di Allenamento';
-      case '/users_dashboard':
-        return 'Gestione Utenti';
-      case '/volume_dashboard':
-        return 'Volume Allenamento';
-      case '/measurements':
-        return 'Misurazioni';
-      case '/tdee':
-        return 'Fabbisogno Calorico';
-      case '/macros_selector':
-        return 'Calcolatore Macronutrienti';
-      case '/training_gallery':
-        return 'Galleria Allenamenti';
-      case '/food_tracker':
-        return 'Tracciatore Cibo';
-      case '/food_tracker/diet_plan':
-        return 'Aggiungi Piano Dietetico';
-      case '/food_tracker/view_diet_plans':
-        return 'Visualizza Piani Dietetici';
-      case '/ai/chat':
-        return 'AI Assistant';
-      case '/settings/ai':
-        return 'Impostazioni AI';
-      default:
-        return 'Alphaness One';
-    }
+    return 'Alphaness One';
   }
 
   bool _isTrainingProgramRoute(String currentRoute) {
@@ -336,37 +302,40 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme =
+        theme.colorScheme; // kept for future AppBar icon/text tints
     final currentRoute = GoRouterState.of(context).uri.toString();
     final isBackButtonVisible = currentRoute.split('/').length > 2;
     final selectedDate = ref.watch(selectedDateProvider);
     final isAdmin = widget.userRole == 'admin';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withAlpha(51),
-            blurRadius: 8,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: AppBar(
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: isBackButtonVisible
-            ? _buildLeadingButtons(currentRoute)
-            : null,
-        title: _isDailyFoodTrackerRoute(currentRoute)
-            ? _buildDateSelector(selectedDate)
-            : _buildTitle(currentRoute),
-        actions: _buildActions(currentRoute, isAdmin),
-      ),
+    final applyGlassEverywhere = ref.watch(appBarGlassAllRoutesProvider);
+    final isTopLevel =
+        !_isBreadcrumbRoute(currentRoute) &&
+        !_isDailyFoodTrackerRoute(currentRoute);
+    final useGlass = applyGlassEverywhere || isTopLevel;
+
+    final appBar = AppBar(
+      centerTitle: true,
+      backgroundColor: useGlass
+          ? Colors.transparent
+          : theme.colorScheme.surface,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      foregroundColor: colorScheme.onSurface,
+      iconTheme: IconThemeData(color: colorScheme.onSurface),
+      leading: isBackButtonVisible ? _buildLeadingButtons(currentRoute) : null,
+      title: _isDailyFoodTrackerRoute(currentRoute)
+          ? _buildDateSelector(selectedDate)
+          : _isBreadcrumbRoute(currentRoute)
+          ? _buildBreadcrumb(currentRoute)
+          : _buildTitle(currentRoute),
+      actions: _buildActions(currentRoute, isAdmin),
     );
+
+    if (!useGlass) return appBar;
+
+    return GlassLite(padding: EdgeInsets.zero, radius: 0, child: appBar);
   }
 
   Widget _buildTitle(String currentRoute) {
@@ -393,56 +362,127 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           ),
         ),
         SizedBox(width: AppTheme.spacing.sm),
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.5,
+        if (currentRoute.contains('/training_viewer/')) ...[
+          // Breadcrumb: Week / Workout quando nel viewer
+          Row(
+            children: [
+              Text(
+                ref.watch(currentWeekNameProvider),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              Text(
+                ' / ',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                ref.watch(currentWorkoutNameProvider),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        ),
+        ] else ...[
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
       ],
     );
   }
 
   IconData _getIconForRoute(String currentPath) {
+    final meta = RouteMetadata.resolveByCurrentPath(currentPath);
+    if (meta != null) return meta.icon;
     if (currentPath.contains('/exercise_details/')) return Icons.fitness_center;
     if (currentPath.contains('/workout_details/')) return Icons.schedule;
     if (currentPath.contains('/week_details/')) return Icons.calendar_today;
-
-    switch (currentPath) {
-      case '/programs_screen':
-        return Icons.people;
-      case '/user_programs':
-        return Icons.fitness_center;
-      case '/exercises_list':
-        return Icons.list;
-      case '/subscriptions':
-        return Icons.card_membership;
-      case '/maxrmdashboard':
-        return Icons.trending_up;
-      case '/user_profile':
-        return Icons.person;
-      case '/training_program':
-        return Icons.edit;
-      case '/users_dashboard':
-        return Icons.group;
-      case '/volume_dashboard':
-        return Icons.bar_chart;
-      case '/measurements':
-        return Icons.straighten;
-      case '/tdee':
-        return Icons.local_fire_department;
-      case '/macros_selector':
-        return Icons.pie_chart;
-      case '/training_gallery':
-        return Icons.photo_library;
-      case '/food_tracker':
-        return Icons.restaurant_menu;
-      default:
-        return Icons.dashboard;
-    }
+    return Icons.dashboard;
   }
+
+  bool _isBreadcrumbRoute(String currentRoute) {
+    return currentRoute.contains('/user_programs') ||
+        currentRoute.contains('/workout_details') ||
+        currentRoute.contains('/week_details');
+  }
+
+  Widget _buildBreadcrumb(String currentRoute) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final List<Widget> crumbs = [];
+
+    Widget chip(IconData icon, String text) => Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing.sm,
+        vertical: AppTheme.spacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withAlpha(77),
+        borderRadius: BorderRadius.circular(AppTheme.radii.full),
+        border: Border.all(color: colorScheme.outline.withAlpha(26)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
+          SizedBox(width: AppTheme.spacing.xs),
+          Text(
+            text,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // Root
+    crumbs.add(chip(Icons.fitness_center, 'Allenamenti'));
+
+    // Week name if available
+    final weekName = ref.read(currentWeekNameProvider);
+    if (weekName.isNotEmpty) {
+      crumbs.add(_breadcrumbSeparator(colorScheme));
+      crumbs.add(chip(Icons.calendar_today, weekName));
+    }
+
+    // Workout name if available
+    final workoutName = ref.read(currentWorkoutNameProvider);
+    if (workoutName.isNotEmpty) {
+      crumbs.add(_breadcrumbSeparator(colorScheme));
+      crumbs.add(chip(Icons.schedule, workoutName));
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(mainAxisSize: MainAxisSize.min, children: crumbs),
+    );
+  }
+
+  Widget _breadcrumbSeparator(ColorScheme colorScheme) => Padding(
+    padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.xs),
+    child: Icon(
+      Icons.chevron_right,
+      size: 18,
+      color: colorScheme.onSurfaceVariant.withAlpha(128),
+    ),
+  );
 
   Widget _buildDateSelector(DateTime selectedDate) {
     final theme = Theme.of(context);
@@ -581,10 +621,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     if (_isTrainingProgramRoute(currentRoute)) {
       actions.add(
         IconButton(
-          onPressed: () {
-            widget.controller?.submitProgram(context);
-          },
-          icon: const Icon(Icons.save),
+          tooltip: 'Salva Programma',
+          onPressed: () => widget.controller?.submitProgram(context),
+          icon: const Icon(Icons.save_rounded),
         ),
       );
     }
@@ -679,6 +718,48 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           tooltip: 'Impostazioni AI',
         ),
       );
+    }
+
+    // Azioni coerenti nel viewer: salva completamenti e note
+    if (currentRoute.contains('/training_viewer/')) {
+      actions.addAll([
+        IconButton(
+          tooltip: 'Segna tutto completato',
+          onPressed: () {
+            // Il dettaglio del completamento batch vive nel Viewer; qui apriamo un bottom sheet dedicato
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              isScrollControlled: true,
+              builder: (context) => Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.done_all_rounded),
+                      title: const Text('Completa serie rimanenti'),
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.note_alt_outlined),
+                      title: const Text('Gestisci note esercizio'),
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.more_horiz_rounded),
+        ),
+      ]);
     }
 
     // Azioni aggiunte per InAppPurchasePage

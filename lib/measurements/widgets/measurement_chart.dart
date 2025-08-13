@@ -25,7 +25,7 @@ class MeasurementChart extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     if (measurements.isEmpty) {
-      return _buildEmptyState(theme, colorScheme);
+      return _buildEmptyState(context, theme, colorScheme);
     }
 
     return Column(
@@ -52,31 +52,50 @@ class MeasurementChart extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.show_chart,
-            size: 64,
+            Icons.monitor_weight,
+            size: 72,
             color: colorScheme.onSurfaceVariant.withAlpha(128),
           ),
           SizedBox(height: AppTheme.spacing.md),
           Text(
-            'Nessuna misurazione disponibile',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
+            'Nessuna misurazione',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
             ),
           ),
           SizedBox(height: AppTheme.spacing.sm),
           Text(
-            'Aggiungi nuove misurazioni per visualizzare il grafico',
+            'Aggiungi la prima misurazione per vedere l\'andamento nel tempo',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant.withAlpha(179),
+              color: colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppTheme.spacing.md),
+          FilledButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Tocca + in alto a destra per aggiungere una misurazione',
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Aggiungi misurazione'),
           ),
         ],
       ),

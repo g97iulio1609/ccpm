@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 // Include anche i dialog bulk già consolidati
 export 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/bulk_series_dialog.dart'
@@ -59,19 +60,16 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: widget.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-      ),
-      title: Text(
-        'Aggiorna Max RM',
-        style: TextStyle(
-          color: widget.colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
+    return AppDialog(
+      title: const Text('Aggiorna Max RM'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Annulla'),
         ),
-      ),
-      content: Column(
+        FilledButton(onPressed: _handleSave, child: const Text('Salva')),
+      ],
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildMaxWeightField(),
@@ -81,26 +79,6 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
           _buildCalculationHint(),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(
-            'Annulla',
-            style: TextStyle(color: widget.colorScheme.onSurface),
-          ),
-        ),
-        FilledButton(
-          onPressed: _handleSave,
-          style: FilledButton.styleFrom(
-            backgroundColor: widget.colorScheme.primary,
-            foregroundColor: widget.colorScheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            ),
-          ),
-          child: const Text('Salva'),
-        ),
-      ],
     );
   }
 
@@ -238,19 +216,20 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: widget.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-      ),
-      title: Text(
-        'Aggiungi al Superset',
-        style: TextStyle(
-          color: widget.colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
+    return AppDialog(
+      title: const Text('Aggiungi al Superset'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
         ),
-      ),
-      content: Column(
+        if (widget.superSets.isNotEmpty)
+          FilledButton(
+            onPressed: selectedSuperSetId != null ? _handleAddToSuperSet : null,
+            child: const Text('Aggiungi'),
+          ),
+      ],
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.superSets.isNotEmpty) ...[
@@ -260,27 +239,6 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
           _buildCreateNewButton(),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Annulla',
-            style: TextStyle(color: widget.colorScheme.onSurface),
-          ),
-        ),
-        if (widget.superSets.isNotEmpty)
-          FilledButton(
-            onPressed: selectedSuperSetId != null ? _handleAddToSuperSet : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: widget.colorScheme.primary,
-              foregroundColor: widget.colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              ),
-            ),
-            child: const Text('Aggiungi'),
-          ),
-      ],
     );
   }
 
@@ -376,19 +334,19 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: widget.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-      ),
-      title: Text(
-        'Sposta Esercizio',
-        style: TextStyle(
-          color: widget.colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
+    return AppDialog(
+      title: const Text('Sposta Esercizio'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
         ),
-      ),
-      content: Column(
+        FilledButton(
+          onPressed: selectedWorkoutIndex != null ? _handleMoveExercise : null,
+          child: const Text('Sposta'),
+        ),
+      ],
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -399,26 +357,6 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
           _buildWorkoutDropdown(),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Annulla',
-            style: TextStyle(color: widget.colorScheme.onSurface),
-          ),
-        ),
-        FilledButton(
-          onPressed: selectedWorkoutIndex != null ? _handleMoveExercise : null,
-          style: FilledButton.styleFrom(
-            backgroundColor: widget.colorScheme.primary,
-            foregroundColor: widget.colorScheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-            ),
-          ),
-          child: const Text('Sposta'),
-        ),
-      ],
     );
   }
 

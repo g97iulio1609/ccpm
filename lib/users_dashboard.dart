@@ -6,6 +6,9 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 
 class UsersDashboard extends ConsumerStatefulWidget {
   const UsersDashboard({super.key});
@@ -27,6 +30,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -48,7 +52,12 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(AppTheme.spacing.xl),
-                  child: _buildSearchBar(theme, colorScheme),
+                  child: AppCard(
+                    glass: glassEnabled,
+                    title: 'Gestione Utenti',
+                    leadingIcon: Icons.supervised_user_circle_outlined,
+                    child: _buildSearchBar(theme, colorScheme),
+                  ),
                 ),
               ),
               SliverPadding(
@@ -63,27 +72,18 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
   }
 
   Widget _buildSearchBar(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      padding: EdgeInsets.all(AppTheme.spacing.md),
-      child: TextField(
-        onChanged: _usersService.searchUsers,
-        decoration: InputDecoration(
-          hintText: 'Search users',
-          hintStyle: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-          prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            vertical: AppTheme.spacing.sm,
-            horizontal: AppTheme.spacing.md,
-          ),
+    return TextField(
+      onChanged: _usersService.searchUsers,
+      decoration: InputDecoration(
+        hintText: 'Search users',
+        hintStyle: theme.textTheme.bodyLarge?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+        prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(
+          vertical: AppTheme.spacing.sm,
+          horizontal: AppTheme.spacing.md,
         ),
       ),
     );
@@ -236,110 +236,99 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         ? user.name.substring(0, 1).toUpperCase()
         : '?';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _navigateToUserProfile(context, user.id),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 40,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withAlpha(76),
-                          shape: BoxShape.circle,
-                          image: user.photoURL.isNotEmpty
-                              ? DecorationImage(
-                                  image: NetworkImage(user.photoURL),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: user.photoURL.isEmpty
-                            ? Center(
-                                child: Text(
-                                  initials,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              )
-                            : null,
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        onPressed: () => _showUserOptions(context, user),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: AppTheme.spacing.lg),
-                Text(
-                  user.name,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: AppTheme.spacing.sm),
-                Text(
-                  user.email,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: AppTheme.spacing.xl),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.md,
-                    vertical: AppTheme.spacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withAlpha(76),
-                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                  ),
-                  child: Text(
-                    user.role.toUpperCase(),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+    return AppCard(
+      glass: ref.watch(uiGlassEnabledProvider),
+      onTap: () => _navigateToUserProfile(context, user.id),
+      child: Padding(
+        padding: EdgeInsets.all(AppTheme.spacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 40,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withAlpha(76),
+                      shape: BoxShape.circle,
+                      image: user.photoURL.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(user.photoURL),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
-                    textAlign: TextAlign.center,
+                    child: user.photoURL.isEmpty
+                        ? Center(
+                            child: Text(
+                              initials,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        : null,
                   ),
-                ),
-              ],
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: () => _showUserOptions(context, user),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
             ),
-          ),
+            SizedBox(height: AppTheme.spacing.lg),
+            Text(
+              user.name,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: AppTheme.spacing.sm),
+            Text(
+              user.email,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: AppTheme.spacing.xl),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.md,
+                vertical: AppTheme.spacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withAlpha(76),
+                borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+              ),
+              child: Text(
+                user.role.toUpperCase(),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -392,57 +381,23 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
   }
 
   void _showDeleteConfirmation(UserModel user) {
-    showDialog(
+    showAppDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        final theme = Theme.of(dialogContext);
-        final colorScheme = theme.colorScheme;
-
-        return AlertDialog(
-          backgroundColor: colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          ),
-          title: Text(
-            'Delete User',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Text(
-            'Are you sure you want to delete ${user.name}?',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: colorScheme.primary),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(AppTheme.radii.md),
-              ),
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  _deleteUser(user);
-                },
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: colorScheme.error),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      title: const Text('Delete User'),
+      child: Text('Are you sure you want to delete ${user.name}?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _deleteUser(user);
+          },
+          child: const Text('Delete'),
+        ),
+      ],
     );
   }
 

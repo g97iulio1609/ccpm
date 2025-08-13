@@ -6,10 +6,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:alphanessone/providers/auth_providers.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/Store/in_app_purchase_model.dart';
 import 'package:alphanessone/Store/in_app_purchase_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 // Extension to capitalize strings
 extension StringCasingExtension on String {
@@ -28,6 +31,7 @@ class SubscriptionCard extends StatelessWidget {
   final String? giftInfo;
   final VoidCallback? onCancelSubscription;
   final bool showCancelButton;
+  final bool glass;
 
   const SubscriptionCard({
     super.key,
@@ -38,102 +42,61 @@ class SubscriptionCard extends StatelessWidget {
     this.giftInfo,
     this.onCancelSubscription,
     this.showCancelButton = false,
+    this.glass = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withAlpha(51),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (isGift)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withAlpha(76),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      Icons.card_giftcard,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                if (isGift) const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    return AppCard(
+      glass: glass,
+      title: title,
+      leadingIcon: isGift ? Icons.card_giftcard : Icons.subscriptions,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          _buildInfoRow(context, 'Stato', status, Icons.info_outline),
+          const SizedBox(height: 8),
+          _buildInfoRow(context, 'Scadenza', expiry, Icons.event_outlined),
+          if (giftInfo != null) ...[
             const SizedBox(height: 16),
-            _buildInfoRow(context, 'Stato', status, Icons.info_outline),
-            const SizedBox(height: 8),
-            _buildInfoRow(context, 'Scadenza', expiry, Icons.event_outlined),
-            if (giftInfo != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withAlpha(76),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  giftInfo!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withAlpha(76),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                giftInfo!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
-            if (showCancelButton &&
-                onCancelSubscription != null &&
-                !isGift &&
-                status.toLowerCase() == 'active') ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showCancelConfirmationDialog(context),
-                  icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Disdici Abbonamento'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.errorContainer,
-                    foregroundColor: colorScheme.error,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ],
-        ),
+          if (showCancelButton &&
+              onCancelSubscription != null &&
+              !isGift &&
+              status.toLowerCase() == 'active') ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showCancelConfirmationDialog(context),
+                icon: const Icon(Icons.cancel_outlined),
+                label: const Text('Disdici Abbonamento'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.errorContainer,
+                  foregroundColor: colorScheme.error,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -168,34 +131,26 @@ class SubscriptionCard extends StatelessWidget {
   }
 
   void _showCancelConfirmationDialog(BuildContext context) {
-    showDialog(
+    showAppDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Conferma Disdetta'),
-          content: const Text(
-            'Sei sicuro di voler disdire l\'abbonamento? '
-            'Potrai continuare ad utilizzare il servizio fino alla fine del periodo corrente.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annulla'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                onCancelSubscription?.call();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                foregroundColor: Theme.of(context).colorScheme.error,
-              ),
-              child: const Text('Disdici'),
-            ),
-          ],
-        );
-      },
+      title: const Text('Conferma Disdetta'),
+      child: const Text(
+        'Sei sicuro di voler disdire l\'abbonamento? '
+        'Potrai continuare ad utilizzare il servizio fino alla fine del periodo corrente.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            onCancelSubscription?.call();
+          },
+          child: const Text('Disdici'),
+        ),
+      ],
     );
   }
 }
@@ -203,15 +158,25 @@ class SubscriptionCard extends StatelessWidget {
 // Reusable widget to display a subscription item
 class SubscriptionItemTile extends StatelessWidget {
   final SubscriptionItem item;
+  final bool glass;
 
-  const SubscriptionItemTile({super.key, required this.item});
+  const SubscriptionItemTile({
+    super.key,
+    required this.item,
+    this.glass = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text('Prodotto: ${item.productId}'),
-      subtitle: Text('ID Prezzo: ${item.priceId}'),
-      trailing: Text('Quantità: ${item.quantity}'),
+    return AppCard(
+      glass: glass,
+      title: 'Prodotto: ${item.productId}',
+      subtitle: 'ID Prezzo: ${item.priceId}',
+      leadingIcon: Icons.shopping_bag_outlined,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Text('Quantità: ${item.quantity}'),
+      ),
     );
   }
 }
@@ -362,6 +327,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     final isAdmin = ref.watch(isAdminProvider);
     final isOwnProfile =
         widget.userId == FirebaseAuth.instance.currentUser?.uid;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     if (isAdmin && isOwnProfile) {
       return const Center(
@@ -446,10 +412,18 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
 
           // Contenuto abbonamento
           if (subscription == null) ...[
-            Center(
-              child: Text(
-                'Nessun abbonamento attivo.',
-                style: Theme.of(context).textTheme.titleLarge,
+            AppCard(
+              glass: glassEnabled,
+              title: 'Abbonamento',
+              leadingIcon: Icons.subscriptions_outlined,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Nessun abbonamento attivo.',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
               ),
             ),
           ] else ...[
@@ -467,16 +441,28 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                   (isAdmin || isOwnProfile) &&
                   subscription.platform == 'stripe',
               onCancelSubscription: _cancelSubscription,
+              glass: glassEnabled,
             ),
             const SizedBox(height: 16),
-            Text(
-              'Dettagli Abbonamento',
-              style: Theme.of(context).textTheme.titleLarge,
+            AppCard(
+              glass: glassEnabled,
+              title: 'Dettagli Abbonamento',
+              leadingIcon: Icons.receipt_long_outlined,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ...subscription.items.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SubscriptionItemTile(
+                        item: item,
+                        glass: glassEnabled,
+                      ),
+                    );
+                  }),
+                ],
+              ),
             ),
-            const Divider(),
-            ...subscription.items.map((item) {
-              return SubscriptionItemTile(item: item);
-            }),
           ],
         ],
       ),
@@ -491,9 +477,22 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
+            return AppDialog(
               title: const Text('Regala Abbonamento'),
-              content: Column(
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Annulla'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _createGiftSubscription(selectedDays);
+                  },
+                  child: Text('Regala'),
+                ),
+              ],
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('Seleziona la durata dell\'abbonamento:'),
@@ -521,19 +520,6 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                   ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Annulla'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    await _createGiftSubscription(selectedDays);
-                  },
-                  child: Text('Regala'),
-                ),
-              ],
             );
           },
         );

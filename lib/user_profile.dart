@@ -11,8 +11,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 
 const Map<int, String> genderMap = {0: 'Altro', 1: 'Maschio', 2: 'Femmina'};
@@ -43,6 +47,8 @@ class UserProfileState extends ConsumerState<UserProfile>
   int? _selectedGender;
   DateTime? _birthdate;
   bool _isLoading = true;
+  String? _role;
+  bool _twoFactorEnabled = false;
 
   @override
   void initState() {
@@ -76,6 +82,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         _birthdate = userProfileData['birthdate'] != null
             ? (userProfileData['birthdate'] as Timestamp).toDate()
             : null;
+        _role = (userProfileData['role'] as String?)?.toUpperCase();
       }
     } catch (e) {
       _showSnackBar('Errore nel caricamento del profilo: $e', Colors.red);
@@ -241,28 +248,24 @@ class UserProfileState extends ConsumerState<UserProfile>
   }
 
   void _showDeleteConfirmationDialog() {
-    showDialog(
+    showAppDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Conferma eliminazione'),
-          content: const Text('Sei sicuro di voler eliminare questo utente?'),
-          actions: [
-            TextButton(
-              child: const Text('Annulla'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: const Text('Elimina'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                final currentUser = FirebaseAuth.instance.currentUser!;
-                _reauthenticateAndDelete(_isGoogleUser(currentUser));
-              },
-            ),
-          ],
-        );
-      },
+      title: const Text('Conferma eliminazione'),
+      child: const Text('Sei sicuro di voler eliminare questo utente?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            final currentUser = FirebaseAuth.instance.currentUser!;
+            _reauthenticateAndDelete(_isGoogleUser(currentUser));
+          },
+          child: const Text('Elimina'),
+        ),
+      ],
     );
   }
 
@@ -286,90 +289,173 @@ class UserProfileState extends ConsumerState<UserProfile>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? Center(
-                  child: CircularProgressIndicator(color: colorScheme.primary),
-                )
-              : Column(
-                  children: [
-                    _buildHeader(theme),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        boxShadow: AppTheme.elevations.small,
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        labelColor: colorScheme.primary,
-                        unselectedLabelColor: colorScheme.onSurfaceVariant,
-                        indicatorColor: colorScheme.primary,
-                        tabs: const [
-                          Tab(text: 'Info'),
-                          Tab(text: 'Account'),
-                          Tab(text: 'Fitness'),
-                          Tab(text: 'Abbonamenti'),
-                        ],
-                      ),
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(color: colorScheme.primary),
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 1000;
+                  final columnGap = AppTheme.spacing.xl;
+                  final glass = glassEnabled;
+
+                  final tabBar = AppCard(
+                    glass: glass,
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: colorScheme.primary,
+                      unselectedLabelColor: colorScheme.onSurfaceVariant,
+                      indicatorColor: colorScheme.primary,
+                      tabs: const [
+                        Tab(text: 'Info'),
+                        Tab(text: 'Account'),
+                        Tab(text: 'Fitness'),
+                        Tab(text: 'Abbonamenti'),
+                      ],
                     ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildPersonalInfoTab(),
-                          _buildAccountSettingsTab(),
-                          _buildFitnessDataTab(),
-                          _buildSubscriptionsTab(),
-                        ],
-                      ),
+                  );
+
+                  final leftCol = Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildPersonalInfoCard(glass),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildAccountSettingsCard(glass),
+                    ],
+                  );
+
+                  final rightCol = Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildFitnessDataCard(glass),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildSubscriptionsCard(),
+                      SizedBox(height: AppTheme.spacing.xl),
+                      _buildSecurityCard(glass),
+                    ],
+                  );
+
+                  return Padding(
+                    padding: EdgeInsets.all(AppTheme.spacing.xl),
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverToBoxAdapter(child: _buildHeader(theme)),
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: AppTheme.spacing.lg),
+                        ),
+                        SliverToBoxAdapter(child: tabBar),
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: AppTheme.spacing.lg),
+                        ),
+                        SliverToBoxAdapter(
+                          child: isWide
+                              ? Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(child: leftCol),
+                                    SizedBox(width: columnGap),
+                                    Expanded(child: rightCol),
+                                  ],
+                                )
+                              : Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    leftCol,
+                                    SizedBox(height: columnGap),
+                                    rightCol,
+                                  ],
+                                ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-        ),
+                  );
+                },
+              ),
       ),
     );
   }
 
   Widget _buildHeader(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-      child: Column(
-        children: [
-          _buildProfilePicture(),
-          const SizedBox(height: 16),
-          Text(
-            _controllers['name']?.text ?? 'Utente',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          if (_controllers['email']?.text != null &&
-              _controllers['email']!.text.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              _controllers['email']!.text,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      child: AppCard(
+        glass: glassEnabled,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+          child: Column(
+            children: [
+              _buildProfilePicture(),
+              const SizedBox(height: 16),
+              Text(
+                _controllers['name']?.text ?? 'Utente',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
-            ),
-          ],
-        ],
+              if (_role != null && _role!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withAlpha(76),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                  ),
+                  child: Text(
+                    _role!,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+              if (_controllers['email']?.text != null &&
+                  _controllers['email']!.text.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _controllers['email']!.text,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppTheme.spacing.md,
+                runSpacing: AppTheme.spacing.sm,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _uploadProfilePicture,
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: const Text('Cambia foto'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _copyEmailToClipboard,
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copia email'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _tabController.animateTo(3),
+                    icon: const Icon(Icons.subscriptions_outlined),
+                    label: const Text('Abbonamenti'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -413,11 +499,12 @@ class UserProfileState extends ConsumerState<UserProfile>
     );
   }
 
-  Widget _buildPersonalInfoTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildPersonalInfoCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Informazioni personali',
+      leadingIcon: Icons.person_outline,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildEditableField('nome', _controllers['name']),
           _buildEditableField('cognome', _controllers['surname']),
@@ -430,21 +517,41 @@ class UserProfileState extends ConsumerState<UserProfile>
     );
   }
 
-  Widget _buildAccountSettingsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildAccountSettingsCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Impostazioni account',
+      leadingIcon: Icons.settings_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildEditableField('username', _controllers['username']),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
-              // Implementa la logica per cambiare la password
-            },
-            child: const Text('Cambia Password'),
+            onPressed: _sendPasswordResetEmail,
+            child: const Text('Reset password via email'),
           ),
           const SizedBox(height: 20),
+          Row(
+            children: [
+              Switch(
+                value: _twoFactorEnabled,
+                onChanged: (v) {
+                  setState(() => _twoFactorEnabled = v);
+                  // Hook 2FA: qui potresti aprire un AppDialog per QR/OTP
+                },
+              ),
+              const SizedBox(width: 8),
+              const Text('Abilita 2FA (placeholder)'),
+            ],
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: _logoutAllDevices,
+            icon: const Icon(Icons.logout),
+            label: const Text('Logout da tutti i dispositivi'),
+          ),
+          const SizedBox(height: 12),
           if (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' ||
               widget.userId != null)
             ElevatedButton(
@@ -457,9 +564,11 @@ class UserProfileState extends ConsumerState<UserProfile>
     );
   }
 
-  Widget _buildFitnessDataTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildFitnessDataCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Dati fitness',
+      leadingIcon: Icons.fitness_center_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -471,9 +580,43 @@ class UserProfileState extends ConsumerState<UserProfile>
     );
   }
 
-  Widget _buildSubscriptionsTab() {
-    return SubscriptionsScreen(
-      userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid,
+  Widget _buildSubscriptionsCard() {
+    return AppCard(
+      glass: ref.watch(uiGlassEnabledProvider),
+      title: 'Abbonamenti',
+      leadingIcon: Icons.subscriptions_outlined,
+      child: SubscriptionsScreen(
+        userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid,
+      ),
+    );
+  }
+
+  Widget _buildSecurityCard(bool glass) {
+    return AppCard(
+      glass: glass,
+      title: 'Sicurezza',
+      leadingIcon: Icons.security_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              const Text('Stato 2FA: placeholder'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Consiglio: abilita la verifica in due passaggi per proteggere il tuo account.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
     );
   }
 
@@ -551,6 +694,42 @@ class UserProfileState extends ConsumerState<UserProfile>
       age--;
     }
     return age;
+  }
+
+  void _copyEmailToClipboard() {
+    final email = _controllers['email']?.text ?? '';
+    if (email.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: email));
+    _showSnackBar('Email copiata negli appunti', Colors.green);
+  }
+
+  Future<void> _sendPasswordResetEmail() async {
+    final email = _controllers['email']?.text ?? '';
+    if (email.isEmpty) {
+      _showSnackBar('Nessuna email in profilo', Colors.red);
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      _showSnackBar('Email di reset inviata a $email', Colors.green);
+    } catch (e) {
+      _showSnackBar('Errore invio reset password: $e', Colors.red);
+    }
+  }
+
+  Future<void> _logoutAllDevices() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        _showSnackBar(
+          'Logout effettuato da questo dispositivo. (Placeholder multi-device)',
+          Colors.green,
+        );
+        context.go('/');
+      }
+    } catch (e) {
+      _showSnackBar('Errore logout: $e', Colors.red);
+    }
   }
 
   Widget _buildGenderDropdown() {

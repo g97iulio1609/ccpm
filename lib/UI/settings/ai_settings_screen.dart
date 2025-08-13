@@ -1,9 +1,11 @@
 import 'package:alphanessone/models/ai_keys_model.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:alphanessone/providers/theme_provider.dart';
 import '../../services/ai/ai_settings_service.dart';
 import '../../services/ai/ai_keys_service.dart';
 import '../../providers/auth_providers.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 class AISettingsScreen extends HookConsumerWidget {
   const AISettingsScreen({super.key});
@@ -22,6 +24,10 @@ class AISettingsScreen extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildThemeSection(context, ref),
+            const SizedBox(height: 16),
+            _buildGlassToggle(context, ref),
+            const SizedBox(height: 24),
             _buildModelSelection(context, settings, settingsNotifier),
             const SizedBox(height: 24),
             _buildAPIKeySection(
@@ -30,6 +36,82 @@ class AISettingsScreen extends HookConsumerWidget {
               aiKeysService,
               aiKeys,
               isAdmin,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeSection(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(appThemeModeProvider);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tema', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            SegmentedButton<ThemeMode>(
+              segments: const <ButtonSegment<ThemeMode>>[
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  label: Text('Sistema'),
+                  icon: Icon(Icons.brightness_auto),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  label: Text('Chiaro'),
+                  icon: Icon(Icons.light_mode),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  label: Text('Scuro'),
+                  icon: Icon(Icons.dark_mode),
+                ),
+              ],
+              selected: <ThemeMode>{themeMode},
+              onSelectionChanged: (values) {
+                final selected = values.first;
+                ref.read(appThemeModeProvider.notifier).setThemeMode(selected);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGlassToggle(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(uiGlassEnabledProvider);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Icon(Icons.blur_on),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tema Glass “lite”',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Abilita un effetto vetro leggero su superfici selezionate',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: enabled,
+              onChanged: (v) =>
+                  ref.read(uiGlassEnabledProvider.notifier).setEnabled(v),
             ),
           ],
         ),
