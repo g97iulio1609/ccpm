@@ -6,6 +6,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/services/users_services.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 
@@ -380,57 +381,23 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
   }
 
   void _showDeleteConfirmation(UserModel user) {
-    showDialog(
+    showAppDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        final theme = Theme.of(dialogContext);
-        final colorScheme = theme.colorScheme;
-
-        return AlertDialog(
-          backgroundColor: colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          ),
-          title: Text(
-            'Delete User',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Text(
-            'Are you sure you want to delete ${user.name}?',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: colorScheme.primary),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(AppTheme.radii.md),
-              ),
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  _deleteUser(user);
-                },
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: colorScheme.error),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      title: const Text('Delete User'),
+      child: Text('Are you sure you want to delete ${user.name}?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _deleteUser(user);
+          },
+          child: const Text('Delete'),
+        ),
+      ],
     );
   }
 

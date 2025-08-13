@@ -15,6 +15,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 const Map<int, String> genderMap = {0: 'Altro', 1: 'Maschio', 2: 'Femmina'};
 
@@ -242,28 +243,24 @@ class UserProfileState extends ConsumerState<UserProfile>
   }
 
   void _showDeleteConfirmationDialog() {
-    showDialog(
+    showAppDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Conferma eliminazione'),
-          content: const Text('Sei sicuro di voler eliminare questo utente?'),
-          actions: [
-            TextButton(
-              child: const Text('Annulla'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: const Text('Elimina'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                final currentUser = FirebaseAuth.instance.currentUser!;
-                _reauthenticateAndDelete(_isGoogleUser(currentUser));
-              },
-            ),
-          ],
-        );
-      },
+      title: const Text('Conferma eliminazione'),
+      child: const Text('Sei sicuro di voler eliminare questo utente?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            final currentUser = FirebaseAuth.instance.currentUser!;
+            _reauthenticateAndDelete(_isGoogleUser(currentUser));
+          },
+          child: const Text('Elimina'),
+        ),
+      ],
     );
   }
 

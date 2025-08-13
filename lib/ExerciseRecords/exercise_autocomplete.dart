@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../common/generic_autocomplete.dart';
 import '../exerciseManager/exercise_model.dart';
 import '../trainingBuilder/dialog/add_exercise_dialog.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import '../providers/providers.dart';
 
 class ExerciseAutocompleteBox extends HookConsumerWidget {
@@ -49,9 +50,10 @@ class ExerciseAutocompleteBox extends HookConsumerWidget {
       },
       onSelected: (suggestion) async {
         if (suggestion.name == 'Crea Esercizio') {
-          final newExercise = await showDialog<ExerciseModel>(
+          final newExercise = await showAppDialog<ExerciseModel>(
             context: context,
-            builder: (context) => userId != null
+            title: const Text('Crea Esercizio'),
+            child: userId != null
                 ? AddExerciseDialog(
                     exercisesService: exercisesService,
                     userId: userId,

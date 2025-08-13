@@ -62,6 +62,13 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
   Widget build(BuildContext context) {
     return AppDialog(
       title: const Text('Aggiorna Max RM'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(onPressed: _handleSave, child: const Text('Salva')),
+      ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -72,13 +79,6 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
           _buildCalculationHint(),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(onPressed: _handleSave, child: const Text('Salva')),
-      ],
     );
   }
 
@@ -218,16 +218,6 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
   Widget build(BuildContext context) {
     return AppDialog(
       title: const Text('Aggiungi al Superset'),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.superSets.isNotEmpty) ...[
-            _buildSuperSetDropdown(),
-            SizedBox(height: AppTheme.spacing.md),
-          ],
-          _buildCreateNewButton(),
-        ],
-      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -239,6 +229,16 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
             child: const Text('Aggiungi'),
           ),
       ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.superSets.isNotEmpty) ...[
+            _buildSuperSetDropdown(),
+            SizedBox(height: AppTheme.spacing.md),
+          ],
+          _buildCreateNewButton(),
+        ],
+      ),
     );
   }
 
@@ -336,6 +336,16 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
   Widget build(BuildContext context) {
     return AppDialog(
       title: const Text('Sposta Esercizio'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: selectedWorkoutIndex != null ? _handleMoveExercise : null,
+          child: const Text('Sposta'),
+        ),
+      ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -347,16 +357,6 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
           _buildWorkoutDropdown(),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: selectedWorkoutIndex != null ? _handleMoveExercise : null,
-          child: const Text('Sposta'),
-        ),
-      ],
     );
   }
 
