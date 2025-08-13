@@ -300,8 +300,8 @@ class UserProfileState extends ConsumerState<UserProfile>
               )
             : LayoutBuilder(
                 builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 1000;
-                  final columnGap = AppTheme.spacing.xl;
+                  // final isWide = constraints.maxWidth >= 1000;
+                  // final columnGap = AppTheme.spacing.xl;
                   final glass = glassEnabled;
 
                   final tabBar = AppCard(
@@ -320,57 +320,41 @@ class UserProfileState extends ConsumerState<UserProfile>
                     ),
                   );
 
-                  final leftCol = Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildPersonalInfoCard(glass),
-                      SizedBox(height: AppTheme.spacing.xl),
-                      _buildAccountSettingsCard(glass),
-                    ],
-                  );
-
-                  final rightCol = Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildFitnessDataCard(glass),
-                      SizedBox(height: AppTheme.spacing.xl),
-                      _buildSubscriptionsCard(),
-                      SizedBox(height: AppTheme.spacing.xl),
-                      _buildSecurityCard(glass),
-                    ],
-                  );
-
                   return Padding(
                     padding: EdgeInsets.all(AppTheme.spacing.xl),
-                    child: CustomScrollView(
-                      slivers: [
-                        SliverToBoxAdapter(child: _buildHeader(theme)),
-                        SliverToBoxAdapter(
-                          child: SizedBox(height: AppTheme.spacing.lg),
-                        ),
-                        SliverToBoxAdapter(child: tabBar),
-                        SliverToBoxAdapter(
-                          child: SizedBox(height: AppTheme.spacing.lg),
-                        ),
-                        SliverToBoxAdapter(
-                          child: isWide
-                              ? Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(child: leftCol),
-                                    SizedBox(width: columnGap),
-                                    Expanded(child: rightCol),
-                                  ],
-                                )
-                              : Column(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildHeader(theme),
+                        SizedBox(height: AppTheme.spacing.lg),
+                        tabBar,
+                        SizedBox(height: AppTheme.spacing.lg),
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              SingleChildScrollView(
+                                child: _buildPersonalInfoCard(glass),
+                              ),
+                              SingleChildScrollView(
+                                child: _buildAccountSettingsCard(glass),
+                              ),
+                              SingleChildScrollView(
+                                child: _buildFitnessDataCard(glass),
+                              ),
+                              SingleChildScrollView(
+                                child: Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    leftCol,
-                                    SizedBox(height: columnGap),
-                                    rightCol,
+                                    _buildSubscriptionsCard(),
+                                    SizedBox(height: AppTheme.spacing.xl),
+                                    _buildSecurityCard(glass),
                                   ],
                                 ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
