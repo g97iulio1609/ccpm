@@ -12,6 +12,7 @@ import 'package:alphanessone/Store/in_app_purchase_model.dart';
 import 'package:alphanessone/Store/in_app_purchase_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 // Extension to capitalize strings
 extension StringCasingExtension on String {
@@ -130,34 +131,26 @@ class SubscriptionCard extends StatelessWidget {
   }
 
   void _showCancelConfirmationDialog(BuildContext context) {
-    showDialog(
+    showAppDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Conferma Disdetta'),
-          content: const Text(
-            'Sei sicuro di voler disdire l\'abbonamento? '
-            'Potrai continuare ad utilizzare il servizio fino alla fine del periodo corrente.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annulla'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                onCancelSubscription?.call();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                foregroundColor: Theme.of(context).colorScheme.error,
-              ),
-              child: const Text('Disdici'),
-            ),
-          ],
-        );
-      },
+      title: const Text('Conferma Disdetta'),
+      child: const Text(
+        'Sei sicuro di voler disdire l\'abbonamento? '
+        'Potrai continuare ad utilizzare il servizio fino alla fine del periodo corrente.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            onCancelSubscription?.call();
+          },
+          child: const Text('Disdici'),
+        ),
+      ],
     );
   }
 }

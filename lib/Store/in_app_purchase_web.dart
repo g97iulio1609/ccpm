@@ -6,6 +6,9 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:alphanessone/Store/stripe_checkout_widget.dart';
 import 'package:alphanessone/Store/web_utils.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 
 class InAppPurchaseScreenWeb extends StatefulWidget {
   const InAppPurchaseScreenWeb({super.key});
@@ -275,7 +278,10 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
       );
     }
 
-    return Container(
+    return Consumer(
+      builder: (context, ref, _) {
+        final glassEnabled = ref.watch(uiGlassEnabledProvider);
+        return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -369,9 +375,9 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildFeatureSection(),
+                    _buildFeatureSection(glassEnabled),
                     const SizedBox(height: 48),
-                    _buildProductList(),
+                    _buildProductList(glassEnabled),
                   ],
                 ),
               ),
@@ -380,58 +386,45 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
         ),
       ),
     );
+      },
+    );
   }
 
-  Widget _buildFeatureSection() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+  Widget _buildFeatureSection(bool glassEnabled) {
+    // theme non necessario qui
+    
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Caratteristiche Premium',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+        child: AppCard(
+          glass: glassEnabled,
+          title: 'Caratteristiche Premium',
+          leadingIcon: Icons.workspace_premium,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildFeatureItem(
+                icon: Icons.fitness_center,
+                title: 'Programmi Illimitati',
+                description:
+                    'Crea e personalizza tutti i programmi che desideri',
+                isFirst: true,
               ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: colorScheme.outlineVariant, width: 1),
+              _buildFeatureItem(
+                icon: Icons.person_outline,
+                title: 'Coaching Personalizzato',
+                description: 'Accesso a consigli e supporto professionale',
               ),
-              child: Column(
-                children: [
-                  _buildFeatureItem(
-                    icon: Icons.fitness_center,
-                    title: 'Programmi Illimitati',
-                    description:
-                        'Crea e personalizza tutti i programmi che desideri',
-                    isFirst: true,
-                  ),
-                  _buildFeatureItem(
-                    icon: Icons.person_outline,
-                    title: 'Coaching Personalizzato',
-                    description: 'Accesso a consigli e supporto professionale',
-                  ),
-                  _buildFeatureItem(
-                    icon: Icons.analytics_outlined,
-                    title: 'Analisi Dettagliate',
-                    description:
-                        'Monitora i tuoi progressi con statistiche avanzate',
-                    isLast: true,
-                  ),
-                ],
+              _buildFeatureItem(
+                icon: Icons.analytics_outlined,
+                title: 'Analisi Dettagliate',
+                description:
+                    'Monitora i tuoi progressi con statistiche avanzate',
+                isLast: true,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -497,7 +490,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
     );
   }
 
-  Widget _buildProductList() {
+  Widget _buildProductList(bool glassEnabled) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -523,139 +516,106 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               ),
             ),
             const SizedBox(height: 24),
-            ..._products.map((product) => _buildProductCard(product)),
+            ..._products.map((product) => _buildProductCard(product, glassEnabled)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProductCard(Product product) {
+  Widget _buildProductCard(Product product, bool glassEnabled) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isYearly = product.id.contains('yearly');
 
-    return Container(
+    return AppCard(
+      glass: glassEnabled,
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isYearly ? colorScheme.primary : colorScheme.outlineVariant,
-          width: isYearly ? 2 : 1,
-        ),
-        boxShadow: isYearly
-            ? [
-                BoxShadow(
-                  color: colorScheme.primary.withAlpha(26),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: InkWell(
-        onTap: () => _handlePurchase(product),
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
+      title: product.title,
+      subtitle: product.description,
+      leadingIcon: Icons.workspace_premium,
+      onTap: () => _handlePurchase(product),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (isYearly)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  size: 16,
-                                  color: colorScheme.onPrimary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Più Popolare',
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: colorScheme.onPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        if (isYearly) const SizedBox(height: 16),
-                        Text(
-                          product.title,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isYearly)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          product.description,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          borderRadius: BorderRadius.circular(99),
                         ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isYearly
-                          ? colorScheme.primary.withAlpha(26)
-                          : colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      product.price,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isYearly
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: 16,
+                              color: colorScheme.onPrimary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Più Popolare',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    if (isYearly) const SizedBox(height: 16),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _handlePurchase(product),
-                  icon: const Icon(Icons.lock_open),
-                  label: const Text('Sblocca Ora'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isYearly ? colorScheme.primary : null,
-                    foregroundColor: isYearly ? colorScheme.onPrimary : null,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    textStyle: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isYearly
+                      ? colorScheme.primary.withAlpha(26)
+                      : colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  product.price,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isYearly
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _handlePurchase(product),
+              icon: const Icon(Icons.lock_open),
+              label: const Text('Sblocca Ora'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isYearly ? colorScheme.primary : null,
+                foregroundColor: isYearly ? colorScheme.onPrimary : null,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

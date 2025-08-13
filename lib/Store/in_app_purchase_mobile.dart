@@ -382,8 +382,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
   }
 
   Widget _buildFeatureSection(bool glassEnabled) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    // theme non necessario qui
 
     return FadeTransition(
       opacity: _fadeAnimation,
