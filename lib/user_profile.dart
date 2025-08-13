@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
@@ -426,6 +427,29 @@ class UserProfileState extends ConsumerState<UserProfile>
                   ),
                 ),
               ],
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppTheme.spacing.md,
+                runSpacing: AppTheme.spacing.sm,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _uploadProfilePicture,
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: const Text('Cambia foto'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _copyEmailToClipboard,
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copia email'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _tabController.animateTo(3),
+                    icon: const Icon(Icons.subscriptions_outlined),
+                    label: const Text('Abbonamenti'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -501,10 +525,8 @@ class UserProfileState extends ConsumerState<UserProfile>
           _buildEditableField('username', _controllers['username']),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
-              // Implementa la logica per cambiare la password
-            },
-            child: const Text('Cambia Password'),
+            onPressed: _sendPasswordResetEmail,
+            child: const Text('Reset password via email'),
           ),
           const SizedBox(height: 20),
           if (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' ||
@@ -620,6 +642,27 @@ class UserProfileState extends ConsumerState<UserProfile>
       age--;
     }
     return age;
+  }
+
+  void _copyEmailToClipboard() {
+    final email = _controllers['email']?.text ?? '';
+    if (email.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: email));
+    _showSnackBar('Email copiata negli appunti', Colors.green);
+  }
+
+  Future<void> _sendPasswordResetEmail() async {
+    final email = _controllers['email']?.text ?? '';
+    if (email.isEmpty) {
+      _showSnackBar('Nessuna email in profilo', Colors.red);
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      _showSnackBar('Email di reset inviata a $email', Colors.green);
+    } catch (e) {
+      _showSnackBar('Errore invio reset password: $e', Colors.red);
+    }
   }
 
   Widget _buildGenderDropdown() {
