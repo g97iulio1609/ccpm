@@ -90,10 +90,10 @@ class AppCard extends StatelessWidget {
         ? GlassLite(
             margin: margin,
             padding: EdgeInsets.zero,
-            child: core,
             tint: glassTint,
             blur: glassBlur,
             radius: glassRadius,
+            child: core,
           )
         : Card(
             elevation: 0,

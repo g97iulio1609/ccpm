@@ -39,6 +39,16 @@ class AthleteSelectionDialog extends ConsumerWidget {
         ),
         child: Icon(Icons.person_search, color: colorScheme.primary, size: 20),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Conferma'),
+        ),
+      ],
       child: FutureBuilder<String>(
         future: controller.athleteName,
         builder: (context, snapshot) {
@@ -93,16 +103,6 @@ class AthleteSelectionDialog extends ConsumerWidget {
           );
         },
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Conferma'),
-        ),
-      ],
     );
   }
 }

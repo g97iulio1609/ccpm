@@ -13,7 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:alphanessone/providers/providers.dart';
-import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 
 const Map<int, String> genderMap = {0: 'Altro', 1: 'Maschio', 2: 'Femmina'};
 
@@ -286,6 +287,7 @@ class UserProfileState extends ConsumerState<UserProfile>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -309,11 +311,8 @@ class UserProfileState extends ConsumerState<UserProfile>
               : Column(
                   children: [
                     _buildHeader(theme),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        boxShadow: AppTheme.elevations.small,
-                      ),
+                    AppCard(
+                      glass: glassEnabled,
                       child: TabBar(
                         controller: _tabController,
                         labelColor: colorScheme.primary,
@@ -346,30 +345,37 @@ class UserProfileState extends ConsumerState<UserProfile>
   }
 
   Widget _buildHeader(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-      child: Column(
-        children: [
-          _buildProfilePicture(),
-          const SizedBox(height: 16),
-          Text(
-            _controllers['name']?.text ?? 'Utente',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          if (_controllers['email']?.text != null &&
-              _controllers['email']!.text.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              _controllers['email']!.text,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      child: AppCard(
+        glass: glassEnabled,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+          child: Column(
+            children: [
+              _buildProfilePicture(),
+              const SizedBox(height: 16),
+              Text(
+                _controllers['name']?.text ?? 'Utente',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
-            ),
-          ],
-        ],
+              if (_controllers['email']?.text != null &&
+                  _controllers['email']!.text.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _controllers['email']!.text,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -414,59 +420,82 @@ class UserProfileState extends ConsumerState<UserProfile>
   }
 
   Widget _buildPersonalInfoTab() {
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildEditableField('nome', _controllers['name']),
-          _buildEditableField('cognome', _controllers['surname']),
-          _buildBirthdayField(),
-          _buildGenderDropdown(),
-          _buildEditableField('email', _controllers['email']),
-          _buildEditableField('telefono', _controllers['phone']),
+          AppCard(
+            glass: glassEnabled,
+            title: 'Informazioni personali',
+            leadingIcon: Icons.person_outline,
+            child: Column(
+              children: [
+                _buildEditableField('nome', _controllers['name']),
+                _buildEditableField('cognome', _controllers['surname']),
+                _buildBirthdayField(),
+                _buildGenderDropdown(),
+                _buildEditableField('email', _controllers['email']),
+                _buildEditableField('telefono', _controllers['phone']),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildAccountSettingsTab() {
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildEditableField('username', _controllers['username']),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Implementa la logica per cambiare la password
-            },
-            child: const Text('Cambia Password'),
-          ),
-          const SizedBox(height: 20),
-          if (ref.read(usersServiceProvider).getCurrentUserRole() == 'admin' ||
-              widget.userId != null)
+      child: AppCard(
+        glass: glassEnabled,
+        title: 'Impostazioni account',
+        leadingIcon: Icons.settings_outlined,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildEditableField('username', _controllers['username']),
+            const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _showDeleteConfirmationDialog,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Elimina Account'),
+              onPressed: () {
+                // Implementa la logica per cambiare la password
+              },
+              child: const Text('Cambia Password'),
             ),
-        ],
+            const SizedBox(height: 20),
+            if (ref.read(usersServiceProvider).getCurrentUserRole() ==
+                    'admin' ||
+                widget.userId != null)
+              ElevatedButton(
+                onPressed: _showDeleteConfirmationDialog,
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Elimina Account'),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildFitnessDataTab() {
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildEditableField('altezza', _controllers['height']),
-          _buildEditableField('peso', _controllers['weight']),
-          _buildEditableField('grassoCorpo', _controllers['bodyFat']),
-        ],
+      child: AppCard(
+        glass: glassEnabled,
+        title: 'Dati fitness',
+        leadingIcon: Icons.fitness_center_outlined,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildEditableField('altezza', _controllers['height']),
+            _buildEditableField('peso', _controllers['weight']),
+            _buildEditableField('grassoCorpo', _controllers['bodyFat']),
+          ],
+        ),
       ),
     );
   }

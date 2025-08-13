@@ -53,53 +53,50 @@ class SubscriptionCard extends StatelessWidget {
       title: title,
       leadingIcon: isGift ? Icons.card_giftcard : Icons.subscriptions,
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            _buildInfoRow(context, 'Stato', status, Icons.info_outline),
-            const SizedBox(height: 8),
-            _buildInfoRow(context, 'Scadenza', expiry, Icons.event_outlined),
-            if (giftInfo != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withAlpha(76),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  giftInfo!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          _buildInfoRow(context, 'Stato', status, Icons.info_outline),
+          const SizedBox(height: 8),
+          _buildInfoRow(context, 'Scadenza', expiry, Icons.event_outlined),
+          if (giftInfo != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withAlpha(76),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                giftInfo!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
-            if (showCancelButton &&
-                onCancelSubscription != null &&
-                !isGift &&
-                status.toLowerCase() == 'active') ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showCancelConfirmationDialog(context),
-                  icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Disdici Abbonamento'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.errorContainer,
-                    foregroundColor: colorScheme.error,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ],
-        ),
+          if (showCancelButton &&
+              onCancelSubscription != null &&
+              !isGift &&
+              status.toLowerCase() == 'active') ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showCancelConfirmationDialog(context),
+                icon: const Icon(Icons.cancel_outlined),
+                label: const Text('Disdici Abbonamento'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.errorContainer,
+                  foregroundColor: colorScheme.error,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -170,7 +167,11 @@ class SubscriptionItemTile extends StatelessWidget {
   final SubscriptionItem item;
   final bool glass;
 
-  const SubscriptionItemTile({super.key, required this.item, this.glass = false});
+  const SubscriptionItemTile({
+    super.key,
+    required this.item,
+    this.glass = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +461,10 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                   ...subscription.items.map((item) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: SubscriptionItemTile(item: item, glass: glassEnabled),
+                      child: SubscriptionItemTile(
+                        item: item,
+                        glass: glassEnabled,
+                      ),
                     );
                   }),
                 ],

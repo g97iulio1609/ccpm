@@ -123,9 +123,9 @@ Future<T?> showAppDialog<T>({
       title: title,
       leading: leading,
       trailing: trailing,
-      child: child,
       actions: actions,
       contentPadding: contentPadding,
+      child: child,
     ),
   );
 }

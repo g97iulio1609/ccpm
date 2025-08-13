@@ -73,6 +73,13 @@ class _SeriesDialogState extends State<SeriesDialog> {
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(onPressed: _handleSubmit, child: const Text('Conferma')),
+      ],
       child: Flexible(
         child: SingleChildScrollView(
           child: Column(
@@ -145,13 +152,6 @@ class _SeriesDialogState extends State<SeriesDialog> {
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(onPressed: _handleSubmit, child: const Text('Conferma')),
-      ],
     );
   }
 

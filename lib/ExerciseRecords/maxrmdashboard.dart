@@ -822,6 +822,26 @@ class EditRecordDialog extends HookConsumerWidget {
 
     return AppDialog(
       title: const Text('Edit Record'),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _handleSave(
+              context,
+              ref,
+              maxWeightController.text,
+              repetitionsController.text,
+              selectedDate.value,
+              keepWeight.value,
+            );
+          },
+          child: const Text('Save'),
+        ),
+      ],
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -856,26 +876,6 @@ class EditRecordDialog extends HookConsumerWidget {
           ],
         ),
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _handleSave(
-              context,
-              ref,
-              maxWeightController.text,
-              repetitionsController.text,
-              selectedDate.value,
-              keepWeight.value,
-            );
-          },
-          child: const Text('Save'),
-        ),
-      ],
     );
   }
 

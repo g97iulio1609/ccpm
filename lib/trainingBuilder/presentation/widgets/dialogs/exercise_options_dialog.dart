@@ -8,6 +8,7 @@ import 'package:alphanessone/trainingBuilder/presentation/pages/progressions_lis
 import 'package:alphanessone/providers/providers.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class ExerciseOptionsDialog extends ConsumerWidget {
   final Exercise exercise;
@@ -145,35 +146,31 @@ class ExerciseOptionsDialog extends ConsumerWidget {
   void _showMoveExerciseDialog(BuildContext context) {
     final week = controller.program.weeks[weekIndex];
 
-    showDialog<int>(
+    showAppDialog<int>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Seleziona l\'Allenamento di Destinazione'),
-          content: DropdownButtonFormField<int>(
-            value: null,
-            items: List.generate(
-              week.workouts.length,
-              (index) => DropdownMenuItem(
-                value: index,
-                child: Text('Allenamento ${week.workouts[index].order}'),
-              ),
-            ),
-            onChanged: (value) {
-              Navigator.pop(dialogContext, value);
-            },
-            decoration: const InputDecoration(
-              labelText: 'Allenamento di Destinazione',
-            ),
+      title: const Text('Seleziona l\'Allenamento di Destinazione'),
+      child: DropdownButtonFormField<int>(
+        value: null,
+        items: List.generate(
+          week.workouts.length,
+          (index) => DropdownMenuItem(
+            value: index,
+            child: Text('Allenamento ${week.workouts[index].order}'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
-            ),
-          ],
-        );
-      },
+        ),
+        onChanged: (value) {
+          Navigator.pop(context, value);
+        },
+        decoration: const InputDecoration(
+          labelText: 'Allenamento di Destinazione',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+      ],
     ).then((destinationWorkoutIndex) {
       if (destinationWorkoutIndex != null &&
           destinationWorkoutIndex != workoutIndex) {
@@ -230,62 +227,54 @@ class ExerciseOptionsDialog extends ConsumerWidget {
         );
       }
     } else {
-      showDialog<String>(
+      showAppDialog<String>(
         context: context,
-        builder: (BuildContext dialogContext) {
-          return StatefulBuilder(
-            builder: (BuildContext builderContext, setState) {
-              return AlertDialog(
-                title: const Text('Aggiungi al Superset'),
-                content: DropdownButtonFormField<String>(
-                  value: selectedSuperSetId,
-                  items:
-                      superSets?.map((ss) {
-                        return DropdownMenuItem<String>(
-                          value: ss['id'] as String?,
-                          child: Text(
-                            ss['name'] as String? ?? 'Superset ${ss['id']}',
-                          ),
-                        );
-                      }).toList() ??
-                      [],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedSuperSetId = value;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    hintText: 'Seleziona il Superset',
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(null),
-                    child: const Text('Annulla'),
-                  ),
-                  if (superSets?.isNotEmpty == true)
-                    TextButton(
-                      onPressed: () {
-                        controller.createSuperSet(weekIndex, workoutIndex);
-                        setState(() {});
-                        Navigator.of(dialogContext).pop(
-                          superSets?.isNotEmpty == true
-                              ? superSets!.last['id'] as String?
-                              : null,
-                        );
-                      },
-                      child: const Text('Crea Nuovo Superset'),
+        title: const Text('Aggiungi al Superset'),
+        child: StatefulBuilder(
+          builder: (context, setState) => DropdownButtonFormField<String>(
+            value: selectedSuperSetId,
+            items:
+                superSets?.map((ss) {
+                  return DropdownMenuItem<String>(
+                    value: ss['id'] as String?,
+                    child: Text(
+                      ss['name'] as String? ?? 'Superset ${ss['id']}',
                     ),
-                  TextButton(
-                    onPressed: () =>
-                        Navigator.of(dialogContext).pop(selectedSuperSetId),
-                    child: const Text('Aggiungi'),
-                  ),
-                ],
-              );
+                  );
+                }).toList() ??
+                [],
+            onChanged: (value) {
+              setState(() {
+                selectedSuperSetId = value;
+              });
             },
-          );
-        },
+            decoration: const InputDecoration(
+              hintText: 'Seleziona il Superset',
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('Annulla'),
+          ),
+          if (superSets?.isNotEmpty == true)
+            TextButton(
+              onPressed: () {
+                controller.createSuperSet(weekIndex, workoutIndex);
+                Navigator.of(context).pop(
+                  superSets?.isNotEmpty == true
+                      ? superSets!.last['id'] as String?
+                      : null,
+                );
+              },
+              child: const Text('Crea Nuovo Superset'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(selectedSuperSetId),
+            child: const Text('Aggiungi'),
+          ),
+        ],
       ).then((result) {
         if (result != null) {
           controller.addExerciseToSuperSet(
