@@ -23,7 +23,7 @@
    - Empty/Error: pattern uniforme con `AppCard` + icone/testi coerenti (estrazione componenti dedicati opzionale)
 
 ### Milestone 4 — Tema Glass “lite”
-- [x] Introdotte varianti Glass per `Drawer` e `AppCard` (blur moderato + opacità bassa) con toggle in Impostazioni
+- [x] Introdotte varianti Glass per `Drawer`, `AppCard`, search/autocomplete e dialog (blur moderato + opacità bassa) con toggle in Impostazioni
 - [x] Bordi/inset subtili e fallback senza blur se preferenze riducono effetti
 - [x] Verifica performance su liste lunghe (applicare glass solo a layer stabili)
 - [x] Verifica contrasto AA su testi e icone sovrapposte
@@ -35,6 +35,7 @@
 - [x] Tracker Nutrizione: header con selettore data e menù azioni unificato presente in `CustomAppBar`
 - [x] Misure: empty state chiaro con CTA; grafici `fl_chart` allineati al tema
 - [x] Records (MaxRM): griglia card uniforme con skeleton e azioni evidenti e filtri
+  - [x] Barra filtro e dropdown in `GlassLite`; card `AppCard(glass: true)`
 
 - [x] Programs screen (`lib/user_programs.dart`):
   - [x] Sostituire card custom con `AppCard` coerente (header/badge, body, actions)
@@ -45,6 +46,7 @@
   - [x] Convertire i contenitori card in `AppCard` (grafico e tabella)
   - [x] Integrare toggle Glass sul body
   - [x] Nessun `AppBar` locale; dipendere da `CustomAppBar`
+  - [x] Dialog `SeriesDialog` unificato in stile `AppDialog` glass
 
 - [x] Esercizi — Cards (`lib/exerciseManager/widgets/exercise_widgets.dart`):
   - [x] Unificare card esercizio da `Container` a `AppCard` per coerenza visiva e hover/tap
@@ -54,6 +56,11 @@
   - [x] Verificare metadati rotta per titolo coerente in `RouteMetadata`
 
 - [x] Metadati Rotte:
+### Milestone 8 — Autenticazione
+### Milestone 9 — Unificazioni KISS/SOLID/DRY
+- [x] Componente dialogo unificato `AppDialog` per tutte le finestre principali (Viewer, TrainingBuilder, conferme)
+- [x] Componente `GenericAutocompleteField` usato da food e selezione atleta; da estendere progressivamente ad altri punti di ricerca/autocomplete
+- [x] Drawer: sezione Avatar/Admin/Logout e Programma Corrente aggiornate in glass con maggiore contrasto
   - [x] Aggiungere eventuali route secondarie mancanti in `RouteMetadata` per garantire titoli/icone coerenti nel `CustomAppBar`
 
 ### Milestone 8 — Autenticazione

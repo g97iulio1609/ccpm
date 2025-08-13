@@ -84,7 +84,7 @@ class CustomDrawer extends ConsumerWidget {
                   ),
                 ),
 
-                // Current Program Section
+                // Current Program Section (glass look)
                 SliverPadding(
                   padding: EdgeInsets.symmetric(
                     horizontal: AppTheme.spacing.lg,
@@ -94,18 +94,28 @@ class CustomDrawer extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AppBadge(
-                          label: 'Programma Corrente',
-                          variant: AppBadgeVariant.filled,
-                          status: AppBadgeStatus.info,
-                          size: AppBadgeSize.medium,
+                        GlassLite(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.md,
+                            vertical: AppTheme.spacing.xs,
+                          ),
+                          child: Text(
+                            'Programma Corrente',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                         SizedBox(height: AppTheme.spacing.md),
-                        _buildCurrentProgram(
-                          context,
-                          theme,
-                          colorScheme,
-                          glassEnabled,
+                        GlassLite(
+                          padding: EdgeInsets.zero,
+                          child: _buildCurrentProgram(
+                            context,
+                            theme,
+                            colorScheme,
+                            glassEnabled,
+                          ),
                         ),
                       ],
                     ),
@@ -115,7 +125,7 @@ class CustomDrawer extends ConsumerWidget {
             ),
           ),
 
-          // User Profile Section (AppCard per coerenza con il design system)
+          // User Profile / Logout section coerente con glass
           Padding(
             padding: EdgeInsets.only(
               left: AppTheme.spacing.lg,
