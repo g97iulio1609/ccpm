@@ -94,24 +94,11 @@ class CustomDrawer extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacing.md,
-                            vertical: AppTheme.spacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer.withAlpha(76),
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radii.full,
-                            ),
-                          ),
-                          child: Text(
-                            'Programma Corrente',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        AppBadge(
+                          label: 'Programma Corrente',
+                          variant: AppBadgeVariant.filled,
+                          status: AppBadgeStatus.info,
+                          size: AppBadgeSize.medium,
                         ),
                         SizedBox(height: AppTheme.spacing.md),
                         _buildCurrentProgram(
@@ -137,6 +124,8 @@ class CustomDrawer extends ConsumerWidget {
             ),
             child: AppCard(
               glass: true,
+              glassTint: colorScheme.surface.withAlpha(172),
+              glassBlur: 16,
               padding: EdgeInsets.zero,
               child: Column(
                 children: [

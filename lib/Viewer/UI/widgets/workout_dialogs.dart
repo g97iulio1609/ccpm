@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// ignore: unused_import
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/series_dialog.dart';
@@ -8,6 +9,7 @@ import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:flutter/services.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class WorkoutDialogs {
   static Future<void> showNoteDialog(
@@ -22,78 +24,50 @@ class WorkoutDialogs {
     final TextEditingController noteController = TextEditingController(
       text: existingNote,
     );
-    final colorScheme = Theme.of(context).colorScheme;
+    // Manteniamo i colori da Theme dove necessario direttamente nei widget
 
-    return showDialog(
+    return showAppDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        title: Text(
-          'Note per $exerciseName',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
+      title: Text('Note per $exerciseName'),
+      child: TextField(
+        controller: noteController,
+        maxLines: 5,
+        decoration: InputDecoration(
+          hintText: 'Inserisci una nota...',
         ),
-        content: TextField(
-          controller: noteController,
-          maxLines: 5,
-          decoration: InputDecoration(
-            hintText: 'Inserisci una nota...',
-            hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-              borderSide: BorderSide(color: colorScheme.outline),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-              borderSide: BorderSide(color: colorScheme.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-              borderSide: BorderSide(color: colorScheme.primary, width: 2),
-            ),
-          ),
-          style: TextStyle(color: colorScheme.onSurface),
-        ),
-        actions: [
-          if (existingNote != null)
-            TextButton(
-              onPressed: () async {
-                await ref
-                    .read(workout_provider.workoutServiceProvider)
-                    .deleteNote(exerciseId, workoutId);
-                if (context.mounted) Navigator.of(context).pop();
-              },
-              child: Text(
-                'Elimina',
-                style: TextStyle(color: colorScheme.error),
-              ),
-            ),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      ),
+      actions: [
+        if (existingNote != null)
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Annulla',
-              style: TextStyle(color: colorScheme.primary),
-            ),
-          ),
-          FilledButton(
             onPressed: () async {
-              final note = noteController.text.trim();
-              if (note.isNotEmpty) {
-                await ref
-                    .read(workout_provider.workoutServiceProvider)
-                    .showNoteDialog(exerciseId, exerciseName, workoutId, note);
-              }
+              await ref
+                  .read(workout_provider.workoutServiceProvider)
+                  .deleteNote(exerciseId, workoutId);
               if (context.mounted) Navigator.of(context).pop();
             },
-            style: FilledButton.styleFrom(backgroundColor: colorScheme.primary),
             child: Text(
-              'Salva',
-              style: TextStyle(color: colorScheme.onPrimary),
+              'Elimina',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
-        ],
-      ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            final note = noteController.text.trim();
+            if (note.isNotEmpty) {
+              await ref
+                  .read(workout_provider.workoutServiceProvider)
+                  .showNoteDialog(exerciseId, exerciseName, workoutId, note);
+            }
+            if (context.mounted) Navigator.of(context).pop();
+          },
+          child: const Text('Salva'),
+        ),
+      ],
     );
   }
 
@@ -120,93 +94,83 @@ class WorkoutDialogs {
       }
     }
 
-    return showDialog(
+    return showAppDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Aggiorna Massimale'),
-        content: StatefulBuilder(
-          builder: (context, setState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: weightController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Peso (kg)',
-                  border: OutlineInputBorder(),
+      title: const Text('Aggiorna Massimale'),
+      child: StatefulBuilder(
+        builder: (context, setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: weightController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Peso (kg)'),
+              onChanged: (_) => calculateMaxWeight(),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: repsController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Ripetizioni'),
+              onChanged: (_) => calculateMaxWeight(),
+            ),
+            const SizedBox(height: 16),
+            ValueListenableBuilder<double?>(
+              valueListenable: calculatedMaxWeight,
+              builder: (context, maxWeight, child) {
+                return maxWeight != null
+                    ? Text(
+                        'Massimale calcolato (1RM): ${maxWeight.toStringAsFixed(1)} kg',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                    : const SizedBox.shrink();
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('Mantieni pesi attuali'),
+                Switch(
+                  value: keepWeightSwitch.value,
+                  onChanged: (value) {
+                    setState(() {
+                      keepWeightSwitch.value = value;
+                    });
+                  },
                 ),
-                onChanged: (_) => calculateMaxWeight(),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: repsController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Ripetizioni',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (_) => calculateMaxWeight(),
-              ),
-              SizedBox(height: 16),
-              ValueListenableBuilder<double?>(
-                valueListenable: calculatedMaxWeight,
-                builder: (context, maxWeight, child) {
-                  return maxWeight != null
-                      ? Text(
-                          'Massimale calcolato (1RM): ${maxWeight.toStringAsFixed(1)} kg',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        )
-                      : SizedBox.shrink();
-                },
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Text('Mantieni pesi attuali'),
-                  Switch(
-                    value: keepWeightSwitch.value,
-                    onChanged: (value) {
-                      setState(() {
-                        keepWeightSwitch.value = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Annulla'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final maxWeight = calculatedMaxWeight.value;
-              final weight = double.tryParse(weightController.text);
-
-              if (maxWeight != null && weight != null) {
-                await ref
-                    .read(workout_provider.workoutServiceProvider)
-                    .updateMaxWeight(
-                      exercise,
-                      maxWeight,
-                      userId,
-                      repetitions: 1,
-                      keepCurrentWeights: keepWeightSwitch.value,
-                    );
-
-                Navigator.pop(context);
-              }
-            },
-            child: Text('Salva'),
-          ),
-        ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            final maxWeight = calculatedMaxWeight.value;
+            final weight = double.tryParse(weightController.text);
+            if (maxWeight != null && weight != null) {
+              await ref
+                  .read(workout_provider.workoutServiceProvider)
+                  .updateMaxWeight(
+                    exercise,
+                    maxWeight,
+                    userId,
+                    repetitions: 1,
+                    keepCurrentWeights: keepWeightSwitch.value,
+                  );
+              Navigator.pop(context);
+            }
+          },
+          child: const Text('Salva'),
+        ),
+      ],
     );
   }
 
@@ -270,7 +234,7 @@ class WorkoutDialogs {
     final latestRecord = await recordsStream.first;
     num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
 
-    final colorScheme = Theme.of(context).colorScheme;
+    // colorScheme non necessario con AppDialog, manteniamo la tipografia di tema
 
     final weightNotifier =
         ref
@@ -311,10 +275,11 @@ class WorkoutDialogs {
             .applySeriesChanges(exercise, updatedSeries);
       } catch (e) {
         if (!context.mounted) return;
+        final cs = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Errore durante il salvataggio delle modifiche: $e'),
-            backgroundColor: colorScheme.error,
+            backgroundColor: cs.error,
           ),
         );
       }
@@ -329,7 +294,7 @@ class WorkoutDialogs {
   ) {
     final TextEditingController repsController = TextEditingController();
     final TextEditingController weightController = TextEditingController();
-    final colorScheme = Theme.of(context).colorScheme;
+    // Usa il colorScheme dove necessario direttamente dai widget
 
     // Initialize controllers with current values if they exist
     final currentReps = seriesData['reps_done'];
@@ -352,102 +317,77 @@ class WorkoutDialogs {
         ? "$weight-$maxWeight"
         : "$weight";
 
-    showDialog(
+    showAppDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        title: Text(
-          'Inserisci ripetizioni e peso',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Obiettivo ripetizioni: ${repsTarget}R',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+      title: const Text('Inserisci ripetizioni e peso'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Obiettivo ripetizioni: ${repsTarget}R',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: repsController,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: repsController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-              ],
-              decoration: InputDecoration(
-                labelText: 'Ripetizioni eseguite',
-                hintText: 'Inserisci le ripetizioni',
-                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Obiettivo peso: ${weightTarget}Kg',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: weightController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-              ],
-              decoration: InputDecoration(
-                labelText: 'Peso eseguito',
-                hintText: 'Inserisci il peso',
-                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Annulla',
-              style: TextStyle(color: colorScheme.primary),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Ripetizioni eseguite',
+              hintText: 'Inserisci le ripetizioni',
             ),
           ),
-          TextButton(
-            onPressed: () {
-              final reps = double.tryParse(repsController.text);
-              final weight = double.tryParse(weightController.text);
-
-              if (reps != null) {
-                seriesData['reps_done'] = reps;
-              }
-              if (weight != null) {
-                seriesData['weight_done'] = weight;
-              }
-
-              if (reps != null || weight != null) {
-                ref
-                    .read(workout_provider.workoutServiceProvider)
-                    .updateSeriesData(seriesData['exerciseId'], seriesData);
-              }
-              Navigator.pop(context);
-            },
-            child: Text('Salva', style: TextStyle(color: colorScheme.primary)),
+          const SizedBox(height: 16),
+          Text(
+            'Obiettivo peso: ${weightTarget}Kg',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: weightController,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Peso eseguito',
+              hintText: 'Inserisci il peso',
+            ),
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final reps = double.tryParse(repsController.text);
+            final weight = double.tryParse(weightController.text);
+            if (reps != null) {
+              seriesData['reps_done'] = reps;
+            }
+            if (weight != null) {
+              seriesData['weight_done'] = weight;
+            }
+            if (reps != null || weight != null) {
+              ref
+                  .read(workout_provider.workoutServiceProvider)
+                  .updateSeriesData(seriesData['exerciseId'], seriesData);
+            }
+            Navigator.pop(context);
+          },
+          child: const Text('Salva'),
+        ),
+      ],
     );
   }
 }

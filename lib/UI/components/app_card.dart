@@ -11,6 +11,9 @@ class AppCard extends StatelessWidget {
   final Color? background;
   final VoidCallback? onTap;
   final bool glass;
+  final Color? glassTint;
+  final double? glassBlur;
+  final double? glassRadius;
   // Header helpers (compat con versione precedente in card.dart)
   final String? title;
   final String? subtitle;
@@ -27,6 +30,9 @@ class AppCard extends StatelessWidget {
     this.background,
     this.onTap,
     this.glass = false,
+    this.glassTint,
+    this.glassBlur,
+    this.glassRadius,
     this.title,
     this.subtitle,
     this.leadingIcon,
@@ -81,7 +87,14 @@ class AppCard extends StatelessWidget {
     );
 
     Widget content = glass
-        ? GlassLite(margin: margin, padding: EdgeInsets.zero, child: core)
+        ? GlassLite(
+            margin: margin,
+            padding: EdgeInsets.zero,
+            child: core,
+            tint: glassTint,
+            blur: glassBlur,
+            radius: glassRadius,
+          )
         : Card(
             elevation: 0,
             margin: margin ?? EdgeInsets.zero,
