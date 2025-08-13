@@ -75,7 +75,7 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
                 ),
               )
             : Text(
-                widget.isLogin.value ? 'Sign In' : 'Create Account',
+                widget.isLogin.value ? 'Accedi' : 'Crea account',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
@@ -237,7 +237,7 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
             ),
             Center(
               child: Text(
-                'Sign in with Google',
+                'Accedi con Google',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
@@ -338,7 +338,7 @@ class SignInWithGoogleButton extends StatelessWidget {
             ),
             Center(
               child: Text(
-                'Sign in with Google',
+                'Accedi con Google',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w500,

@@ -76,6 +76,10 @@ class AuthService {
     return userCredential;
   }
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    await auth.sendPasswordResetEmail(email: email);
+  }
+
   Future<UserCredential?> signInWithGoogle() async {
     try {
       // Initialize GoogleSignIn if not already done

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../models/macros_model.dart';
 import '../models/macros_services.dart';
+import 'package:alphanessone/UI/components/glass.dart';
 
 class AutoTypeField extends ConsumerWidget {
   final TextEditingController controller;
@@ -54,10 +55,19 @@ class AutoTypeField extends ConsumerWidget {
       hideOnSelect: true,
       retainOnLoading: false,
       decorationBuilder: (context, child) {
-        return Material(
-          elevation: 4,
-          borderRadius: BorderRadius.circular(12),
-          child: child,
+        final colorScheme = Theme.of(context).colorScheme;
+        return GlassLite(
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.outline.withAlpha(38)),
+              ),
+              child: child,
+            ),
+          ),
         );
       },
       offset: const Offset(0, 8),
@@ -65,22 +75,40 @@ class AutoTypeField extends ConsumerWidget {
       controller: controller,
       focusNode: focusNode,
       builder: (context, suggestionsController, focusNode) {
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            labelText: 'Search Food',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            prefixIcon: Icon(
-              Icons.fastfood,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+        final colorScheme = Theme.of(context).colorScheme;
+        return GlassLite(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              labelText: 'Search Food',
+              filled: false,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: colorScheme.outline.withAlpha(64),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: colorScheme.outline.withAlpha(38),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: colorScheme.primary, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.fastfood,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         );

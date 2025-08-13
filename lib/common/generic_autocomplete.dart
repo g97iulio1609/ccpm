@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:alphanessone/UI/components/glass.dart';
 
 class GenericAutocompleteField<T> extends HookConsumerWidget {
   final TextEditingController controller;
@@ -42,52 +43,60 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
       hideOnSelect: true,
       retainOnLoading: false,
       decorationBuilder: (context, child) {
-        return Material(
-          elevation: 4,
-          borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).colorScheme.surface,
-          child: child,
+        final colorScheme = Theme.of(context).colorScheme;
+        return GlassLite(
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.outline.withAlpha(38)),
+              ),
+              child: child,
+            ),
+          ),
         );
       },
       offset: const Offset(0, 8),
       constraints: const BoxConstraints(maxHeight: 200),
       focusNode: focusNode,
       builder: (context, controller, focusNode) {
-        return TextField(
-          controller: this.controller, // Modifica chiave qui
-          focusNode: focusNode,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            labelText: labelText,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline,
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        return GlassLite(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: TextField(
+            controller: this.controller,
+            focusNode: focusNode,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              labelText: labelText,
+              filled: false,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: colorScheme.outline.withAlpha(64),
+                ),
               ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.white),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: colorScheme.outline.withAlpha(38),
+                ),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: colorScheme.primary, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              prefixIcon: prefixIcon != null
+                  ? Icon(prefixIcon, color: colorScheme.onSurfaceVariant)
+                  : null,
             ),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            prefixIcon: prefixIcon != null
-                ? Icon(
-                    prefixIcon,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  )
-                : null,
           ),
         );
       },

@@ -14,6 +14,8 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/icon_button_with_background.dart';
 import 'package:alphanessone/UI/components/bottom_input_form.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 // Providers per i muscleGroups e exerciseTypes
 final muscleGroupsProvider = StreamProvider<List<String>>((ref) {
@@ -94,26 +96,18 @@ class ExercisesList extends HookConsumerWidget {
     final theme = Theme.of(context);
 
     final muscleGroupsAsyncValue = ref.watch(muscleGroupsProvider);
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surface.withAlpha(235),
-          ],
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            TypeAheadField<ExerciseModel>(
-              builder: (context, controller, focusNode) {
-                return TextField(
+    final Widget core = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        children: [
+          const SizedBox(height: 24),
+          TypeAheadField<ExerciseModel>(
+            builder: (context, controller, focusNode) {
+              return GlassLite(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: TextField(
                   controller: controller,
                   focusNode: focusNode,
                   decoration: InputDecoration(
@@ -143,261 +137,284 @@ class ExercisesList extends HookConsumerWidget {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    filled: true,
-                    fillColor: theme.colorScheme.surfaceContainerHighest,
+                    filled: false,
                   ),
-                );
-              },
-              suggestionsCallback: (pattern) async {
-                if (pattern.length < 2) return [];
-
-                final exercises = await ref
-                    .read(exercisesServiceProvider)
-                    .getExercises()
-                    .first;
-                return exercises
-                    .where(
-                      (exercise) => exercise.name.toLowerCase().contains(
-                        pattern.toLowerCase(),
-                      ),
-                    )
-                    .toList();
-              },
-              itemBuilder: (context, exercise) {
-                return ListTile(
-                  title: Text(exercise.name),
-                  subtitle: Text(
-                    '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                );
-              },
-              onSelected: (exercise) {
-                searchController.text = exercise.name;
-                Future.microtask(() {
-                  controller.updateFilters(searchText: exercise.name);
-                });
-              },
-              debounceDuration: const Duration(milliseconds: 500),
-              hideOnEmpty: false,
-              hideOnLoading: false,
-              hideOnError: false,
-              animationDuration: const Duration(milliseconds: 300),
-              constraints: const BoxConstraints(maxHeight: 300),
-              decorationBuilder: (context, child) {
-                return Material(
-                  elevation: 4,
-                  borderRadius: BorderRadius.circular(12),
-                  color: theme.colorScheme.surface,
-                  child: child,
-                );
-              },
-              loadingBuilder: (context) => const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              errorBuilder: (context, error) => Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Error: $error',
-                  style: TextStyle(color: theme.colorScheme.error),
                 ),
-              ),
-              emptyBuilder: (context) => const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('No exercises found'),
+              );
+            },
+            suggestionsCallback: (pattern) async {
+              if (pattern.length < 2) return [];
+
+              final exercises = await ref
+                  .read(exercisesServiceProvider)
+                  .getExercises()
+                  .first;
+              return exercises
+                  .where(
+                    (exercise) => exercise.name.toLowerCase().contains(
+                      pattern.toLowerCase(),
+                    ),
+                  )
+                  .toList();
+            },
+            itemBuilder: (context, exercise) {
+              return ListTile(
+                title: Text(exercise.name),
+                subtitle: Text(
+                  '${exercise.muscleGroups.join(", ")} - ${exercise.type}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              );
+            },
+            onSelected: (exercise) {
+              searchController.text = exercise.name;
+              Future.microtask(() {
+                controller.updateFilters(searchText: exercise.name);
+              });
+            },
+            debounceDuration: const Duration(milliseconds: 500),
+            hideOnEmpty: false,
+            hideOnLoading: false,
+            hideOnError: false,
+            animationDuration: const Duration(milliseconds: 300),
+            constraints: const BoxConstraints(maxHeight: 300),
+            decorationBuilder: (context, child) {
+              return GlassLite(
+                padding: EdgeInsets.zero,
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withAlpha(38),
+                      ),
+                    ),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            loadingBuilder: (context) => const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            errorBuilder: (context, error) => Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Error: $error',
+                style: TextStyle(color: theme.colorScheme.error),
               ),
             ),
-            const SizedBox(height: 16),
-            muscleGroupsAsyncValue.when(
-              data: (muscleGroups) => SizedBox(
-                height: 48,
-                child: ScrollConfiguration(
-                  behavior: ScrollConfiguration.of(context).copyWith(
-                    dragDevices: {
-                      PointerDeviceKind.touch,
-                      PointerDeviceKind.mouse,
-                      PointerDeviceKind.trackpad,
-                    },
-                    physics: const BouncingScrollPhysics(),
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 4),
-                          ...muscleGroups.map((group) {
-                            final isSelected = selectedMuscleGroups.value
-                                .contains(group);
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: SizedBox(
-                                height: 32,
-                                child: FilterChip(
-                                  label: Text(
-                                    group,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isSelected
-                                          ? theme
-                                                .colorScheme
-                                                .onSecondaryContainer
-                                          : theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  selected: isSelected,
-                                  onSelected: (bool selected) {
-                                    if (selected) {
-                                      selectedMuscleGroups.value = [
-                                        ...selectedMuscleGroups.value,
-                                        group,
-                                      ];
-                                    } else {
-                                      selectedMuscleGroups.value =
-                                          selectedMuscleGroups.value
-                                              .where((g) => g != group)
-                                              .toList();
-                                    }
-                                    controller.updateFilters(
-                                      muscleGroups: selectedMuscleGroups.value,
-                                    );
-                                  },
-                                  showCheckmark: false,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8.0,
-                                  ),
-                                  labelPadding: const EdgeInsets.symmetric(
-                                    horizontal: 4.0,
-                                  ),
-                                  avatar: isSelected
-                                      ? Icon(
-                                          Icons.check,
-                                          size: 16,
-                                          color: theme
-                                              .colorScheme
-                                              .onSecondaryContainer,
-                                        )
-                                      : null,
-                                  selectedColor:
-                                      theme.colorScheme.secondaryContainer,
-                                  backgroundColor: theme
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withAlpha(128),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    side: BorderSide(
-                                      color: isSelected
-                                          ? theme.colorScheme.secondary
-                                          : theme.colorScheme.outline.withAlpha(
-                                              26,
-                                            ),
-                                      width: 1,
-                                    ),
+            emptyBuilder: (context) => const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('No exercises found'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          muscleGroupsAsyncValue.when(
+            data: (muscleGroups) => SizedBox(
+              height: 48,
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                    PointerDeviceKind.trackpad,
+                  },
+                  physics: const BouncingScrollPhysics(),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 4),
+                        ...muscleGroups.map((group) {
+                          final isSelected = selectedMuscleGroups.value
+                              .contains(group);
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: SizedBox(
+                              height: 32,
+                              child: FilterChip(
+                                label: Text(
+                                  group,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isSelected
+                                        ? theme.colorScheme.onSecondaryContainer
+                                        : theme.colorScheme.onSurface,
                                   ),
                                 ),
-                              ),
-                            );
-                          }),
-                          if (selectedMuscleGroups.value.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8.0,
-                              ),
-                              child: SizedBox(
-                                height: 32,
-                                child: TextButton.icon(
-                                  onPressed: () {
-                                    selectedMuscleGroups.value = [];
-                                    controller.updateFilters(muscleGroups: []);
-                                  },
-                                  icon: Icon(
-                                    Icons.clear,
-                                    size: 16,
-                                    color: theme.colorScheme.error,
-                                  ),
-                                  label: Text(
-                                    'Clear',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: theme.colorScheme.error,
-                                    ),
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0,
-                                    ),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
+                                selected: isSelected,
+                                onSelected: (bool selected) {
+                                  if (selected) {
+                                    selectedMuscleGroups.value = [
+                                      ...selectedMuscleGroups.value,
+                                      group,
+                                    ];
+                                  } else {
+                                    selectedMuscleGroups.value =
+                                        selectedMuscleGroups.value
+                                            .where((g) => g != group)
+                                            .toList();
+                                  }
+                                  controller.updateFilters(
+                                    muscleGroups: selectedMuscleGroups.value,
+                                  );
+                                },
+                                showCheckmark: false,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                labelPadding: const EdgeInsets.symmetric(
+                                  horizontal: 4.0,
+                                ),
+                                avatar: isSelected
+                                    ? Icon(
+                                        Icons.check,
+                                        size: 16,
+                                        color: theme
+                                            .colorScheme
+                                            .onSecondaryContainer,
+                                      )
+                                    : null,
+                                selectedColor:
+                                    theme.colorScheme.secondaryContainer,
+                                backgroundColor: theme
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withAlpha(128),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? theme.colorScheme.secondary
+                                        : theme.colorScheme.outline.withAlpha(
+                                            26,
+                                          ),
+                                    width: 1,
                                   ),
                                 ),
                               ),
                             ),
-                          const SizedBox(width: 4),
-                        ],
+                          );
+                        }),
+                        if (selectedMuscleGroups.value.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                            ),
+                            child: SizedBox(
+                              height: 32,
+                              child: TextButton.icon(
+                                onPressed: () {
+                                  selectedMuscleGroups.value = [];
+                                  controller.updateFilters(muscleGroups: []);
+                                },
+                                icon: Icon(
+                                  Icons.clear,
+                                  size: 16,
+                                  color: theme.colorScheme.error,
+                                ),
+                                label: Text(
+                                  'Clear',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.error,
+                                  ),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(width: 4),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            loading: () => const SizedBox(
+              height: 48,
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+            error: (_, __) => SizedBox(
+              height: 48,
+              child: Center(
+                child: Text(
+                  'Error loading muscle groups',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: exercisesState.when(
+              data: (exercises) {
+                return ExercisesGrid(
+                  exercises: exercises,
+                  currentUserRole: currentUserRole,
+                  currentUserId: currentUserId,
+                  onEdit: (exercise) =>
+                      ExercisesManager.showEditExerciseBottomSheet(
+                        context,
+                        ref,
+                        exercise,
                       ),
-                    ),
+                  onDelete: (exercise) => _showDeleteConfirmationDialog(
+                    context,
+                    exercise,
+                    ref,
+                    theme,
                   ),
-                ),
-              ),
-              loading: () => const SizedBox(
-                height: 48,
-                child: Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-              error: (_, __) => SizedBox(
-                height: 48,
-                child: Center(
-                  child: Text(
-                    'Error loading muscle groups',
-                    style: TextStyle(color: theme.colorScheme.error),
-                  ),
-                ),
-              ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(child: Text('Error: $error')),
             ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: exercisesState.when(
-                data: (exercises) {
-                  return ExercisesGrid(
-                    exercises: exercises,
-                    currentUserRole: currentUserRole,
-                    currentUserId: currentUserId,
-                    onEdit: (exercise) =>
-                        ExercisesManager.showEditExerciseBottomSheet(
-                          context,
-                          ref,
-                          exercise,
-                        ),
-                    onDelete: (exercise) => _showDeleteConfirmationDialog(
-                      context,
-                      exercise,
-                      ref,
-                      theme,
-                    ),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(child: Text('Error: $error')),
-              ),
-            ),
+          ),
+        ],
+      ),
+    );
+
+    if (glassEnabled) {
+      return GlassLite(padding: EdgeInsets.zero, radius: 0, child: core);
+    }
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surface.withAlpha(235),
           ],
         ),
       ),
+      child: core,
     );
   }
 

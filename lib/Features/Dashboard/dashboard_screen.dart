@@ -22,7 +22,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  Timer? _refreshTimer;
   bool _isRefreshing = false;
 
   @override
@@ -33,17 +32,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
       vsync: this,
     );
     _controller.forward();
-
-    // Aggiorna i dati ogni 30 secondi
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _refreshData();
-    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -895,15 +888,22 @@ class _AnimatedActionButton extends StatelessWidget {
 }
 
 final currentTrainingProgramProvider =
-    StreamProvider.family<TrainingProgram?, String>((ref, userId) {
+    StreamProvider.family<TrainingProgram?, String>((ref, userId) async* {
       final usersService = ref.watch(usersServiceProvider);
       final trainingService = TrainingProgramService(FirestoreService());
 
-      return Stream.periodic(const Duration(seconds: 30)).asyncMap((_) async {
-        final user = await usersService.getUserById(userId);
-        if (user?.currentProgram == null) return null;
-        return await trainingService.fetchTrainingProgram(
-          user!.currentProgram!,
-        );
-      });
+      // Usa stream Firestore per il programma corrente se disponibile,
+      // altrimenti emetti il valore una tantum e completa.
+      final user = await usersService.getUserById(userId);
+      if (user?.currentProgram == null) {
+        yield null;
+        return;
+      }
+
+      // Fallback: poll evitato; qui potremmo collegarci a snapshot di collezioni
+      // correlate se previsto dal servizio. In mancanza, emetti fetch singolo.
+      final program = await trainingService.fetchTrainingProgram(
+        user!.currentProgram!,
+      );
+      yield program;
     });

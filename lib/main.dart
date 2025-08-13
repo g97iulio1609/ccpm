@@ -10,6 +10,8 @@ import 'Main/app_router.dart';
 import 'Main/app_theme.dart';
 import 'Main/app_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dynamic_color/dynamic_color.dart';
+import 'providers/theme_provider.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (ref) => throw UnimplementedError(
@@ -75,6 +77,8 @@ void main() async {
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           aiSettingsServiceProvider.overrideWithValue(AISettingsService(prefs)),
+          // Override per il provider di SharedPreferences usato dal theme provider
+          prefsForThemeProvider.overrideWithValue(prefs),
         ],
         child: const MyApp(),
       ),
@@ -169,13 +173,27 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ThemeData darkTheme = AppTheme.darkTheme;
+    final ThemeMode themeMode = ref.watch(appThemeModeProvider);
 
-    return MaterialApp.router(
-      routerConfig: AppRouter.router(ref),
-      title: 'AlphanessOne',
-      darkTheme: darkTheme,
-      themeMode: ThemeMode.dark,
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        final ThemeData lightTheme = lightDynamic != null
+            ? AppTheme.lightTheme.copyWith(
+                colorScheme: lightDynamic.harmonized(),
+              )
+            : AppTheme.lightTheme;
+        final ThemeData darkTheme = darkDynamic != null
+            ? AppTheme.darkTheme.copyWith(colorScheme: darkDynamic.harmonized())
+            : AppTheme.darkTheme;
+
+        return MaterialApp.router(
+          routerConfig: AppRouter.router(ref),
+          title: 'AlphanessOne',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: themeMode,
+        );
+      },
     );
   }
 }

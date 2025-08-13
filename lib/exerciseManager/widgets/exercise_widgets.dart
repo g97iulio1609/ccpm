@@ -5,6 +5,7 @@ import '../exercise_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/UI/components/icon_button_with_background.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 
 class PendingApprovalBadge extends StatelessWidget {
   const PendingApprovalBadge({super.key});
@@ -60,96 +61,81 @@ class ExerciseCardContent extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showExerciseOptions(context),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tipo di esercizio e menu
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacing.md,
-                          vertical: AppTheme.spacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withAlpha(76),
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.xxl,
-                          ),
-                        ),
-                        child: Text(
-                          exercise.type,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      onPressed: () => _showExerciseOptions(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
-                ),
-                SizedBox(height: AppTheme.spacing.md),
-
-                // Nome dell'esercizio
-                Text(
-                  exercise.name,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
+    return AppCard(
+      onTap: () => _showExerciseOptions(context),
+      padding: EdgeInsets.all(AppTheme.spacing.lg),
+      glass: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tipo di esercizio e menu
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacing.md,
+                    vertical: AppTheme.spacing.xs,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: AppTheme.spacing.sm),
-
-                // Gruppi muscolari
-                Text(
-                  exercise.muscleGroups.join(", "),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withAlpha(76),
+                    borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  child: Text(
+                    exercise.type,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-
-                // Badge di approvazione pendente
-                if (exercise.status == 'pending') ...[
-                  SizedBox(height: AppTheme.spacing.md),
-                  const PendingApprovalBadge(),
-                ],
-              ],
-            ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                onPressed: () => _showExerciseOptions(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
           ),
-        ),
+          SizedBox(height: AppTheme.spacing.md),
+
+          // Nome dell'esercizio
+          Text(
+            exercise.name,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.5,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: AppTheme.spacing.sm),
+
+          // Gruppi muscolari
+          Text(
+            exercise.muscleGroups.join(", "),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          // Badge di approvazione pendente
+          if (exercise.status == 'pending') ...[
+            SizedBox(height: AppTheme.spacing.md),
+            const PendingApprovalBadge(),
+          ],
+        ],
       ),
     );
   }

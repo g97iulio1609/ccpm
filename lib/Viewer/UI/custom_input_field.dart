@@ -58,7 +58,7 @@ class _CustomInputFieldState extends State<CustomInputField>
           child: Container(
             width: 120,
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: Colors.black.withAlpha(120),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               boxShadow: _isFocused
                   ? [

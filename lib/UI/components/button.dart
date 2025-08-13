@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/glass.dart';
 
 enum AppButtonVariant { filled, outline, ghost, subtle, primary, secondary }
 
@@ -15,6 +16,7 @@ class AppButton extends StatelessWidget {
   final bool isLoading;
   final Color? backgroundColor;
   final Color? iconColor;
+  final bool glass;
 
   const AppButton({
     super.key,
@@ -27,6 +29,7 @@ class AppButton extends StatelessWidget {
     this.isLoading = false,
     this.backgroundColor,
     this.iconColor,
+    this.glass = true,
   }) : assert(label != null || icon != null);
 
   factory AppButton.icon({
@@ -37,6 +40,7 @@ class AppButton extends StatelessWidget {
     bool isLoading = false,
     Color? backgroundColor,
     Color? iconColor,
+    bool glass = true,
   }) {
     return AppButton(
       icon: icon,
@@ -46,6 +50,7 @@ class AppButton extends StatelessWidget {
       isLoading: isLoading,
       backgroundColor: backgroundColor,
       iconColor: iconColor,
+      glass: glass,
     );
   }
 
@@ -80,14 +85,16 @@ class AppButton extends StatelessWidget {
       switch (variant) {
         case AppButtonVariant.filled:
         case AppButtonVariant.primary:
-          return colorScheme.primary;
+          return glass ? Colors.transparent : colorScheme.primary;
         case AppButtonVariant.outline:
         case AppButtonVariant.ghost:
           return Colors.transparent;
         case AppButtonVariant.subtle:
-          return colorScheme.primaryContainer.withAlpha(77);
+          return glass
+              ? Colors.transparent
+              : colorScheme.primaryContainer.withAlpha(77);
         case AppButtonVariant.secondary:
-          return colorScheme.secondary;
+          return glass ? Colors.transparent : colorScheme.secondary;
       }
     }
 
@@ -96,7 +103,8 @@ class AppButton extends StatelessWidget {
       switch (variant) {
         case AppButtonVariant.filled:
         case AppButtonVariant.primary:
-          return colorScheme.onPrimary;
+          // In modalità glass lo sfondo è trasparente: usare il primario per garantire contrasto
+          return glass ? colorScheme.primary : colorScheme.onPrimary;
         case AppButtonVariant.outline:
         case AppButtonVariant.ghost:
         case AppButtonVariant.subtle:
@@ -147,7 +155,7 @@ class AppButton extends StatelessWidget {
       ],
     );
 
-    return SizedBox(
+    final coreButton = SizedBox(
       width: block ? double.infinity : null,
       height: height,
       child: MaterialButton(
@@ -165,6 +173,19 @@ class AppButton extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         child: buttonChild,
       ),
+    );
+
+    final shouldUseGlass =
+        glass &&
+        variant != AppButtonVariant.outline &&
+        variant != AppButtonVariant.ghost;
+    if (!shouldUseGlass) return coreButton;
+
+    return GlassLite(
+      padding: EdgeInsets.zero,
+      radius: AppTheme.radii.lg,
+      tint: colorScheme.surfaceContainerHighest.withAlpha(72),
+      child: coreButton,
     );
   }
 }

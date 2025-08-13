@@ -1,77 +1,82 @@
-## Obiettivi
+## Milestones UI/UX Rewamp
 
-- Correggere tutti gli errori e completare il refactoring di TrainingBuilder e Viewer (DRY, KISS, SOLID)
-- Uniformare data layer, stato e componenti UI
-- Migliorare UX (performance, accessibilità, coerenza visiva)
-- Integrare test e strumenti di qualità
+### Milestone 1 — Fondamenta e tema
+- [x] Verifica utilizzo `MaterialApp.router` e `AppTheme.darkTheme` attivo
+- [x] Attivare `themeMode: system` e introdurre `AppTheme.lightTheme`
+- [x] Aggiungere toggle tema in `Impostazioni` (nuova sezione `settings/ui` o esistente)
+- [x] Integrare `dynamic_color` (Android 12+) con fallback palette brand
 
-## Roadmap step-by-step
+### Milestone 2 — Navigazione: Drawer semplificato e multilivello
+- [x] Drawer persistente su large screen in `HomeScreen`
+- [x] `CustomAppBar` centralizzato e riutilizzato
+- [x] Semplificare voci Drawer: mantenere solo 5-7 destinazioni top‑level (Allenamenti, Nutrizione, Misure, Records, Profilo, Abbonamenti opz.)
+- [x] Aggiungere gruppi/espansioni (multi‑livello) per sezioni secondarie (es. Diet Plans, Favorite Meals, Gestione Utenti)
+- [x] Unificare metadati rotta (titolo, icona) in `route_metadata.dart` ed eliminare `switch` duplicati in `CustomAppBar`/`CustomDrawer`
 
-1) Stabilità e qualità di base
-- Verifica build/lint su tutto il repo
-- Uniformare definitivamente gli import `Viewer` (case-sensitive) ovunque
-- Rafforzare `analysis_options.yaml` (lint più severi)
-- Setup CI (lint + test) per evitare regressioni
+### Milestone 3 — Design System e componenti
+- [x] Token di design (`Spacing`, `Radii`, `Elevations`) presenti in `AppTheme`
+- [x] Componenti core esistenti (`AppCard`, `SectionHeader`, `Badge`, `Snackbar`, `Spinner`)
+- [x] Bonifica duplicati (preferire `app_card.dart` rispetto a `card.dart` se ridondante)
+ - [x] Introdurre widget standard `AppLoading`, `AppEmptyState`, `AppErrorState` e linee guida d’uso
+   - Loading: `AppSpinner`
+   - Skeleton: `SkeletonBox/Card/List/Grid`
+   - Empty/Error: pattern uniforme con `AppCard` + icone/testi coerenti (estrazione componenti dedicati opzionale)
 
-2) Struttura del progetto e naming
-- Consolidare modelli e mapper in `lib/shared/models` e `lib/shared/mappers`
-- Spostare util comuni in `lib/shared/utils` (formatter, validator, logger)
-- Allineare naming file/cartelle a lower_snake_case ovunque
+### Milestone 4 — Tema Glass “lite”
+- [x] Introdotte varianti Glass per `Drawer` e `AppCard` (blur moderato + opacità bassa) con toggle in Impostazioni
+- [x] Bordi/inset subtili e fallback senza blur se preferenze riducono effetti
+- [x] Verifica performance su liste lunghe (applicare glass solo a layer stabili)
+- [x] Verifica contrasto AA su testi e icone sovrapposte
+- [x] AppBar: glass opzionale per tutte le route (toggle attivo in Impostazioni)
 
-3) Data layer unificato (Builder + Viewer)
-- Definire repository condivisi in `lib/shared/repositories` (TrainingRepository, WorkoutRepository, TimerPresetRepository)
-- Implementazioni Firestore in `infrastructure/...` per entrambi i moduli
-- Ridurre N+1 (parallelizzazione con Future.wait) in tutte le fetch (già fatto per Viewer)
-- Aggiornare/creare indici Firestore necessari
+### Milestone 5 — Schermate chiave
+- [x] Dashboard: rimosso `Timer` periodico; mantenuto refresh esplicito/animato
+- [x] Viewer/Allenamenti: breadcrumb nel `CustomAppBar`, azioni coerenti (salva, note, completamento)
+- [x] Tracker Nutrizione: header con selettore data e menù azioni unificato presente in `CustomAppBar`
+- [x] Misure: empty state chiaro con CTA; grafici `fl_chart` allineati al tema
+- [x] Records (MaxRM): griglia card uniforme con skeleton e azioni evidenti e filtri
 
-4) Stato e Dependency Injection
-- Riverpod ovunque per lo stato e i provider
-- Convergere i `ChangeNotifier` orientati UI e i `StateNotifier` per logiche più complesse
-- Un contenitore DI per Builder (`TrainingBuilderDI`) e uno per Viewer (`viewer_providers.dart`) puntati ai repository condivisi
+- [x] Programs screen (`lib/user_programs.dart`):
+  - [x] Sostituire card custom con `AppCard` coerente (header/badge, body, actions)
+  - [x] Integrare toggle Glass via `uiGlassEnabledProvider` su body (fallback gradient)
+  - [x] Evitare `AppBar` locali, usare `CustomAppBar` globale
 
-5) Refactor TrainingBuilder
-- Rimuovere controller legacy duplicati, mantenendo le versioni refactor
-- Consolidare dialog/forme (esercizi, serie, superset) usando `RangeControllers` condiviso
-- Migliorare riordino e copia (week/workout/exercise) con validazioni chiare e messaggistica UX coerente
+- [x] TrainingBuilder — Volume Dashboard (`lib/trainingBuilder/training_volume_dashboard.dart`):
+  - [x] Convertire i contenitori card in `AppCard` (grafico e tabella)
+  - [x] Integrare toggle Glass sul body
+  - [x] Nessun `AppBar` locale; dipendere da `CustomAppBar`
 
-6) Refactor Viewer
-- Caching coerente e prefetch ottimizzato (già migliorato)
-- Subscriptions per exerciseId (già corretto) e gestione note fluida
-- Timer con preset stabili, opzione EMOM e feedback chiari
+- [x] Esercizi — Cards (`lib/exerciseManager/widgets/exercise_widgets.dart`):
+  - [x] Unificare card esercizio da `Container` a `AppCard` per coerenza visiva e hover/tap
 
-7) UI/UX e Design System
-- Uniformare componenti (card, badge, divider, chip, dialog, empty state)
-- Stati di errore e loading coerenti (skeleton, pull-to-refresh)
-- Accessibilità: contrasto, touch target, semantic label, focus order
+- [x] Nutrizione — FavouriteDays (`lib/nutrition/tracker/my_meals.dart`):
+  - [x] Rimuovere `appBar` locale e usare `CustomAppBar`
+  - [x] Verificare metadati rotta per titolo coerente in `RouteMetadata`
 
-8) Error handling e logging
-- Handler centralizzato errori (Firestore, rete, permessi)
-- Logging strutturato; eventuale integrazione crashlytics
+- [x] Metadati Rotte:
+  - [x] Aggiungere eventuali route secondarie mancanti in `RouteMetadata` per garantire titoli/icone coerenti nel `CustomAppBar`
 
-9) Performance
-- Prefetch settimanale selettivo (on-expand), pagination se necessario
-- Cache locale mirata (SharedPreferences/Hive per preset e metadati)
-- Debounce nelle query di ricerca/filtri
+### Milestone 8 — Autenticazione
+- [x] Login: UI coerente con stile Glass “lite” (GlassLite + AppTheme), testi localizzati IT, bottoni coerenti
+- [x] Recupero password: flusso reset via email integrato, feedback SnackBar
 
-10) Test
-- Unit test: repository e business services (TrainingBusinessService, WorkoutRepositoryImpl)
-- Widget test: `TrainingViewerPage`, `WorkoutDetailsPage`, dialog chiave
-- Golden test: card e componenti UI principali
-- Integration test (emulatore Firestore) per CRUD completo
+### Milestone 6 — Accessibilità e motion
+- [x] Controllo touch target ≥ 44px (IconButton/TextButton/FilledButton) e overlay coerenti
+- [x] Riduzione animazioni rispettando preferenze OS (transizioni ridotte)
+- [x] Stati hover/focus coerenti su desktop/web
+- [x] Verifica puntuale contrasto AA su combinazioni critiche (badge, KPI badge; grafici con testo/linee leggibili)
 
-11) Rilascio e documentazione
-- Aggiornare `MIGRATION_GUIDE.md` e `README.md` (architettura, convenzioni, come aggiungere feature)
-
-## Prossime azioni (immediate)
-- Scansione globale import `package:alphanessone/viewer/` e normalizzazione a `.../Viewer/...` (completata)
-- Allineare i dialog di bulk series al `RangeControllers` condiviso (completata)
-- Eseguire `flutter analyze` e correggere i warning residui (in corso)
-- Sostituire `PopupMenuButton` con `MenuAnchor` dove opportuno (in corso)
+### Milestone 7 — Qualità e test
+- [x] Skeleton e placeholder unificati
+ - [x] Golden/smoke test base per card/badge/empty-state
+ - [x] Smoke test navigazione (GoRouter) e flussi principali
 
 ## Criteri di accettazione
-- Build verde, lint a zero per i file toccati
-- Test esistenti e nuovi verdi
-- Nessuna regressione funzionale (CRUD, timer, note, progressi)
-- UI coerente, accessibilità base rispettata
+- Build verde e lint puliti sui file toccati
+- Coerenza visiva tra schermate (tipografia, spaziatura, colori, stati)
+- Navigazione chiara e consistente mobile/desktop
+- Nessuna regressione su deep‑link e rotte
+- Riuso di `CustomAppBar` ovunque senza duplicati
 
-
+## Note
+-. Per preferenze di stile, mantenere UI moderna Google/Apple e non creare duplicati di `CustomAppBar`.

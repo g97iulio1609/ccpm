@@ -94,7 +94,9 @@ class AppBadge extends StatelessWidget {
       switch (variant) {
         case AppBadgeVariant.filled:
         case AppBadgeVariant.gradient:
-          return colorScheme.onPrimary;
+          // Garantisce contrasto sufficiente su badge pieni/gradienti
+          final luminance = badgeColor.computeLuminance();
+          return luminance > 0.5 ? Colors.black : Colors.white;
         case AppBadgeVariant.outline:
         case AppBadgeVariant.subtle:
           return badgeColor;

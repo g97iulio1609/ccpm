@@ -8,6 +8,9 @@ import './trainingBuilder/services/training_services.dart';
 import 'trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'UI/components/bottom_menu.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
@@ -26,58 +29,60 @@ class UserProgramsScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userRole = ref.watch(userRoleProvider);
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
     final firestoreService = FirestoreService();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Add Program Button (if applicable)
-              if (userRole == 'admin' ||
-                  userRole == 'client_premium' ||
-                  userRole == 'coach')
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spacing.xl),
-                    child: _buildAddProgramButton(
-                      context,
-                      userId,
-                      theme,
-                      colorScheme,
-                    ),
-                  ),
-                ),
-
-              // Programs Grid
-              SliverPadding(
+    final content = SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          if (userRole == 'admin' ||
+              userRole == 'client_premium' ||
+              userRole == 'coach')
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
-                sliver: _buildProgramList(
+                child: _buildAddProgramButton(
                   context,
-                  ref,
                   userId,
-                  userRole,
-                  firestoreService,
+                  theme,
+                  colorScheme,
                 ),
               ),
-            ],
+            ),
+          SliverPadding(
+            padding: EdgeInsets.all(AppTheme.spacing.xl),
+            sliver: _buildProgramList(
+              context,
+              ref,
+              userId,
+              userRole,
+              firestoreService,
+            ),
           ),
-        ),
+        ],
       ),
+    );
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: glassEnabled
+          ? GlassLite(padding: EdgeInsets.zero, radius: 0, child: content)
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest.withAlpha(128),
+                  ],
+                  stops: const [0.0, 1.0],
+                ),
+              ),
+              child: content,
+            ),
     );
   }
 
@@ -111,130 +116,112 @@ class UserProgramsScreen extends HookConsumerWidget {
     final controller = ref.read(trainingProgramControllerProvider.notifier);
     final mesocycleNumber = doc['mesocycleNumber'] ?? 1;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(26)),
-        boxShadow: AppTheme.elevations.small,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _navigateToTrainingViewer(context, userId, doc.id),
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.all(AppTheme.spacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header con badge e menu
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacing.md,
-                        vertical: AppTheme.spacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withAlpha(76),
-                        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                      ),
-                      child: Text(
-                        'Mesocycle $mesocycleNumber',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (userRole == 'admin' ||
-                        userRole == 'coach' ||
-                        userRole == 'client_premium')
-                      IconButton(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        onPressed: () => _showProgramOptions(
-                          context,
-                          doc,
-                          userId,
-                          controller,
-                          firestoreService,
-                          theme,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                  ],
+    return AppCard(
+      onTap: () => _navigateToTrainingViewer(context, userId, doc.id),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.md,
+                  vertical: AppTheme.spacing.xs,
                 ),
-
-                SizedBox(height: AppTheme.spacing.lg),
-
-                // Nome programma
-                Text(
-                  doc['name'],
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withAlpha(76),
+                  borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+                ),
+                child: Text(
+                  'Mesocycle $mesocycleNumber',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              const Spacer(),
+              if (userRole == 'admin' ||
+                  userRole == 'coach' ||
+                  userRole == 'client_premium')
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () => _showProgramOptions(
+                    context,
+                    doc,
+                    userId,
+                    controller,
+                    firestoreService,
+                    theme,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
 
-                if (doc['description']?.isNotEmpty ?? false) ...[
-                  SizedBox(height: AppTheme.spacing.sm),
+          SizedBox(height: AppTheme.spacing.lg),
+
+          Text(
+            doc['name'],
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.5,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          if (doc['description']?.isNotEmpty ?? false) ...[
+            SizedBox(height: AppTheme.spacing.sm),
+            Text(
+              doc['description'],
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+
+          SizedBox(height: AppTheme.spacing.md),
+
+          if (isHidden && (userRole == 'admin' || userRole == 'coach'))
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.md,
+                vertical: AppTheme.spacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_off,
+                    size: 16,
+                    color: colorScheme.onErrorContainer,
+                  ),
+                  SizedBox(width: AppTheme.spacing.xs),
                   Text(
-                    doc['description'],
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    'Hidden',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-
-                const Spacer(),
-
-                // Hidden badge (se applicabile)
-                if (isHidden && (userRole == 'admin' || userRole == 'coach'))
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing.md,
-                      vertical: AppTheme.spacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.visibility_off,
-                          size: 16,
-                          color: colorScheme.onErrorContainer,
-                        ),
-                        SizedBox(width: AppTheme.spacing.xs),
-                        Text(
-                          'Hidden',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: colorScheme.onErrorContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+              ),
             ),
-          ),
-        ),
+        ],
       ),
     );
   }

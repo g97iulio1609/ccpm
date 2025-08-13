@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 /// Body scaffold condiviso: gradient opzionale + SafeArea + CustomScrollView (slivers)
-class PageScaffold extends StatelessWidget {
+class PageScaffold extends ConsumerWidget {
   final ColorScheme colorScheme;
   final List<Widget> slivers;
   final EdgeInsetsGeometry? padding;
@@ -20,7 +23,8 @@ class PageScaffold extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
     final content = SafeArea(
       child: CustomScrollView(
         slivers: [
@@ -36,6 +40,10 @@ class PageScaffold extends StatelessWidget {
 
     if (!useGradient) {
       return content;
+    }
+
+    if (glassEnabled) {
+      return GlassLite(padding: EdgeInsets.zero, radius: 0, child: content);
     }
 
     return Container(

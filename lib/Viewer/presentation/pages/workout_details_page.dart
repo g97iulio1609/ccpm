@@ -51,12 +51,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     );
 
     final colorScheme = Theme.of(context).colorScheme;
-  // Stabilizziamo il rendering: per ora usiamo sempre la LISTA in tutte le larghezze
-  // per evitare calcoli incoerenti che causano layout error su desktop.
+    // Stabilizziamo il rendering: per ora usiamo sempre la LISTA in tutte le larghezze
+    // per evitare calcoli incoerenti che causano layout error su desktop.
 
     // Deprecated: calcolo colonne non più usato (si usa maxCrossAxisExtent)
-  final padding = AppTheme.spacing.md;
-  final spacing = AppTheme.spacing.md;
+    final padding = AppTheme.spacing.md;
+    final spacing = AppTheme.spacing.md;
 
     // Se è in caricamento, mostra un indicatore di progresso
     if (state.isLoading) {
@@ -114,35 +114,35 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final groupedExercises = groupExercisesBySuperSet(exercises);
 
     // Mostra gli esercizi in una lista o griglia
-  Widget buildListBody() => RefreshIndicator(
-          onRefresh: () => notifier.refreshWorkout(),
-          child: Semantics(
-            container: true,
-            label: 'Dettagli allenamento, lista esercizi',
-            child: ListView.builder(
-              padding: EdgeInsets.all(padding),
-              itemCount: groupedExercises.length,
-              itemBuilder: (context, index) {
-                final entry = groupedExercises.entries.elementAt(index);
-                final exercises = entry.value;
-                return Padding(
-                  padding: EdgeInsets.only(bottom: spacing),
-                  child: exercises.length == 1
-                      ? _buildSingleExerciseCard(
-                          exercises.first,
-                          context,
-                          isListMode: true,
-                        )
-                      : _buildSuperSetCard(
-                          superSetExercises: exercises,
-                          context: context,
-                          isListMode: true,
-                        ),
-                );
-              },
-            ),
-          ),
-        );
+    Widget buildListBody() => RefreshIndicator(
+      onRefresh: () => notifier.refreshWorkout(),
+      child: Semantics(
+        container: true,
+        label: 'Dettagli allenamento, lista esercizi',
+        child: ListView.builder(
+          padding: EdgeInsets.all(padding),
+          itemCount: groupedExercises.length,
+          itemBuilder: (context, index) {
+            final entry = groupedExercises.entries.elementAt(index);
+            final exercises = entry.value;
+            return Padding(
+              padding: EdgeInsets.only(bottom: spacing),
+              child: exercises.length == 1
+                  ? _buildSingleExerciseCard(
+                      exercises.first,
+                      context,
+                      isListMode: true,
+                    )
+                  : _buildSuperSetCard(
+                      superSetExercises: exercises,
+                      context: context,
+                      isListMode: true,
+                    ),
+            );
+          },
+        ),
+      ),
+    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -155,32 +155,32 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             return buildListBody();
           }
 
-      // Griglia stabile con card a altezza nota. Niente Expanded nelle card.
-      final bool ultraWide = width >= 1800;
-      final bool veryWide = width >= 1600 && width < 1800;
-      final double cardHeight = ultraWide
-        ? 480.0
-        : veryWide
-          ? 500.0
-          : (width >= 1400 ? 520.0 : 540.0);
-      final double crossAxisExtent = ultraWide
-        ? 320.0
-        : veryWide
-          ? 340.0
-          : (width >= 1400 ? 360.0 : 380.0);
-      final double gridSpacing = (veryWide || ultraWide)
-        ? AppTheme.spacing.sm
-        : spacing;
+          // Griglia stabile con card a altezza nota. Niente Expanded nelle card.
+          final bool ultraWide = width >= 1800;
+          final bool veryWide = width >= 1600 && width < 1800;
+          final double cardHeight = ultraWide
+              ? 480.0
+              : veryWide
+              ? 500.0
+              : (width >= 1400 ? 520.0 : 540.0);
+          final double crossAxisExtent = ultraWide
+              ? 320.0
+              : veryWide
+              ? 340.0
+              : (width >= 1400 ? 360.0 : 380.0);
+          final double gridSpacing = (veryWide || ultraWide)
+              ? AppTheme.spacing.sm
+              : spacing;
 
           return RefreshIndicator(
             onRefresh: () => notifier.refreshWorkout(),
-      child: GridView.builder(
+            child: GridView.builder(
               padding: EdgeInsets.all(padding),
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: crossAxisExtent,
                 mainAxisExtent: cardHeight,
-        crossAxisSpacing: gridSpacing,
-        mainAxisSpacing: gridSpacing,
+                crossAxisSpacing: gridSpacing,
+                mainAxisSpacing: gridSpacing,
               ),
               itemCount: groupedExercises.length,
               itemBuilder: (context, index) {
@@ -197,7 +197,11 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                         context: context,
                         isListMode: false,
                       );
-                return Semantics(container: true, label: 'Scheda esercizio', child: child);
+                return Semantics(
+                  container: true,
+                  label: 'Scheda esercizio',
+                  child: child,
+                );
               },
             ),
           );
@@ -219,6 +223,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final allSeriesCompleted = series.every((serie) => serie.isCompleted);
 
     return AppCard(
+      glass: true,
       header: ExerciseHeader(
         exercise: exercise,
         onNote: () => _showNoteDialog(
@@ -345,6 +350,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         .fold<int>(0, (p, c) => p + c);
 
     return AppCard(
+      glass: true,
       header: SectionHeader(
         title: 'Super Set',
         subtitle: '${superSetExercises.length} esercizi',
@@ -546,7 +552,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         final notifier = ref.read(
           workoutDetailsNotifierProvider(widget.workoutId).notifier,
         );
-        
+
         try {
           await notifier.completeSeries(
             series.id ?? '',
@@ -554,11 +560,13 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             repsDone,
             weightDone,
           );
-          
+
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Serie completata: ${repsDone}R × ${weightDone}kg'),
+                content: Text(
+                  'Serie completata: ${repsDone}R × ${weightDone}kg',
+                ),
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 2),
               ),

@@ -20,6 +20,8 @@ import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/section_header.dart';
 import 'package:alphanessone/UI/components/kpi_badge.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/glass.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -36,6 +38,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     final userFetchComplete = useState(false);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     // Effetto per caricare gli utenti
     useEffect(() {
@@ -60,55 +63,114 @@ class MaxRMDashboard extends HookConsumerWidget {
       return null;
     }, [currentUserRole]);
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Search Bar
-              if (currentUserRole == 'admin' || currentUserRole == 'coach')
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.spacing.xl),
-                    child: _buildSearchBar(
-                      selectedUserController,
-                      focusNode,
-                      context,
-                      ref,
-                      theme,
-                      colorScheme,
-                    ),
-                  ),
-                ),
-
-              // Records Grid
-              SliverPadding(
+    final content = SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          // Search Bar
+          if (currentUserRole == 'admin' || currentUserRole == 'coach')
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
-                sliver: _buildAllExercisesMaxRMs(
+                child: _buildSearchBar(
+                  selectedUserController,
+                  focusNode,
+                  context,
                   ref,
-                  usersService,
-                  exerciseRecordService,
                   theme,
                   colorScheme,
-                  selectedUserId,
                 ),
               ),
-            ],
+            ),
+
+          // Records Grid
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.xl,
+                vertical: AppTheme.spacing.md,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GlassLite(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
+                      ),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Filtra per esercizio...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          ref.read(_recordsFilterProvider.notifier).state =
+                              value.trim().toLowerCase();
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppTheme.spacing.md),
+                  GlassLite(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: ref.watch(_recordsSortProvider),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'date_desc',
+                            child: Text('Più recenti'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'weight_desc',
+                            child: Text('Peso maggiore'),
+                          ),
+                        ],
+                        onChanged: (v) =>
+                            ref.read(_recordsSortProvider.notifier).state =
+                                v ?? 'date_desc',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+          SliverPadding(
+            padding: EdgeInsets.all(AppTheme.spacing.xl),
+            sliver: _buildAllExercisesMaxRMs(
+              ref,
+              usersService,
+              exerciseRecordService,
+              theme,
+              colorScheme,
+              selectedUserId,
+            ),
+          ),
+        ],
       ),
+    );
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: glassEnabled
+          ? GlassLite(padding: EdgeInsets.zero, radius: 0, child: content)
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest.withAlpha(128),
+                  ],
+                  stops: const [0.0, 1.0],
+                ),
+              ),
+              child: content,
+            ),
     );
   }
 
@@ -120,13 +182,7 @@ class MaxRMDashboard extends HookConsumerWidget {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(color: colorScheme.outline.withAlpha(128)),
-        boxShadow: AppTheme.elevations.small,
-      ),
+    return GlassLite(
       padding: EdgeInsets.all(AppTheme.spacing.md),
       child: UserTypeAheadField(
         controller: controller,
@@ -208,16 +264,48 @@ class MaxRMDashboard extends HookConsumerWidget {
                   );
                 }
 
-                final latestRecords = (snapshot.data ?? [])
+                List<ExerciseRecord> latestRecords = (snapshot.data ?? [])
                     .where((record) => record != null)
                     .map((record) => record!)
                     .toList();
+
+                // Filtro per nome esercizio
+                final filter = ref.watch(_recordsFilterProvider);
+                if (filter.isNotEmpty) {
+                  latestRecords = latestRecords
+                      .where(
+                        (r) => exercises
+                            .firstWhere(
+                              (ex) => ex.id == r.exerciseId,
+                              orElse: () => ExerciseModel(
+                                id: '',
+                                name: 'Exercise not found',
+                                type: '',
+                                muscleGroups: [],
+                              ),
+                            )
+                            .name
+                            .toLowerCase()
+                            .contains(filter),
+                      )
+                      .toList();
+                }
+
+                // Ordinamento
+                final sort = ref.watch(_recordsSortProvider);
+                latestRecords.sort((a, b) {
+                  if (sort == 'weight_desc') {
+                    return b.maxWeight.compareTo(a.maxWeight);
+                  }
+                  return b.date.compareTo(a.date);
+                });
 
                 if (latestRecords.isEmpty) {
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.only(top: AppTheme.spacing.xl),
                       child: AppCard(
+                        glass: true,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -293,9 +381,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                                           : 0,
                                     ),
                                     child: AppCard(
-                                      background: colorScheme
-                                          .surfaceContainerHighest
-                                          .withAlpha(38),
+                                      glass: true,
                                       header: SectionHeader(
                                         title:
                                             exercises
@@ -704,6 +790,9 @@ class MaxRMDashboard extends HookConsumerWidget {
     );
   }
 }
+
+final _recordsFilterProvider = StateProvider<String>((ref) => '');
+final _recordsSortProvider = StateProvider<String>((ref) => 'date_desc');
 
 class EditRecordDialog extends HookConsumerWidget {
   final ExerciseRecord record;

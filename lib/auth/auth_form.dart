@@ -31,7 +31,7 @@ class AuthForm extends HookConsumerWidget {
           // Title Section
           Center(
             child: Text(
-              isLogin.value ? 'Welcome Back' : 'Create Account',
+              isLogin.value ? 'Ben tornato' : 'Crea account',
               textAlign: TextAlign.center,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
@@ -43,8 +43,8 @@ class AuthForm extends HookConsumerWidget {
           const SizedBox(height: 8),
           Text(
             isLogin.value
-                ? 'Sign in to continue your fitness journey'
-                : 'Join us and start your transformation',
+                ? 'Accedi per continuare il tuo percorso'
+                : 'Unisciti e inizia la tua trasformazione',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -79,7 +79,7 @@ class AuthForm extends HookConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'or continue with',
+                  'oppure continua con',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -246,7 +246,7 @@ class AuthForm extends HookConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                isLogin.value ? 'Not a member? ' : 'Already have an account? ',
+                isLogin.value ? 'Non sei registrato? ' : 'Hai già un account? ',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -258,7 +258,7 @@ class AuthForm extends HookConsumerWidget {
                   minimumSize: Size.zero,
                 ),
                 child: Text(
-                  isLogin.value ? 'Sign up' : 'Sign in',
+                  isLogin.value ? 'Registrati' : 'Accedi',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -270,15 +270,41 @@ class AuthForm extends HookConsumerWidget {
 
           if (isLogin.value) ...[
             TextButton(
-              onPressed: () {
-                // Implementa la logica per il recupero password
+              onPressed: () async {
+                final email = userEmail.value.trim();
+                if (email.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Inserisci l\'email per reimpostare la password',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                try {
+                  await authService.sendPasswordResetEmail(email);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Email di reimpostazione inviata'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Errore: ${e.toString()}')),
+                    );
+                  }
+                }
               },
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 minimumSize: Size.zero,
               ),
               child: Text(
-                'Forgot password?',
+                'Password dimenticata?',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w500,

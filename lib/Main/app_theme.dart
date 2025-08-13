@@ -289,15 +289,16 @@ class AppTheme {
       textTheme: textTheme,
 
       brightness: isDark ? Brightness.dark : Brightness.light,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
 
       // Page transitions: Material 3 aligned transitions with safe builders
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.android: ZoomPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
-          TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+          TargetPlatform.android: _ReducedAwareTransitionsBuilder(),
+          TargetPlatform.iOS: _ReducedAwareCupertinoTransitionsBuilder(),
+          TargetPlatform.macOS: _ReducedAwareCupertinoTransitionsBuilder(),
+          TargetPlatform.windows: _ReducedAwareTransitionsBuilder(),
+          TargetPlatform.linux: _ReducedAwareTransitionsBuilder(),
         },
       ),
 
@@ -398,6 +399,56 @@ class AppTheme {
         ),
       ),
 
+      // IconButton Theme: touch target >= 48, overlay states
+      iconButtonTheme: IconButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: WidgetStateProperty.all(const Size(48, 48)),
+          padding: WidgetStateProperty.all(EdgeInsets.all(spacing.xs)),
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered)) {
+              return colorScheme.onSurface.withAlpha(20);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return colorScheme.primary.withAlpha(26);
+            }
+            if (states.contains(WidgetState.pressed)) {
+              return colorScheme.onSurface.withAlpha(30);
+            }
+            return null;
+          }),
+        ),
+      ),
+
+      // TextButton Theme: uniform hover/focus
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered)) {
+              return colorScheme.primary.withAlpha(20);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return colorScheme.primary.withAlpha(30);
+            }
+            return null;
+          }),
+        ),
+      ),
+
+      // FilledButton Theme: uniform hover/focus
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered)) {
+              return colorScheme.onPrimary.withAlpha(26);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return colorScheme.onPrimary.withAlpha(38);
+            }
+            return null;
+          }),
+        ),
+      ),
+
       // Dialog Theme
       dialogTheme: DialogThemeData(
         backgroundColor: isDark
@@ -468,8 +519,66 @@ class AppTheme {
         ),
       ),
 
+      // Global hover/focus colors (desktop/web)
+      hoverColor: colorScheme.primary.withAlpha(16),
+      focusColor: colorScheme.primary.withAlpha(26),
+      highlightColor: colorScheme.primary.withAlpha(20),
+
       scaffoldBackgroundColor: colorScheme.surface,
       visualDensity: VisualDensity.adaptivePlatformDensity,
+    );
+  }
+}
+
+// Transitions che rispettano le preferenze di riduzione animazioni
+class _ReducedAwareTransitionsBuilder extends PageTransitionsBuilder {
+  const _ReducedAwareTransitionsBuilder();
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final mq = MediaQuery.maybeOf(context);
+    final reduce =
+        mq?.disableAnimations == true || mq?.accessibleNavigation == true;
+    if (reduce) {
+      return child;
+    }
+    return ZoomPageTransitionsBuilder().buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
+    );
+  }
+}
+
+class _ReducedAwareCupertinoTransitionsBuilder extends PageTransitionsBuilder {
+  const _ReducedAwareCupertinoTransitionsBuilder();
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final mq = MediaQuery.maybeOf(context);
+    final reduce =
+        mq?.disableAnimations == true || mq?.accessibleNavigation == true;
+    if (reduce) {
+      return child;
+    }
+    return const CupertinoPageTransitionsBuilder().buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }

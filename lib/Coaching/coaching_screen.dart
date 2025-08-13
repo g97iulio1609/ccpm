@@ -8,6 +8,8 @@ import '../UI/components/user_autocomplete.dart';
 import '../UI/components/bottom_menu.dart';
 import '../../models/user_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/glass.dart';
 
 class CoachingScreen extends HookConsumerWidget {
   const CoachingScreen({super.key});
@@ -31,6 +33,7 @@ class CoachingScreen extends HookConsumerWidget {
     final currentUserId = usersService.getCurrentUserId();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     // Recupero degli utenti in base al ruolo
     final usersFuture = useMemoized(() async {
@@ -74,53 +77,57 @@ class CoachingScreen extends HookConsumerWidget {
       return null;
     }, [snapshot.data, snapshot.error]);
 
+    final content = SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          // Search Bar
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(AppTheme.spacing.xl),
+              child: _buildSearchBar(
+                typeAheadController,
+                focusNode,
+                context,
+                ref,
+                theme,
+                colorScheme,
+              ),
+            ),
+          ),
+
+          // Athletes Grid
+          SliverPadding(
+            padding: EdgeInsets.all(AppTheme.spacing.xl),
+            sliver: _buildAthletesList(
+              snapshot,
+              theme,
+              colorScheme,
+              currentUserRole,
+              context,
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Search Bar
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.spacing.xl),
-                  child: _buildSearchBar(
-                    typeAheadController,
-                    focusNode,
-                    context,
-                    ref,
-                    theme,
-                    colorScheme,
-                  ),
+      body: glassEnabled
+          ? GlassLite(padding: EdgeInsets.zero, radius: 0, child: content)
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest.withAlpha(128),
+                  ],
+                  stops: const [0.0, 1.0],
                 ),
               ),
-
-              // Athletes Grid
-              SliverPadding(
-                padding: EdgeInsets.all(AppTheme.spacing.xl),
-                sliver: _buildAthletesList(
-                  snapshot,
-                  theme,
-                  colorScheme,
-                  currentUserRole,
-                  context,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+              child: content,
+            ),
     );
   }
 

@@ -5,10 +5,13 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/user_autocomplete.dart';
 import 'widgets/measurement_card.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 import 'widgets/measurement_chart.dart';
 import 'widgets/measurement_form.dart';
 import 'measurement_controller.dart';
 import 'measurement_constants.dart';
+import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 class MeasurementsPage extends ConsumerStatefulWidget {
   const MeasurementsPage({super.key});
@@ -69,39 +72,44 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     final colorScheme = theme.colorScheme;
     final currentUserRole = ref.watch(userRoleProvider);
     final selectedUserId = ref.watch(selectedUserIdProvider);
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
+
+    final content = SafeArea(
+      child: Column(
+        children: [
+          if (currentUserRole == 'admin' || currentUserRole == 'coach')
+            _buildUserSearch(colorScheme),
+          _buildAddButton(context, colorScheme, selectedUserId),
+          Expanded(
+            child: selectedUserId != null
+                ? _buildMeasurementsContent(selectedUserId)
+                : _buildUserSelectionPrompt(
+                    theme,
+                    colorScheme,
+                    currentUserRole,
+                  ),
+          ),
+        ],
+      ),
+    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              if (currentUserRole == 'admin' || currentUserRole == 'coach')
-                _buildUserSearch(colorScheme),
-              _buildAddButton(context, colorScheme, selectedUserId),
-              Expanded(
-                child: selectedUserId != null
-                    ? _buildMeasurementsContent(selectedUserId)
-                    : _buildUserSelectionPrompt(
-                        theme,
-                        colorScheme,
-                        currentUserRole,
-                      ),
+      body: glassEnabled
+          ? GlassLite(padding: EdgeInsets.zero, radius: 0, child: content)
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest.withAlpha(128),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
+              child: content,
+            ),
     );
   }
 
@@ -181,11 +189,36 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
           data: (user) => measurementsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(child: Text('Errore: $error')),
-            data: (measurements) => _MeasurementsContent(
-              measurements: measurements,
-              userId: userId,
-              userGender: user!.gender,
-            ),
+            data: (measurements) {
+              if (measurements.isEmpty) {
+                return Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing.lg),
+                  child: AppCard(
+                    title: 'Nessuna misurazione',
+                    subtitle:
+                        'Aggiungi la prima misurazione per vedere l\'andamento nel tempo',
+                    leadingIcon: Icons.monitor_weight,
+                    actions: [
+                      FilledButton.icon(
+                        onPressed: () =>
+                            MeasurementsPage.showAddMeasurementDialog(
+                              context,
+                              userId,
+                            ),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Aggiungi misurazione'),
+                      ),
+                    ],
+                    child: const SizedBox.shrink(),
+                  ),
+                );
+              }
+              return _MeasurementsContent(
+                measurements: measurements,
+                userId: userId,
+                userGender: user!.gender,
+              );
+            },
           ),
         );
       },
