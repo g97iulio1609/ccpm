@@ -22,6 +22,7 @@ import 'package:alphanessone/UI/components/kpi_badge.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -819,13 +820,9 @@ class EditRecordDialog extends HookConsumerWidget {
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
-    return AlertDialog(
-      title: Text(
-        'Edit Record',
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-      ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      content: SingleChildScrollView(
+    return AppDialog(
+      title: const Text('Edit Record'),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -862,12 +859,9 @@ class EditRecordDialog extends HookConsumerWidget {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary),
-          ),
+          child: const Text('Cancel'),
         ),
-        TextButton(
+        FilledButton(
           onPressed: () {
             Navigator.of(context).pop();
             _handleSave(
@@ -879,10 +873,7 @@ class EditRecordDialog extends HookConsumerWidget {
               keepWeight.value,
             );
           },
-          child: Text(
-            'Save',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary),
-          ),
+          child: const Text('Save'),
         ),
       ],
     );
