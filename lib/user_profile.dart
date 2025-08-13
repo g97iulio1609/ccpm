@@ -601,7 +601,11 @@ class UserProfileState extends ConsumerState<UserProfile>
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.info_outline,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
               const Text('Stato 2FA: placeholder'),
             ],
@@ -717,7 +721,10 @@ class UserProfileState extends ConsumerState<UserProfile>
     try {
       await FirebaseAuth.instance.signOut();
       if (mounted) {
-        _showSnackBar('Logout effettuato da questo dispositivo. (Placeholder multi-device)', Colors.green);
+        _showSnackBar(
+          'Logout effettuato da questo dispositivo. (Placeholder multi-device)',
+          Colors.green,
+        );
         context.go('/');
       }
     } catch (e) {
