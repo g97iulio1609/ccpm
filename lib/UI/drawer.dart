@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/badge.dart';
+import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/glass.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'package:alphanessone/Main/route_metadata.dart';
@@ -113,7 +114,12 @@ class CustomDrawer extends ConsumerWidget {
                           ),
                         ),
                         SizedBox(height: AppTheme.spacing.md),
-                        _buildCurrentProgram(context, theme, colorScheme),
+                        _buildCurrentProgram(
+                          context,
+                          theme,
+                          colorScheme,
+                          glassEnabled,
+                        ),
                       ],
                     ),
                   ),
@@ -122,15 +128,23 @@ class CustomDrawer extends ConsumerWidget {
             ),
           ),
 
-          // User Profile Section (glassified + contrast)
-          GlassLite(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _buildUserProfile(context, ref, theme, colorScheme),
-                Divider(color: colorScheme.outline.withAlpha(38), height: 1),
-                _buildLogoutButton(context, theme, colorScheme),
-              ],
+          // User Profile Section (AppCard per coerenza con il design system)
+          Padding(
+            padding: EdgeInsets.only(
+              left: AppTheme.spacing.lg,
+              right: AppTheme.spacing.lg,
+              bottom: AppTheme.spacing.lg,
+            ),
+            child: AppCard(
+              glass: true,
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _buildUserProfile(context, ref, theme, colorScheme),
+                  Divider(color: colorScheme.outline.withAlpha(38), height: 1),
+                  _buildLogoutButton(context, theme, colorScheme),
+                ],
+              ),
             ),
           ),
         ],
@@ -317,6 +331,7 @@ class CustomDrawer extends ConsumerWidget {
     BuildContext context,
     ThemeData theme,
     ColorScheme colorScheme,
+    bool glassEnabled,
   ) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
@@ -327,13 +342,9 @@ class CustomDrawer extends ConsumerWidget {
         if (snapshot.hasData && snapshot.data!.exists) {
           final programId = snapshot.data!.get('currentProgram') as String?;
           if (programId != null) {
-            return Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                border: Border.all(color: colorScheme.outline.withAlpha(25)),
-                boxShadow: AppTheme.elevations.small,
-              ),
+            return AppCard(
+              glass: glassEnabled,
+              padding: EdgeInsets.zero,
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('weeks')
