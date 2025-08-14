@@ -23,6 +23,7 @@ import 'package:alphanessone/Viewer/presentation/widgets/workout_details/note_di
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/series_execution_dialog.dart'
     as series_dialog;
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
   final String programId;
@@ -496,9 +497,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     if (series.isCompleted) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AppDialog(
           title: const Text('Conferma'),
-          content: const Text('Vuoi segnare questa serie come non completata?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -512,6 +512,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               child: const Text('Conferma'),
             ),
           ],
+          child: const Text('Vuoi segnare questa serie come non completata?'),
         ),
       );
     } else {

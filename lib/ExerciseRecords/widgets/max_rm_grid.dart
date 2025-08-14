@@ -16,6 +16,7 @@ import 'package:alphanessone/providers/providers.dart';
 
 import 'package:alphanessone/ExerciseRecords/widgets/edit_record_dialog.dart';
 import 'package:alphanessone/ExerciseRecords/providers/max_rm_providers.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class MaxRMGridSliver extends ConsumerWidget {
   final String? selectedUserId;
@@ -34,19 +35,19 @@ class MaxRMGridSliver extends ConsumerWidget {
         final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
         final userId = selectedUserId ?? usersService.getCurrentUserId();
 
-        List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map(
-          (exercise) {
-            return exerciseRecordService
-                .getExerciseRecords(userId: userId, exerciseId: exercise.id)
-                .map(
-                  (records) => records.isNotEmpty
-                      ? records.reduce(
-                          (a, b) => a.date.compareTo(b.date) > 0 ? a : b,
-                        )
-                      : null,
-                );
-          },
-        ).toList();
+        List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((
+          exercise,
+        ) {
+          return exerciseRecordService
+              .getExerciseRecords(userId: userId, exerciseId: exercise.id)
+              .map(
+                (records) => records.isNotEmpty
+                    ? records.reduce(
+                        (a, b) => a.date.compareTo(b.date) > 0 ? a : b,
+                      )
+                    : null,
+              );
+        }).toList();
 
         return StreamBuilder<List<ExerciseRecord?>>(
           stream: CombineLatestStream.list(exerciseRecordStreams),
@@ -189,10 +190,12 @@ class MaxRMGridSliver extends ConsumerWidget {
                                 child: AppCard(
                                   glass: true,
                                   header: SectionHeader(
-                                    title: exercises
+                                    title:
+                                        exercises
                                             .firstWhere(
                                               (ex) =>
-                                                  ex.id == rowRecords[i].exerciseId,
+                                                  ex.id ==
+                                                  rowRecords[i].exerciseId,
                                               orElse: () => ExerciseModel(
                                                 id: '',
                                                 name: 'Exercise not found',
@@ -259,9 +262,7 @@ class MaxRMGridSliver extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => SliverToBoxAdapter(
-        child: Center(
-          child: Text('Error loading max RMs: $error'),
-        ),
+        child: Center(child: Text('Error loading max RMs: $error')),
       ),
     );
   }
@@ -355,7 +356,9 @@ class MaxRMGridSliver extends ConsumerWidget {
                   return EditRecordDialog(
                     record: record,
                     exercise: exercise,
-                    exerciseRecordService: ref.read(exerciseRecordServiceProvider),
+                    exerciseRecordService: ref.read(
+                      exerciseRecordServiceProvider,
+                    ),
                     usersService: ref.read(usersServiceProvider),
                   );
                 },
@@ -384,60 +387,49 @@ class MaxRMGridSliver extends ConsumerWidget {
   ) {
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(
-            'Confirmation',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      builder: (dialogContext) => AppDialog(
+        title: const Text('Elimina Record'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annulla'),
           ),
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          content: Text(
-            'Are you sure you want to delete this record?',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Theme.of(context).colorScheme.primary),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                try {
-                  await ref
-                      .read(exerciseRecordServiceProvider)
-                      .deleteExerciseRecord(
-                        userId: ref.read(selectedUserIdProvider) ??
-                            ref.read(usersServiceProvider).getCurrentUserId(),
-                        exerciseId: exercise.id,
-                        recordId: record.id,
-                      );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Record deleted successfully')),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              try {
+                await ref
+                    .read(exerciseRecordServiceProvider)
+                    .deleteExerciseRecord(
+                      userId:
+                          ref.read(selectedUserIdProvider) ??
+                          ref.read(usersServiceProvider).getCurrentUserId(),
+                      exerciseId: exercise.id,
+                      recordId: record.id,
                     );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to delete record: $e')),
-                    );
-                  }
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Record deleted successfully'),
+                    ),
+                  );
                 }
-              },
-              child: Text(
-                'Delete',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          ],
-        );
-      },
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete record: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Elimina'),
+          ),
+        ],
+        child: Text(
+          'Sei sicuro di voler eliminare questo record?',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+      ),
     );
   }
 }
-
-

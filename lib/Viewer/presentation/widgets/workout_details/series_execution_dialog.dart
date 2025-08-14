@@ -34,15 +34,18 @@ Future<void> showSeriesExecutionDialog({
     ),
     actions: [
       TextButton(
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
         child: const Text('Annulla'),
       ),
       FilledButton(
         onPressed: () async {
           final repsDone = int.tryParse(repsController.text.trim()) ?? 0;
-          final weightDone = double.tryParse(weightController.text.trim()) ?? 0.0;
+          final weightDone =
+              double.tryParse(weightController.text.trim()) ?? 0.0;
           await onSave(repsDone, weightDone);
-          if (context.mounted) Navigator.of(context).pop();
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
         },
         child: const Text('Salva'),
       ),

@@ -10,6 +10,7 @@ import 'dart:convert';
 
 import '../services/ai/ai_settings_service.dart';
 import '../services/ai/ai_services.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 /// Stato dei messaggi di chat
 final chatMessagesProvider =
@@ -141,26 +142,16 @@ class AIChatWidget extends HookConsumerWidget {
       if (settings.availableProviders.isEmpty) {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Configurazione Richiesta'),
-            content: const Text(
+          builder: (context) => const AppDialog(
+            title: Text('Configurazione Richiesta'),
+            actions: [
+              // Le azioni vengono gestite sopra con Navigator/GoRouter; qui solo pulsanti UI
+            ],
+            child: Text(
               'Per utilizzare l\'assistente AI, è necessario configurare almeno una chiave API nelle impostazioni.',
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Annulla'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  context.go('/settings/ai');
-                },
-                child: const Text('Configura'),
-              ),
-            ],
           ),
-        );
+        ).then((_) => context.go('/settings/ai'));
         return;
       }
 
