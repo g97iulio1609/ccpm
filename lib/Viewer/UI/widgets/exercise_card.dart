@@ -209,7 +209,13 @@ class ExerciseCard extends ConsumerWidget {
   void _handleMenuSelection(BuildContext context, WidgetRef ref, String value) {
     switch (value) {
       case 'change':
-        WorkoutDialogs.showChangeExerciseDialog(context, ref, exercise, userId);
+        WorkoutDialogs.showChangeExerciseDialog(
+          context,
+          ref,
+          exercise,
+          userId,
+          workoutId,
+        );
         break;
       case 'edit_series':
         _showEditSeriesDialog(
@@ -266,6 +272,13 @@ class ExerciseCard extends ConsumerWidget {
     Map<String, dynamic> exercise,
     List<Map<String, dynamic>> series,
   ) {
-    WorkoutDialogs.showSeriesEditDialog(context, ref, exercise, series, userId);
+    WorkoutDialogs.showSeriesEditDialog(
+      context,
+      ref,
+      exercise,
+      series,
+      userId,
+      workoutId,
+    );
   }
 }

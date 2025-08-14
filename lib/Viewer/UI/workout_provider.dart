@@ -4,6 +4,7 @@ import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import '../services/training_program_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:alphanessone/providers/providers.dart' as app_providers; // unused
 
 // Provider per le note degli esercizi
 final exerciseNotesProvider = StateProvider<Map<String, String>>((ref) => {});
@@ -31,8 +32,7 @@ final workoutIdProvider = StateProvider<String?>((ref) => null);
 // Provider per il nome del workout corrente
 final currentWorkoutNameProvider = StateProvider<String>((ref) => '');
 
-// Provider per il ruolo dell'utente (per es. admin o user)
-final userRoleProvider = StateProvider<String?>((ref) => null);
+// Ruolo utente: usa il provider globale centralizzato
 
 // Provider per l'ID dell'utente
 final userIdProvider = StateProvider<String?>((ref) {

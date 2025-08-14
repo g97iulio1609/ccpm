@@ -4,7 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../exerciseManager/exercises_services.dart';
 import '../../exerciseManager/exercises_manager.dart';
 import '../../Main/app_theme.dart';
-import '../../UI/components/dialog.dart';
+import '../../UI/components/app_dialog.dart';
 import '../../common/generic_autocomplete.dart';
 
 class AddExerciseDialog extends HookConsumerWidget {
@@ -255,8 +255,8 @@ class AddExerciseDialog extends HookConsumerWidget {
         child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
       ),
       actions: [
-        AppDialog.buildCancelButton(context: context),
-        AppDialog.buildActionButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
           context: context,
           label: 'Crea',
           icon: Icons.add,

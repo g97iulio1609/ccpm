@@ -20,6 +20,7 @@ import 'package:alphanessone/Viewer/presentation/widgets/workout_details/superse
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/superset_series_matrix.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/note_dialog.dart'
     as note_dialog;
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/series_execution_dialog.dart'
     as series_dialog;
 
@@ -155,33 +156,25 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             return buildListBody();
           }
 
-          // Griglia stabile con card a altezza nota. Niente Expanded nelle card.
+          // Griglia a colonne con altezza variabile (masonry): le card non vengono mai tagliate
           final bool ultraWide = width >= 1800;
           final bool veryWide = width >= 1600 && width < 1800;
-          final double cardHeight = ultraWide
-              ? 480.0
-              : veryWide
-              ? 500.0
-              : (width >= 1400 ? 520.0 : 540.0);
-          final double crossAxisExtent = ultraWide
-              ? 320.0
-              : veryWide
-              ? 340.0
-              : (width >= 1400 ? 360.0 : 380.0);
           final double gridSpacing = (veryWide || ultraWide)
               ? AppTheme.spacing.sm
               : spacing;
+          final int columns = ultraWide
+              ? 5
+              : veryWide
+              ? 4
+              : (width >= 1400 ? 3 : 2);
 
           return RefreshIndicator(
             onRefresh: () => notifier.refreshWorkout(),
-            child: GridView.builder(
+            child: MasonryGridView.count(
               padding: EdgeInsets.all(padding),
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: crossAxisExtent,
-                mainAxisExtent: cardHeight,
-                crossAxisSpacing: gridSpacing,
-                mainAxisSpacing: gridSpacing,
-              ),
+              crossAxisCount: columns,
+              mainAxisSpacing: gridSpacing,
+              crossAxisSpacing: gridSpacing,
               itemCount: groupedExercises.length,
               itemBuilder: (context, index) {
                 final entry = groupedExercises.entries.elementAt(index);
@@ -190,12 +183,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                     ? _buildSingleExerciseCard(
                         exercises.first,
                         context,
-                        isListMode: false,
+                        // Usa layout completo anche in griglia per evitare tagli
+                        isListMode: true,
                       )
                     : _buildSuperSetCard(
                         superSetExercises: exercises,
                         context: context,
-                        isListMode: false,
+                        // Usa layout completo anche in griglia per evitare tagli
+                        isListMode: true,
                       );
                 return Semantics(
                   container: true,
@@ -239,6 +234,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               ref,
               exercise.toMap(),
               widget.userId,
+              widget.workoutId,
             );
           } else if (value == 'edit_series') {
             WorkoutDialogs.showSeriesEditDialog(
@@ -247,6 +243,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               exercise.toMap(),
               exercise.series.map((s) => s.toMap()).toList(),
               widget.userId,
+              widget.workoutId,
             );
           }
         },
@@ -384,6 +381,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                           ref,
                           exercise.toMap(),
                           widget.userId,
+                          widget.workoutId,
                         );
                       } else if (value == 'edit_series') {
                         WorkoutDialogs.showSeriesEditDialog(
@@ -392,6 +390,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                           exercise.toMap(),
                           exercise.series.map((s) => s.toMap()).toList(),
                           widget.userId,
+                          widget.workoutId,
                         );
                       }
                     },

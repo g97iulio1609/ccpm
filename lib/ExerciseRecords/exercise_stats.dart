@@ -11,6 +11,7 @@ import '../providers/providers.dart';
 import 'package:alphanessone/UI/app_bar_custom.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/kpi_badge.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 
 class ExerciseStats extends HookConsumerWidget {
   final ExerciseModel exercise;
@@ -927,8 +928,10 @@ class EditRecordDialog extends HookConsumerWidget {
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions)))
-          .roundToDouble();
+      newMaxWeight = ExerciseService.calculateMaxRM(
+        newMaxWeight,
+        newRepetitions,
+      ).roundToDouble();
       newRepetitions = 1;
     }
 

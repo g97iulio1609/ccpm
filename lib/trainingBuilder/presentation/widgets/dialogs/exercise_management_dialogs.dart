@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 
 // Include anche i dialog bulk già consolidati
 export 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/bulk_series_dialog.dart'
@@ -51,7 +52,10 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
     if (repetitions > 1) {
       final weight = double.tryParse(maxWeightController.text) ?? 0;
       if (weight > 0) {
-        final calculatedMaxWeight = weight / (1.0278 - (0.0278 * repetitions));
+        final calculatedMaxWeight = ExerciseService.calculateMaxRM(
+          weight,
+          repetitions,
+        );
         maxWeightController.text = calculatedMaxWeight.toStringAsFixed(1);
         repetitionsController.text = '1';
       }

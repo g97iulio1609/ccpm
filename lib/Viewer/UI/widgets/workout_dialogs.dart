@@ -10,6 +10,8 @@ import 'package:alphanessone/Viewer/UI/workout_provider.dart'
     as workout_provider;
 import 'package:flutter/services.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/Viewer/presentation/notifiers/workout_details_notifier.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 
 class WorkoutDialogs {
   static Future<void> showNoteDialog(
@@ -32,9 +34,7 @@ class WorkoutDialogs {
       child: TextField(
         controller: noteController,
         maxLines: 5,
-        decoration: InputDecoration(
-          hintText: 'Inserisci una nota...',
-        ),
+        decoration: InputDecoration(hintText: 'Inserisci una nota...'),
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
       ),
       actions: [
@@ -87,8 +87,10 @@ class WorkoutDialogs {
       final reps = int.tryParse(repsController.text);
 
       if (weight != null && reps != null && reps > 0) {
-        calculatedMaxWeight.value = (weight / (1.0278 - 0.0278 * reps))
-            .roundToDouble();
+        calculatedMaxWeight.value = ExerciseService.calculateMaxRM(
+          weight,
+          reps,
+        ).roundToDouble();
       } else {
         calculatedMaxWeight.value = null;
       }
@@ -165,6 +167,13 @@ class WorkoutDialogs {
                     repetitions: 1,
                     keepCurrentWeights: keepWeightSwitch.value,
                   );
+              // Forza l'aggiornamento dello stato del Viewer dopo il write
+              final workoutId = (exercise['workoutId'] as String?) ?? '';
+              if (workoutId.isNotEmpty && context.mounted) {
+                await ref
+                    .read(workoutDetailsNotifierProvider(workoutId).notifier)
+                    .refreshWorkout();
+              }
               Navigator.pop(context);
             }
           },
@@ -179,6 +188,7 @@ class WorkoutDialogs {
     WidgetRef ref,
     Map<String, dynamic> currentExercise,
     String userId,
+    String workoutId,
   ) {
     final exerciseRecordService = ref.read(
       app_providers.exerciseRecordServiceProvider,
@@ -204,7 +214,14 @@ class WorkoutDialogs {
       if (newExercise != null) {
         await ref
             .read(workout_provider.workoutServiceProvider)
-            .updateExercise(currentExercise, newExercise);
+            .updateExercise(currentExercise, newExercise, targetUserId: userId);
+
+        // Forza l'aggiornamento dello stato del Viewer dopo il write
+        if (workoutId.isNotEmpty) {
+          await ref
+              .read(workoutDetailsNotifierProvider(workoutId).notifier)
+              .refreshWorkout();
+        }
       }
     });
   }
@@ -215,12 +232,14 @@ class WorkoutDialogs {
     Map<String, dynamic> exercise,
     List<Map<String, dynamic>> series,
     String userId,
+    String workoutId,
   ) async {
     final List<Series> seriesList = series
         .map((s) => Series.fromMap(s))
         .toList();
     final originalExerciseId =
-        seriesList.first.originalExerciseId ?? exercise['id'];
+        seriesList.first.originalExerciseId ??
+        (exercise['exerciseId'] as String? ?? '');
 
     final recordsStream = ref
         .read(app_providers.exerciseRecordServiceProvider)
@@ -242,7 +261,7 @@ class WorkoutDialogs {
             .getWeightNotifier(exercise['id']) ??
         ValueNotifier<double>(0.0);
 
-  final result = await showDialog<dynamic>(
+    final result = await showDialog<dynamic>(
       context: context,
       builder: (context) => SeriesDialog(
         exerciseRecordService: ref.read(
@@ -261,18 +280,27 @@ class WorkoutDialogs {
       ),
     );
 
-  if (result != null && context.mounted) {
+    if (result != null && context.mounted) {
       try {
-    // Supporta sia il nuovo ritorno (List<Series>) che il vecchio (Map con chiave 'series')
-    final List<Series> updatedSeries = result is List<Series>
-      ? result
-      : (result is Map<String, dynamic>
-        ? (result['series'] as List<Series>)
-        : <Series>[]);
-    if (updatedSeries.isEmpty) return;
+        // Supporta sia il nuovo ritorno (List<Series>) che il vecchio (Map con chiave 'series')
+        final List<Series> updatedSeries = result is List<Series>
+            ? result
+            : (result is Map<String, dynamic>
+                  ? (result['series'] as List<Series>)
+                  : <Series>[]);
+        if (updatedSeries.isEmpty) return;
+        // Riusa il SeriesService del TrainingBuilder per applicare le modifiche con la stessa logica
+        // Aggiorno/creo/eliminazione già delegati in WorkoutService.applySeriesChanges; manteniamo qui la chiamata
         await ref
             .read(workout_provider.workoutServiceProvider)
             .applySeriesChanges(exercise, updatedSeries);
+
+        // Forza l'aggiornamento dello stato del Viewer dopo il write
+        if (workoutId.isNotEmpty) {
+          await ref
+              .read(workoutDetailsNotifierProvider(workoutId).notifier)
+              .refreshWorkout();
+        }
       } catch (e) {
         if (!context.mounted) return;
         final cs = Theme.of(context).colorScheme;
@@ -331,9 +359,7 @@ class WorkoutDialogs {
           const SizedBox(height: 8),
           TextField(
             controller: repsController,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
             ],
@@ -350,9 +376,7 @@ class WorkoutDialogs {
           const SizedBox(height: 8),
           TextField(
             controller: weightController,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
             ],

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/dialog.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/shared/shared.dart';
 import '../forms/bulk_series_form.dart';
 
@@ -39,8 +39,8 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
         ),
       ),
       actions: [
-        AppDialog.buildCancelButton(context: context),
-        AppDialog.buildActionButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
           context: context,
           label: 'Gestisci Serie',
           icon: Icons.playlist_add,
@@ -164,8 +164,8 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
         ),
       ),
       actions: [
-        AppDialog.buildCancelButton(context: context),
-        AppDialog.buildActionButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
           context: context,
           label: 'Applica',
           icon: Icons.check,
