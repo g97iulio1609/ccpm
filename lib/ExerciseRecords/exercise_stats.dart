@@ -11,6 +11,10 @@ import '../providers/providers.dart';
 import 'package:alphanessone/UI/app_bar_custom.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/kpi_badge.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/UI/components/input.dart';
+import 'package:alphanessone/UI/components/date_picker_field.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 
 class ExerciseStats extends HookConsumerWidget {
   final ExerciseModel exercise;
@@ -668,46 +672,28 @@ class ExerciseStats extends HookConsumerWidget {
   ) {
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(
-            'Confirmation',
-            style: TextStyle(
-              color: Theme.of(dialogContext).colorScheme.onSurface,
-            ),
+      builder: (dialogContext) => AppDialog(
+        title: const Text('Elimina Record'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annulla'),
           ),
-          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
-          content: Text(
-            'Are you sure you want to delete this record?',
-            style: TextStyle(
-              color: Theme.of(dialogContext).colorScheme.onSurface,
-            ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _performDelete(context, ref, record);
+            },
+            child: const Text('Elimina'),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: Theme.of(dialogContext).colorScheme.primary,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _performDelete(context, ref, record);
-              },
-              child: Text(
-                'Delete',
-                style: TextStyle(
-                  color: Theme.of(dialogContext).colorScheme.error,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+        ],
+        child: Text(
+          'Sei sicuro di voler eliminare questo record?',
+          style: TextStyle(
+            color: Theme.of(dialogContext).colorScheme.onSurface,
+          ),
+        ),
+      ),
     );
   }
 
@@ -778,13 +764,29 @@ class EditRecordDialog extends HookConsumerWidget {
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
-    return AlertDialog(
-      title: Text(
-        'Edit Record',
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-      ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      content: SingleChildScrollView(
+    return AppDialog(
+      title: const Text('Edit Record'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            _handleSave(
+              context,
+              ref,
+              maxWeightController.text,
+              repetitionsController.text,
+              selectedDate.value,
+              keepWeight.value,
+            );
+          },
+          child: const Text('Save'),
+        ),
+      ],
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -818,32 +820,6 @@ class EditRecordDialog extends HookConsumerWidget {
           ],
         ),
       ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            _handleSave(
-              context,
-              ref,
-              maxWeightController.text,
-              repetitionsController.text,
-              selectedDate.value,
-              keepWeight.value,
-            );
-          },
-          child: Text(
-            'Save',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary),
-          ),
-        ),
-      ],
     );
   }
 
@@ -854,18 +830,7 @@ class EditRecordDialog extends HookConsumerWidget {
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: labelText,
-          labelStyle: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        keyboardType: TextInputType.number,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-      ),
+      child: AppInput.number(controller: controller, label: labelText),
     );
   }
 
@@ -875,42 +840,12 @@ class EditRecordDialog extends HookConsumerWidget {
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: InkWell(
-        onTap: () async {
-          final DateTime? picked = await showDatePicker(
-            context: context,
-            initialDate: selectedDate.value,
-            firstDate: DateTime(2000),
-            lastDate: DateTime.now(),
-          );
-          if (picked != null && picked != selectedDate.value) {
-            selectedDate.value = picked;
-          }
-        },
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: 'Date',
-            labelStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                DateFormat('dd/MM/yyyy').format(selectedDate.value),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              Icon(
-                Icons.calendar_today,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ],
-          ),
-        ),
+      child: DatePickerField(
+        value: selectedDate.value,
+        label: 'Date',
+        onDateSelected: (date) => selectedDate.value = date,
+        firstDate: DateTime(2000),
+        lastDate: DateTime.now(),
       ),
     );
   }
@@ -927,8 +862,10 @@ class EditRecordDialog extends HookConsumerWidget {
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight = (newMaxWeight / (1.0278 - (0.0278 * newRepetitions)))
-          .roundToDouble();
+      newMaxWeight = ExerciseService.calculateMaxRM(
+        newMaxWeight,
+        newRepetitions,
+      ).roundToDouble();
       newRepetitions = 1;
     }
 

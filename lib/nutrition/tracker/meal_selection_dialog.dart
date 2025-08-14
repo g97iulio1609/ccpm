@@ -1,6 +1,6 @@
 import 'package:alphanessone/nutrition/models/meals_model.dart';
 import 'package:alphanessone/nutrition/services/meals_services.dart';
-import 'package:alphanessone/UI/components/dialog.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/UI/components/badge.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -55,8 +55,8 @@ class _MealSelectionDialogState extends ConsumerState<MealSelectionDialog> {
       maxWidth: 480,
       maxHeight: MediaQuery.of(context).size.height * 0.8,
       actions: [
-        AppDialog.buildCancelButton(context: context),
-        AppDialog.buildActionButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
           context: context,
           label: 'Seleziona',
           onPressed: () => Navigator.of(context).pop(_selectedMealIds),

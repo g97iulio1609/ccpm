@@ -62,6 +62,7 @@ dependencies:
   uuid: ^4.4.2
   flutter_native_splash: ^2.4.1
   flutter_stripe: ^11.5.0
+  flutter_staggered_grid_view: ^0.7.0
   # flutter_stripe_web: ^6.5.0  # Temporaneamente commentato per compatibilità con Flutter 3.32
   shared_preferences: ^2.2.2
   http: ^1.2.2

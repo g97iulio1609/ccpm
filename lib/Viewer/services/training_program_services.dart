@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:alphanessone/shared/services/series_completion_utils.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class TrainingProgramServices {
@@ -74,17 +75,14 @@ class TrainingProgramServices {
     double? maxWeight,
     int repsDone,
     double weightDone,
-  ) {
-    bool repsCompleted = maxReps != null
-        ? repsDone >= reps && repsDone <= maxReps
-        : repsDone >= reps;
-
-    bool weightCompleted = maxWeight != null
-        ? weightDone >= weight && weightDone <= maxWeight
-        : weightDone >= weight;
-
-    return repsCompleted && weightCompleted;
-  }
+  ) => SeriesCompletionUtils.isDoneValues(
+        reps: reps,
+        maxReps: maxReps,
+        weight: weight,
+        maxWeight: maxWeight,
+        repsDone: repsDone,
+        weightDone: weightDone,
+      );
 
   // Timer Service
   Future<void> showNotification(String title, String body) async {

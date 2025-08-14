@@ -7,6 +7,7 @@ import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
 import '../cards/series_card.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import '../forms/series_form_fields.dart';
 
 class SeriesListWidget extends ConsumerStatefulWidget {
@@ -189,19 +190,15 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
   void _deleteSeriesGroup(List<Series> seriesGroup) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => AppDialog(
         title: const Text('Elimina Gruppo Serie'),
-        content: const Text(
-          'Sei sicuro di voler eliminare questo gruppo di serie?',
-        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Annulla'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () {
-              // Immutabile: crea nuova lista senza le serie del gruppo
               final updated = widget.exercise.series
                   .where((s) => !seriesGroup.contains(s))
                   .toList();
@@ -219,6 +216,9 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
             child: const Text('Elimina'),
           ),
         ],
+        child: const Text(
+          'Sei sicuro di voler eliminare questo gruppo di serie?',
+        ),
       ),
     );
   }
@@ -382,10 +382,8 @@ class _GroupedSeriesExpanded extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemCount: group.length,
-        separatorBuilder: (_, __) => Divider(
-          height: 1,
-          color: cs.outlineVariant.withValues(alpha: 0.3),
-        ),
+        separatorBuilder: (_, __) =>
+            Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.3)),
         itemBuilder: (context, idx) {
           final s = group[idx];
           return Padding(

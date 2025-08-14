@@ -9,6 +9,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 
 class ExerciseOptionsDialog extends ConsumerWidget {
   final Exercise exercise;
@@ -399,8 +400,10 @@ class ExerciseOptionsDialog extends ConsumerWidget {
       int adjustedRepetitions = repetitions;
 
       if (repetitions > 1) {
-        // Formula di Brzycki per calcolare 1RM
-        adjustedMaxWeight = maxWeight / (1.0278 - (0.0278 * repetitions));
+        adjustedMaxWeight = ExerciseService.calculateMaxRM(
+          maxWeight,
+          repetitions,
+        );
         adjustedRepetitions = 1;
       }
 

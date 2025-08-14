@@ -3,7 +3,7 @@
 import 'package:alphanessone/ExerciseRecords/exercise_record_services.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Main/app_theme.dart';
-import 'package:alphanessone/UI/components/dialog.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../providers/training_providers.dart';
@@ -58,8 +58,8 @@ class ExerciseDialog extends HookConsumerWidget {
         ),
       ),
       actions: [
-        AppDialog.buildCancelButton(context: context),
-        AppDialog.buildActionButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
           context: context,
           label: exercise == null ? 'Aggiungi' : 'Aggiorna',
           icon: exercise == null ? Icons.add : Icons.check,
