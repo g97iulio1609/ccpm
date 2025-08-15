@@ -92,40 +92,66 @@ class ExerciseDialog extends HookConsumerWidget {
               ),
             ),
             SizedBox(height: AppTheme.spacing.xs),
-            SearchAnchor(
-              isFullScreen: false,
-              builder: (context, controller) {
-                return SearchBar(
-                  controller: controller,
-                  hintText: 'Cerca esercizio',
-                  leading: const Icon(Icons.search),
-                  onTap: controller.openView,
-                  onChanged: (_) => controller.openView(),
-                  onSubmitted: (value) {
-                    exerciseNameController.text = value;
-                  },
-                );
-              },
-              suggestionsBuilder: (context, controller) {
-                final query = controller.text.toLowerCase();
-                final filtered = query.isEmpty
-                    ? exercisesList
-                    : exercisesList
-                          .where((e) => e.name.toLowerCase().contains(query))
-                          .toList();
-                return filtered.map((e) {
-                  return ListTile(
-                    leading: const Icon(Icons.fitness_center),
-                    title: Text(e.name),
-                    onTap: () {
-                      controller.closeView(e.name);
-                      exerciseNameController.text = e.name;
-                      selectedExerciseId.value = e.id;
-                      selectedExerciseType.value = e.type;
+            // Autocomplete coerente con AppTheme + Glass lite
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withAlpha(26),
+                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                border: Border.all(color: colorScheme.outline.withAlpha(26)),
+              ),
+              child: SearchAnchor(
+                isFullScreen: false,
+                builder: (context, controller) {
+                  return SearchBar(
+                    controller: controller,
+                    hintText: 'Cerca esercizio',
+                    leading: Icon(Icons.search, color: colorScheme.primary),
+                    onTap: controller.openView,
+                    onChanged: (_) => controller.openView(),
+                    onSubmitted: (value) {
+                      exerciseNameController.text = value;
                     },
+                    padding: WidgetStatePropertyAll(
+                      EdgeInsets.all(AppTheme.spacing.md),
+                    ),
+                    elevation: const WidgetStatePropertyAll(0),
+                    backgroundColor: WidgetStatePropertyAll(
+                      colorScheme.surfaceContainerHighest.withAlpha(26),
+                    ),
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                        side: BorderSide(
+                          color: colorScheme.outline.withAlpha(26),
+                        ),
+                      ),
+                    ),
                   );
-                });
-              },
+                },
+                suggestionsBuilder: (context, controller) {
+                  final query = controller.text.toLowerCase();
+                  final filtered = query.isEmpty
+                      ? exercisesList
+                      : exercisesList
+                            .where((e) => e.name.toLowerCase().contains(query))
+                            .toList();
+                  return filtered.map((e) {
+                    return ListTile(
+                      leading: Icon(
+                        Icons.fitness_center,
+                        color: colorScheme.primary,
+                      ),
+                      title: Text(e.name),
+                      onTap: () {
+                        controller.closeView(e.name);
+                        exerciseNameController.text = e.name;
+                        selectedExerciseId.value = e.id;
+                        selectedExerciseType.value = e.type;
+                      },
+                    );
+                  });
+                },
+              ),
             ),
           ],
         ),
