@@ -4,6 +4,7 @@ import '../repositories/training_repository.dart';
 import '../../../ExerciseRecords/exercise_record_services.dart';
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
+import 'simple_copy_service.dart';
 
 import '../../../shared/services/weight_calculation_service.dart';
 import '../../services/exercise_service.dart' as tb_exercise_service;
@@ -170,7 +171,7 @@ class TrainingBusinessService {
         .weeks[weekIndex]
         .workouts[workoutIndex]
         .exercises[exerciseIndex];
-    final duplicatedExercise = ModelUtils.copyExercise(sourceExercise);
+    final duplicatedExercise = ModelUtils.copyExercise(sourceExercise, targetWeekIndex: weekIndex);
 
     final exerciseWithNewOrder = duplicatedExercise.copyWith(
       order:
@@ -181,7 +182,93 @@ class TrainingBusinessService {
     );
   }
 
-  /// Copies a week to another position
+  /// Updates the number of a specific week
+  void updateWeekNumber(TrainingProgram program, int weekIndex, int newWeekNumber) {
+    if (!ValidationUtils.isValidProgramIndex(program, weekIndex)) {
+      throw ArgumentError('Invalid week index');
+    }
+
+    if (newWeekNumber < 1) {
+      throw ArgumentError('Week number must be greater than 0');
+    }
+
+    // Check if the new week number is already in use by another week
+    final existingWeekIndex = program.weeks.indexWhere(
+      (week) => week.number == newWeekNumber,
+    );
+    
+    if (existingWeekIndex != -1 && existingWeekIndex != weekIndex) {
+      // Swap the week numbers
+      final currentWeek = program.weeks[weekIndex];
+      final existingWeek = program.weeks[existingWeekIndex];
+      
+      program.weeks[weekIndex] = currentWeek.copyWith(number: newWeekNumber);
+      program.weeks[existingWeekIndex] = existingWeek.copyWith(number: currentWeek.number);
+      
+      // Update week progressions for all exercises in both weeks
+      _updateWeekProgressionsForWeekNumberChange(program, weekIndex, existingWeekIndex);
+    } else {
+      // Simply update the week number
+      final currentWeek = program.weeks[weekIndex];
+      program.weeks[weekIndex] = currentWeek.copyWith(number: newWeekNumber);
+      
+      // Update week progressions for all exercises in this week
+      _updateWeekProgressionsForSingleWeek(program, weekIndex);
+    }
+  }
+
+  /// Updates week progressions when week numbers are swapped
+  void _updateWeekProgressionsForWeekNumberChange(
+    TrainingProgram program,
+    int weekIndex1,
+    int weekIndex2,
+  ) {
+    for (int wIndex = 0; wIndex < program.weeks.length; wIndex++) {
+      final week = program.weeks[wIndex];
+      for (final workout in week.workouts) {
+        for (int eIndex = 0; eIndex < workout.exercises.length; eIndex++) {
+          final exercise = workout.exercises[eIndex];
+          if (exercise.weekProgressions != null) {
+            // Update week numbers in progressions
+            for (int wpIndex = 0; wpIndex < exercise.weekProgressions!.length; wpIndex++) {
+              if (wpIndex == weekIndex1 || wpIndex == weekIndex2) {
+                for (int progIndex = 0; progIndex < exercise.weekProgressions![wpIndex].length; progIndex++) {
+                  final progression = exercise.weekProgressions![wpIndex][progIndex];
+                  final newWeekNumber = wpIndex == weekIndex1 
+                    ? program.weeks[weekIndex1].number 
+                    : program.weeks[weekIndex2].number;
+                  exercise.weekProgressions![wpIndex][progIndex] = progression.copyWith(
+                    weekNumber: newWeekNumber,
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /// Updates week progressions for a single week
+  void _updateWeekProgressionsForSingleWeek(TrainingProgram program, int weekIndex) {
+    final week = program.weeks[weekIndex];
+    for (final workout in week.workouts) {
+      for (int eIndex = 0; eIndex < workout.exercises.length; eIndex++) {
+        final exercise = workout.exercises[eIndex];
+        if (exercise.weekProgressions != null && exercise.weekProgressions!.length > weekIndex) {
+          for (int progIndex = 0; progIndex < exercise.weekProgressions![weekIndex].length; progIndex++) {
+            final progression = exercise.weekProgressions![weekIndex][progIndex];
+            exercise.weekProgressions![weekIndex][progIndex] = progression.copyWith(
+              weekNumber: week.number,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  /// Copies a week following KISS principle - simply adds a new week with all new IDs
+  /// No tracking lists, no complex ID management, just pure copying
   Future<void> copyWeek(
     TrainingProgram program,
     int sourceWeekIndex,
@@ -192,21 +279,13 @@ class TrainingBusinessService {
     }
 
     final sourceWeek = program.weeks[sourceWeekIndex];
-    final copiedWeek = ModelUtils.copyWeek(sourceWeek);
-
-    if (destinationWeekIndex != null &&
-        destinationWeekIndex < program.weeks.length) {
-      final destinationWeek = program.weeks[destinationWeekIndex];
-      if (destinationWeek.id != null) {
-        program.trackToDeleteWeeks.add(destinationWeek.id!);
-      }
-      program.weeks[destinationWeekIndex] = copiedWeek;
-    } else {
-      final weekWithNewNumber = copiedWeek.copyWith(
-        number: program.weeks.length + 1,
-      );
-      program.weeks.add(weekWithNewNumber);
-    }
+    
+    // KISS: Simply create a new week with the next available number
+    final newWeekNumber = program.weeks.length + 1;
+    final copiedWeek = SimpleCopyService.copyWeek(sourceWeek, targetWeekNumber: newWeekNumber);
+    
+    // KISS: Just add it to the end - no complex positioning logic
+    program.weeks.add(copiedWeek);
   }
 
   /// Copies a workout to another week
@@ -225,7 +304,7 @@ class TrainingBusinessService {
     }
 
     final sourceWorkout = program.weeks[sourceWeekIndex].workouts[workoutIndex];
-    final copiedWorkout = ModelUtils.copyWorkout(sourceWorkout);
+    final copiedWorkout = ModelUtils.copyWorkout(sourceWorkout, targetWeekIndex: destinationWeekIndex);
 
   if (destinationWeekIndex != null &&
     destinationWeekIndex < program.weeks.length) {

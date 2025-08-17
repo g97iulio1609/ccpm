@@ -237,20 +237,26 @@ class WorkoutDialogs {
     final List<Series> seriesList = series
         .map((s) => Series.fromMap(s))
         .toList();
-    final originalExerciseId =
-        seriesList.first.originalExerciseId ??
-        (exercise['exerciseId'] as String? ?? '');
+    String originalExerciseId =
+        (exercise['exerciseId'] as String?) ??
+        (exercise['originalExerciseId'] as String?) ??
+        (seriesList.isNotEmpty
+            ? (seriesList.first.originalExerciseId ?? '')
+            : '');
+    // Se ancora vuoto, prova a usare l'id esercizio del documento
+    if (originalExerciseId.isEmpty) {
+      final String? fromDocId = exercise['id'] as String?;
+      if (fromDocId != null && fromDocId.isNotEmpty) {
+        originalExerciseId = fromDocId;
+      }
+    }
 
-    final recordsStream = ref
+    final latestRecord = await ref
         .read(app_providers.exerciseRecordServiceProvider)
-        .getExerciseRecords(userId: userId, exerciseId: originalExerciseId)
-        .map(
-          (records) => records.isNotEmpty
-              ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
-              : null,
+        .getLatestExerciseRecord(
+          userId: userId,
+          exerciseId: originalExerciseId,
         );
-
-    final latestRecord = await recordsStream.first;
     num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
 
     // colorScheme non necessario con AppDialog, manteniamo la tipografia di tema
@@ -268,13 +274,11 @@ class WorkoutDialogs {
           app_providers.exerciseRecordServiceProvider,
         ),
         athleteId: userId,
-        exerciseId: exercise['id'],
+        exerciseId: originalExerciseId,
         exerciseType: exercise['type'] ?? 'weight',
         weekIndex: 0,
         exercise: Exercise.fromMap(exercise),
-        currentSeriesGroup: seriesList
-            .map((s) => Series.fromMap(s.toMap()))
-            .toList(),
+        currentSeriesGroup: seriesList,
         latestMaxWeight: latestMaxWeight.toDouble(),
         weightNotifier: weightNotifier,
       ),

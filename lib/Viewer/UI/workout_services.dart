@@ -10,6 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:alphanessone/shared/services/exercise_notes_service.dart';
 import 'package:alphanessone/shared/services/series_completion_utils.dart';
 import 'package:alphanessone/shared/services/workout_editor_service.dart';
+import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 
 class WorkoutService {
   final Ref ref;
@@ -474,24 +475,38 @@ class WorkoutService {
 
     _weightNotifiers[exerciseId]?.value = newMaxWeight.toDouble();
 
+    // Allinea calcolo/arrotondamento pesi con servizio condiviso
+    final String exerciseType = (exercise['type'] as String?) ?? 'weight';
     if (!keepCurrentWeights) {
       for (var serie in series) {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
 
         if (seriesMap['intensity'] != null) {
-          final double intensity = double.parse(
-            seriesMap['intensity'].toString(),
+          final double intensity =
+              double.tryParse(seriesMap['intensity'].toString()) ?? 0.0;
+          final double calculated =
+              WeightCalculationService.calculateWeightFromIntensity(
+                newMaxWeight.toDouble(),
+                intensity,
+              );
+          seriesMap['weight'] = WeightCalculationService.roundWeight(
+            calculated,
+            exerciseType,
           );
-          seriesMap['weight'] = (newMaxWeight * intensity / 100)
-              .roundToDouble();
         }
 
         if (seriesMap['maxIntensity'] != null) {
-          final double maxIntensity = double.parse(
-            seriesMap['maxIntensity'].toString(),
+          final double maxIntensity =
+              double.tryParse(seriesMap['maxIntensity'].toString()) ?? 0.0;
+          final double calculated =
+              WeightCalculationService.calculateWeightFromIntensity(
+                newMaxWeight.toDouble(),
+                maxIntensity,
+              );
+          seriesMap['maxWeight'] = WeightCalculationService.roundWeight(
+            calculated,
+            exerciseType,
           );
-          seriesMap['maxWeight'] = (newMaxWeight * maxIntensity / 100)
-              .roundToDouble();
         }
       }
     } else {
@@ -499,19 +514,25 @@ class WorkoutService {
         final Map<String, dynamic> seriesMap = serie as Map<String, dynamic>;
 
         if (seriesMap['weight'] != null) {
-          final double currentWeight = double.parse(
-            seriesMap['weight'].toString(),
-          );
-          seriesMap['intensity'] = ((currentWeight / newMaxWeight) * 100)
-              .roundToDouble();
+          final double currentWeight =
+              double.tryParse(seriesMap['weight'].toString()) ?? 0.0;
+          final double intensity =
+              WeightCalculationService.calculateIntensityFromWeight(
+                currentWeight,
+                newMaxWeight.toDouble(),
+              );
+          seriesMap['intensity'] = intensity;
         }
 
         if (seriesMap['maxWeight'] != null) {
-          final double currentMaxWeight = double.parse(
-            seriesMap['maxWeight'].toString(),
-          );
-          seriesMap['maxIntensity'] = ((currentMaxWeight / newMaxWeight) * 100)
-              .roundToDouble();
+          final double currentMaxWeight =
+              double.tryParse(seriesMap['maxWeight'].toString()) ?? 0.0;
+          final double maxIntensity =
+              WeightCalculationService.calculateIntensityFromWeight(
+                currentMaxWeight,
+                newMaxWeight.toDouble(),
+              );
+          seriesMap['maxIntensity'] = maxIntensity;
         }
       }
     }

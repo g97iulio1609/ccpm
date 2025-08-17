@@ -40,11 +40,20 @@ class WeekProgression {
     int? weekNumber,
     int? sessionNumber,
     List<Series>? series,
+    bool resetCompletionData = false,
   }) {
     return WeekProgression(
       weekNumber: weekNumber ?? this.weekNumber,
       sessionNumber: sessionNumber ?? this.sessionNumber,
-      series: series ?? this.series.map((series) => series.copyWith()).toList(),
+      series: series ?? this.series.map((series) => 
+        resetCompletionData 
+          ? series.copyWith(
+              done: false,
+              repsDone: 0,
+              weightDone: 0.0,
+            )
+          : series.copyWith()
+      ).toList(),
     );
   }
 

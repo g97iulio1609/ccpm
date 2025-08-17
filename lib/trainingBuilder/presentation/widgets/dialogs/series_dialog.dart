@@ -80,11 +80,10 @@ class _SeriesDialogState extends State<SeriesDialog> {
         ),
         FilledButton(onPressed: _handleSubmit, child: const Text('Conferma')),
       ],
-      child: Flexible(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               _buildFormField(
                 controller: _formController.repsController,
                 maxController: _formController.maxRepsController,
@@ -149,7 +148,6 @@ class _SeriesDialogState extends State<SeriesDialog> {
                 maxFocusNode: _formController.maxWeightNode,
               ),
             ],
-          ),
         ),
       ),
     );

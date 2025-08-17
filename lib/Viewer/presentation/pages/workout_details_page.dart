@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
@@ -24,6 +25,10 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/series_execution_dialog.dart'
     as series_dialog;
 import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/providers/providers.dart' as app_providers;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart'
+    as workout_provider;
+import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/series_dialog.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
   final String programId;
@@ -222,6 +227,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       glass: true,
       header: ExerciseHeader(
         exercise: exercise,
+        isAdmin: _isAdmin(ref),
         onNote: () => _showNoteDialog(
           exercise.id ?? '',
           exercise.name,
@@ -246,6 +252,16 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
               widget.userId,
               widget.workoutId,
             );
+          } else if (value == 'add_series') {
+            _handleAddSeries(context, exercise);
+          } else if (value == 'add_series_group') {
+            _handleAddSeriesGroup(context, exercise);
+          } else if (value == 'remove_last_series') {
+            _handleRemoveLastSeries(exercise);
+          } else if (value == 'remove_all_series') {
+            _handleRemoveAllSeries(exercise);
+          } else if (value == 'remove_exercise') {
+            _handleRemoveExercise(exercise);
           }
         },
       ),
@@ -328,6 +344,127 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         ],
       ),
     );
+  }
+
+  bool _isAdmin(WidgetRef ref) {
+    final role = ref.read(app_providers.userRoleProvider);
+    return role == 'admin' || role == 'coach';
+  }
+
+  Future<void> _handleAddSeries(BuildContext context, Exercise exercise) async {
+    if (!context.mounted) return;
+    final result = await showDialog<List<Series>>(
+      context: context,
+      builder: (context) => SeriesDialog(
+        exerciseRecordService: ref.read(
+          app_providers.exerciseRecordServiceProvider,
+        ),
+        athleteId: widget.userId,
+        exerciseId:
+            exercise.exerciseId ??
+            exercise.originalExerciseId ??
+            exercise.id ??
+            '',
+        exerciseType: exercise.type,
+        weekIndex: 0,
+        exercise: exercise,
+        currentSeriesGroup: null,
+        latestMaxWeight: (exercise.latestMaxWeight ?? 0).toDouble(),
+        weightNotifier: ValueNotifier<double>(
+          exercise.latestMaxWeight?.toDouble() ?? 0.0,
+        ),
+      ),
+    );
+    if (result == null || result.isEmpty) return;
+    // Applica tramite servizio condiviso
+    await ref
+        .read(workout_provider.workoutServiceProvider)
+        .applySeriesChanges(exercise.toMap(), result);
+    await ref
+        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
+        .refreshWorkout();
+  }
+
+  Future<void> _handleAddSeriesGroup(
+    BuildContext context,
+    Exercise exercise,
+  ) async {
+    if (!context.mounted) return;
+    // Usa SeriesDialog con currentSeriesGroup = [] e sets impostabili
+    final result = await showDialog<List<Series>>(
+      context: context,
+      builder: (context) => SeriesDialog(
+        exerciseRecordService: ref.read(
+          app_providers.exerciseRecordServiceProvider,
+        ),
+        athleteId: widget.userId,
+        exerciseId:
+            exercise.exerciseId ??
+            exercise.originalExerciseId ??
+            exercise.id ??
+            '',
+        exerciseType: exercise.type,
+        weekIndex: 0,
+        exercise: exercise,
+        currentSeriesGroup: const <Series>[],
+        latestMaxWeight: (exercise.latestMaxWeight ?? 0).toDouble(),
+        weightNotifier: ValueNotifier<double>(
+          exercise.latestMaxWeight?.toDouble() ?? 0.0,
+        ),
+      ),
+    );
+    if (result == null || result.isEmpty) return;
+    await ref
+        .read(workout_provider.workoutServiceProvider)
+        .applySeriesChanges(exercise.toMap(), result);
+    await ref
+        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
+        .refreshWorkout();
+  }
+
+  Future<void> _handleRemoveLastSeries(Exercise exercise) async {
+    if (exercise.series.isEmpty) return;
+    final last = exercise.series.last;
+    await FirebaseFirestore.instance.collection('series').doc(last.id).delete();
+    await ref
+        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
+        .refreshWorkout();
+  }
+
+  Future<void> _handleRemoveAllSeries(Exercise exercise) async {
+    final batch = FirebaseFirestore.instance.batch();
+    for (final s in exercise.series) {
+      if (s.id != null && s.id!.isNotEmpty) {
+        batch.delete(FirebaseFirestore.instance.collection('series').doc(s.id));
+      }
+    }
+    await batch.commit();
+    await ref
+        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
+        .refreshWorkout();
+  }
+
+  Future<void> _handleRemoveExercise(Exercise exercise) async {
+    await ref
+        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
+        .refreshWorkout();
+    await FirebaseFirestore.instance
+        .collection('exercisesWorkout')
+        .doc(exercise.id)
+        .delete();
+    // Le serie verranno eliminate via regole oppure potremmo forzare la cancellazione
+    final seriesSnap = await FirebaseFirestore.instance
+        .collection('series')
+        .where('exerciseId', isEqualTo: exercise.id)
+        .get();
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in seriesSnap.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+    await ref
+        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
+        .refreshWorkout();
   }
 
   // Header estratto in ExerciseHeader

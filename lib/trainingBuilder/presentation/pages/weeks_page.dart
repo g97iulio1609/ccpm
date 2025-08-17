@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/trainingBuilder/shared/mixins/training_list_mixin.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
+import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/week_number_dialog.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/shared/widgets/empty_state.dart';
 
@@ -124,6 +125,7 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
           onReorder: _showReorderDialog,
           onAdd: () => widget.controller.addWeek(),
           onDelete: () => _handleDeleteWeek(index),
+          onEditNumber: () => _showWeekNumberDialog(index),
         ),
       ),
     );
@@ -167,6 +169,22 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
       widget.controller.removeWeek(index);
     }
   }
+
+  void _showWeekNumberDialog(int index) {
+    final currentWeek = widget.controller.program.weeks[index];
+    final maxWeekNumber = widget.controller.program.weeks.length;
+
+    showDialog(
+      context: context,
+      builder: (context) => WeekNumberDialog(
+        currentWeekNumber: currentWeek.number,
+        maxWeekNumber: maxWeekNumber,
+        onWeekNumberChanged: (newWeekNumber) {
+          widget.controller.updateWeekNumber(index, newWeekNumber);
+        },
+      ),
+    );
+  }
 }
 
 class _WeekCardContent extends StatelessWidget {
@@ -177,6 +195,7 @@ class _WeekCardContent extends StatelessWidget {
   final VoidCallback onReorder;
   final VoidCallback onAdd;
   final VoidCallback onDelete;
+  final VoidCallback onEditNumber;
 
   const _WeekCardContent({
     required this.weekNumber,
@@ -186,6 +205,7 @@ class _WeekCardContent extends StatelessWidget {
     required this.onReorder,
     required this.onAdd,
     required this.onDelete,
+    required this.onEditNumber,
   });
 
   @override
@@ -246,6 +266,11 @@ class _WeekCardContent extends StatelessWidget {
         );
       },
       menuChildren: [
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.edit_outlined),
+          onPressed: onEditNumber,
+          child: const Text('Modifica Numero'),
+        ),
         MenuItemButton(
           leadingIcon: const Icon(Icons.content_copy_outlined),
           onPressed: onCopy,

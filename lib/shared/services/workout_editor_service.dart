@@ -64,6 +64,10 @@ class WorkoutEditorService {
     required List<Series> newSeriesList,
   }) async {
     final String exerciseDocId = exercise['id'];
+    final String originalExerciseIdForNewSeries =
+        (exercise['exerciseId'] as String?) ??
+        (exercise['originalExerciseId'] as String?) ??
+        '';
 
     // Serie correnti (vecchie)
     final List<Series> oldSeries = List<Series>.from(
@@ -97,6 +101,8 @@ class WorkoutEditorService {
           id: seriesRef.id,
           serieId: seriesRef.id,
           exerciseId: exerciseDocId,
+          originalExerciseId:
+              series.originalExerciseId ?? originalExerciseIdForNewSeries,
         );
         final data = newSeries.toMap();
         data['exerciseId'] = exerciseDocId;
