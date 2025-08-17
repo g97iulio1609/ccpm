@@ -18,6 +18,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
   final int weekIndex;
   final int workoutIndex;
   final VoidCallback onBulkSeries;
+  final VoidCallback onBulkDelete;
   final VoidCallback onEdit;
   final VoidCallback onDuplicate;
   final VoidCallback onDelete;
@@ -30,6 +31,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
     required this.weekIndex,
     required this.workoutIndex,
     required this.onBulkSeries,
+    required this.onBulkDelete,
     required this.onEdit,
     required this.onDuplicate,
     required this.onDelete,
@@ -75,6 +77,15 @@ class ExerciseOptionsDialog extends ConsumerWidget {
             Navigator.pop(context);
             onBulkSeries();
           },
+        ),
+        BottomMenuItem(
+          title: 'Elimina Esercizi in Bulk',
+          icon: Icons.delete_sweep_outlined,
+          onTap: () {
+            Navigator.pop(context);
+            onBulkDelete();
+          },
+          isDestructive: true,
         ),
         BottomMenuItem(
           title: 'Sposta Esercizio',

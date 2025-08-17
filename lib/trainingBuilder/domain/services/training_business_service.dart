@@ -151,6 +151,65 @@ class TrainingBusinessService {
     ModelUtils.updateExerciseOrders(exercises, exerciseIndex);
   }
 
+  /// Removes multiple exercises from a workout in one pass (bulk)
+  /// Optimized to track deletions and reorder only once.
+  void removeExercisesBulkByIds(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+    List<String> exerciseIds,
+  ) {
+    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex)) {
+      throw ArgumentError('Invalid indices');
+    }
+    if (exerciseIds.isEmpty) return;
+
+    final workout = program.weeks[weekIndex].workouts[workoutIndex];
+    final idSet = exerciseIds.toSet();
+
+    // Track all matched exercises for deletion and collect their indices
+    final indicesToRemove = <int>[];
+    for (int i = 0; i < workout.exercises.length; i++) {
+      final ex = workout.exercises[i];
+      final exId = ex.id;
+      if (exId != null && idSet.contains(exId)) {
+        _trackExerciseForDeletion(program, ex);
+        indicesToRemove.add(i);
+      }
+    }
+
+    if (indicesToRemove.isEmpty) return;
+
+    // Clean up supersets in workout mapping (if present)
+    final originalSuperSets = List<Map<String, dynamic>>.from(
+      workout.superSets ?? const [],
+    );
+    final cleanedSuperSets = <Map<String, dynamic>>[];
+    for (final ss in originalSuperSets) {
+      final Map<String, dynamic> entry = Map<String, dynamic>.from(ss);
+      final List<String> exIds = List<String>.from(entry['exerciseIds'] ?? []);
+      final filtered = exIds.where((id) => !idSet.contains(id)).toList();
+      if (filtered.isNotEmpty) {
+        entry['exerciseIds'] = filtered;
+        cleanedSuperSets.add(entry);
+      }
+    }
+
+    // Remove exercises in descending index order to avoid shifting
+    final remaining = List<Exercise>.from(workout.exercises);
+    indicesToRemove.sort((a, b) => b.compareTo(a));
+    for (final idx in indicesToRemove) {
+      remaining.removeAt(idx);
+    }
+    ModelUtils.updateExerciseOrders(remaining, 0);
+
+    // Write updated workout back into the program
+    program.weeks[weekIndex].workouts[workoutIndex] = workout.copyWith(
+      exercises: remaining,
+      superSets: cleanedSuperSets.isEmpty ? null : cleanedSuperSets,
+    );
+  }
+
   /// Duplicates an exercise in a workout
   void duplicateExercise(
     TrainingProgram program,

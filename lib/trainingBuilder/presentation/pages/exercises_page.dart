@@ -9,6 +9,7 @@ import 'package:alphanessone/trainingBuilder/presentation/widgets/cards/exercise
 import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/bulk_series_dialog.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/lists/series_list_widget.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/exercise_options_dialog.dart';
+import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/bulk_exercise_delete_dialog.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 import 'package:alphanessone/providers/providers.dart';
@@ -291,6 +292,7 @@ class ExercisesPage extends ConsumerWidget {
         weekIndex: weekIndex,
         workoutIndex: workoutIndex,
         onBulkSeries: () => _showBulkSeriesDialog(context, exercise),
+        onBulkDelete: () => _showBulkDeleteDialog(context, exercise),
         onEdit: () => controller.editExercise(
           weekIndex,
           workoutIndex,
@@ -307,6 +309,30 @@ class ExercisesPage extends ConsumerWidget {
           workoutIndex,
           exercise.order - 1,
         ),
+      ),
+    );
+  }
+
+  void _showBulkDeleteDialog(BuildContext context, Exercise initialExercise) {
+    final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
+    showDialog(
+      context: context,
+      builder: (context) => BulkExerciseDeleteDialog(
+        workoutExercises: workout.exercises,
+        initialSelection: initialExercise,
+        onConfirm: (selected) async {
+          final ids = selected
+              .map((e) => e.id)
+              .whereType<String>()
+              .toList();
+          if (ids.isEmpty) return;
+          await controller.removeExercisesBulk(
+            weekIndex,
+            workoutIndex,
+            ids,
+            context,
+          );
+        },
       ),
     );
   }

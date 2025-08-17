@@ -41,6 +41,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   final SuperSetController _superSetController;
   late final TrainingBusinessService _trainingBusinessService;
   final Ref ref;
+  bool _disposed = false;
 
   TrainingProgramController(
     FirestoreService service,
@@ -71,6 +72,12 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       trainingRepository: FirestoreTrainingRepository(),
       exerciseRecordService: _exerciseRecordService,
     );
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   void _initControllers() {
@@ -344,7 +351,6 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
     } catch (e) {
-      debugPrint("Errore salvando esercizio: $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -375,9 +381,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
-    } catch (e) {
-      debugPrint("Errore salvando modifica esercizio: $e");
-    }
+    } catch (e) {}
     
     _emit();
   }
@@ -393,9 +397,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
-    } catch (e) {
-      debugPrint("Errore salvando rimozione esercizio: $e");
-    }
+    } catch (e) {}
     
     _emit();
   }
@@ -492,6 +494,48 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       latestMaxWeight,
     );
     _emit();
+  }
+
+  Future<void> removeExercisesBulk(
+    int weekIndex,
+    int workoutIndex,
+    List<String> exerciseIds,
+    BuildContext context,
+  ) async {
+    if (exerciseIds.isEmpty) return;
+    if (_disposed) return;
+    final prog = program; // snapshot to avoid accessing state after dispose
+    // Update in-memory state first for snappy UI
+    _trainingBusinessService.removeExercisesBulkByIds(
+      prog,
+      weekIndex,
+      workoutIndex,
+      exerciseIds,
+    );
+    _emit();
+
+    // Persist asynchronously with optimized batching
+    try {
+      await _trainingService.removeToDeleteItems(prog);
+      await _trainingService.addOrUpdateTrainingProgram(prog);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eliminati ${exerciseIds.length} esercizi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore eliminando esercizi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void removeSeries(
@@ -704,6 +748,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void _emit() {
+    if (_disposed) return;
     // Forza un nuovo stato immutabile per notificare i listener
     state = state.copyWith();
     _programStateNotifier.updateProgram(state);
