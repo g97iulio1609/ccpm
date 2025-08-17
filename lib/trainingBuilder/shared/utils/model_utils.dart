@@ -6,11 +6,25 @@ class ModelUtils {
   ModelUtils._();
 
   /// Creates a deep copy of an exercise with new IDs
-  static Exercise copyExercise(Exercise source) {
+  static Exercise copyExercise(Exercise source, {int? targetWeekIndex}) {
+    // Copy the weekProgressions and update them if needed
+    List<List<WeekProgression>>? copiedProgressions;
+    if (source.weekProgressions != null) {
+      copiedProgressions = source.weekProgressions!.map((weekProgression) {
+        return weekProgression.map((progression) {
+          return progression.copyWith(
+            series: progression.series.map((s) => copySeries(s)).toList(),
+            resetCompletionData: true,
+          );
+        }).toList();
+      }).toList();
+    }
+
     return source.copyWith(
       id: generateRandomId(16).toString(),
       series: source.series.map((s) => copySeries(s)).toList(),
       superSetId: null, // Reset superset assignment
+      weekProgressions: copiedProgressions,
     );
   }
 
@@ -28,11 +42,12 @@ class ModelUtils {
   static Workout copyWorkout(
     Workout source, {
     Map<String, String>? exerciseIdMap,
+    int? targetWeekIndex,
   }) {
     final newExerciseIdMap = <String, String>{};
 
     final copiedExercises = source.exercises.map((exercise) {
-      final copiedExercise = copyExercise(exercise);
+      final copiedExercise = copyExercise(exercise, targetWeekIndex: targetWeekIndex);
       if (exercise.id != null) {
         newExerciseIdMap[exercise.id!] = copiedExercise.id!;
       }
@@ -70,10 +85,13 @@ class ModelUtils {
   }
 
   /// Creates a deep copy of a week with new IDs
-  static Week copyWeek(Week source) {
+  static Week copyWeek(Week source, {int? targetWeekNumber}) {
+    final newWeekNumber = targetWeekNumber ?? source.number;
+    
     return source.copyWith(
-      id: null,
-      workouts: source.workouts.map((w) => copyWorkout(w)).toList(),
+      id: null, // Forza un nuovo ID
+      number: newWeekNumber,
+      workouts: source.workouts.map((w) => copyWorkout(w, targetWeekIndex: newWeekNumber - 1)).toList(),
     );
   }
 

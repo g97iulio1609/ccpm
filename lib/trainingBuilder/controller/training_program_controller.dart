@@ -517,6 +517,11 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     _emit();
   }
 
+  void updateWeekNumber(int weekIndex, int newWeekNumber) {
+    _trainingBusinessService.updateWeekNumber(program, weekIndex, newWeekNumber);
+    _emit();
+  }
+
   Future<void> copyWorkout(
     int sourceWeekIndex,
     int workoutIndex,
@@ -634,6 +639,9 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       await _trainingService.addOrUpdateTrainingProgram(program);
 
       program.trackToDeleteSeries = [];
+      program.trackToDeleteWeeks = [];
+      program.trackToDeleteWorkouts = [];
+      program.trackToDeleteExercises = [];
 
       await _usersService.updateUser(_athleteIdController.text, {
         'currentProgram': program.id,
@@ -726,39 +734,11 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
         athleteId: currentUserId ?? existingProgram.athleteId,
       );
 
-      newProgram.weeks = newProgram.weeks.map((week) {
-        return week.copyWith(
-          id: generateRandomId(16).toString(),
-          workouts: week.workouts.map((workout) {
-            return workout.copyWith(
-              id: generateRandomId(16).toString(),
-              exercises: workout.exercises.map((exercise) {
-                return exercise.copyWith(
-                  id: generateRandomId(16).toString(),
-                  series: exercise.series.map((series) {
-                    return series.copyWith(
-                      serieId: generateRandomId(16).toString(),
-                      repsDone: 0,
-                      weightDone: 0.0,
-                      done: false,
-                    );
-                  }).toList(),
-                );
-              }).toList(),
-              superSets: workout.superSets?.map<Map<String, dynamic>>((
-                superSet,
-              ) {
-                return {
-                  'id': generateRandomId(16).toString(),
-                  'name': superSet['name'] ?? '',
-                  'exerciseIds': List<String>.from(
-                    superSet['exerciseIds'] ?? [],
-                  ),
-                };
-              }).toList(),
-            );
-          }).toList(),
-        );
+      // Use WeekUtils for consistent copying and proper reset of completion data
+      newProgram.weeks = newProgram.weeks.asMap().entries.map<Week>((entry) {
+        final weekIndex = entry.key;
+        final week = entry.value;
+        return WeekUtils.resetWeek(WeekUtils.duplicateWeek(week, newNumber: week.number));
       }).toList();
 
       final exercisesService = ref.read(exercisesServiceProvider);

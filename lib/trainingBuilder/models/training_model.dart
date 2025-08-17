@@ -37,7 +37,7 @@ class TrainingProgram {
     int? mesocycleNumber,
     List<Week>? weeks,
   }) {
-    return TrainingProgram(
+    final newProgram = TrainingProgram(
       id: id ?? this.id,
       name: name ?? this.name,
       hide: hide ?? this.hide,
@@ -47,6 +47,14 @@ class TrainingProgram {
       mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
       weeks: weeks ?? this.weeks.map((week) => week.copyWith()).toList(),
     );
+    
+    // Preserve tracking lists
+    newProgram.trackToDeleteWeeks = List.from(trackToDeleteWeeks);
+    newProgram.trackToDeleteWorkouts = List.from(trackToDeleteWorkouts);
+    newProgram.trackToDeleteExercises = List.from(trackToDeleteExercises);
+    newProgram.trackToDeleteSeries = List.from(trackToDeleteSeries);
+    
+    return newProgram;
   }
 
   factory TrainingProgram.fromMap(Map<String, dynamic> map) {

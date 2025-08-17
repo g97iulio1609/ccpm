@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../shared/shared.dart';
 
 class TrainingProgramService {
@@ -254,6 +255,7 @@ class FirestoreService {
       String programId = program.id?.trim().isEmpty ?? true
           ? _db.collection('programs').doc().id
           : program.id!;
+      
       program = program.copyWith(id: programId);
 
       await _addOrUpdateProgram(batch, program);
@@ -296,9 +298,18 @@ class FirestoreService {
     for (int i = 0; i < program.weeks.length; i++) {
       final currentWeek = program.weeks[i];
       final int weekNumber = (currentWeek.number > 0) ? currentWeek.number : (i + 1);
-      final String weekId = currentWeek.id?.trim().isNotEmpty == true
-          ? currentWeek.id!
-          : (existingWeekIdByNumber[weekNumber] ?? _db.collection('weeks').doc().id);
+      
+      // Priorità: usa l'ID già presente nella settimana, poi quello esistente per quel numero, infine uno nuovo
+      String weekId;
+      if (currentWeek.id?.trim().isNotEmpty == true) {
+        weekId = currentWeek.id!;
+        // Rimuovi questo ID dalla mappa per evitare conflitti
+        existingWeekIdByNumber.removeWhere((key, value) => value == weekId);
+      } else {
+        weekId = existingWeekIdByNumber[weekNumber] ?? _db.collection('weeks').doc().id;
+        // Rimuovi questo mapping per evitare riutilizzo
+        existingWeekIdByNumber.remove(weekNumber);
+      }
 
       final updatedWeek = currentWeek.copyWith(id: weekId, number: weekNumber);
 
@@ -395,51 +406,36 @@ class FirestoreService {
     }
   }
 
-  /// Deduplica settimane con stesso numero mantenendo al massimo una per numero
+  /// Simplified deduplication - only removes weeks that are explicitly marked for deletion
+  /// KISS: No complex logic, just preserve all weeks currently in memory
   Future<void> _dedupWeeksByNumber(
     WriteBatch batch,
     TrainingProgram program,
   ) async {
     if (program.id == null || (program.id?.isEmpty ?? true)) return;
 
+    // KISS: Create a simple set of all week IDs that should be preserved
+    final preserveIds = program.weeks
+        .map((w) => w.id)
+        .where((id) => id != null && id!.isNotEmpty)
+        .toSet();
+
+    // Only process orphaned weeks (weeks in DB that are not in current program structure)
     final qs = await _db
         .collection('weeks')
         .where('programId', isEqualTo: program.id)
         .get();
 
-    // Raggruppa per numero
-    final Map<int, List<QueryDocumentSnapshot<Map<String, dynamic>>>> byNumber = {};
     for (final doc in qs.docs) {
       final data = doc.data();
       final number = (data['number'] as int?) ?? 0;
-      byNumber.putIfAbsent(number, () => []).add(doc);
-    }
-
-    for (final entry in byNumber.entries) {
-      final number = entry.key;
-      final docs = entry.value;
-      if (number < 1) {
-        for (final d in docs) {
-          await _removeRelatedWorkouts(batch, d.id);
-          batch.delete(d.reference);
-        }
-        continue;
-      }
-
-      // Mantieni la settimana che coincide con quella in memoria (se presente), altrimenti la prima
-      QueryDocumentSnapshot<Map<String, dynamic>> keep = docs.first;
-      if (number <= program.weeks.length) {
-        final desiredId = program.weeks[number - 1].id;
-        if (desiredId != null && desiredId.isNotEmpty) {
-          final found = docs.where((d) => d.id == desiredId).toList();
-          if (found.isNotEmpty) keep = found.first;
-        }
-      }
-
-      for (final d in docs) {
-        if (d.id == keep.id) continue;
-        await _removeRelatedWorkouts(batch, d.id);
-        batch.delete(d.reference);
+      
+      // Only delete if:
+      // 1. Week number is invalid (< 1), OR
+      // 2. Week ID is not in our preserve list (orphaned)
+      if (number < 1 || !preserveIds.contains(doc.id)) {
+        await _removeRelatedWorkouts(batch, doc.id);
+        batch.delete(doc.reference);
       }
     }
   }
