@@ -84,7 +84,6 @@ class FoodService {
     OpenFoodFactsLanguage language = OpenFoodFactsLanguage.ITALIAN,
     OpenFoodFactsCountry country = OpenFoodFactsCountry.ITALY,
   }) async {
-    debugPrint('Starting import of foods from OpenFoodFacts');
     _isImporting = true; // Impostare lo stato di importazione a true
 
     await _importCategoryFoods(mainCategories, pages, language, country);
@@ -111,7 +110,7 @@ class FoodService {
         if (!_isImporting) {
           break; // Fermare l'importazione se _isImporting è false
         }
-        debugPrint('Importing page: $page for category: $category');
+        // importing page (debug removed)
         final configuration = ProductSearchQueryConfiguration(
           parametersList: <Parameter>[
             TagFilter.fromType(
@@ -140,11 +139,7 @@ class FoodService {
           _importProgressController.add({
             category: importedProducts,
           }); // Aggiorna il progresso
-        } catch (e) {
-          debugPrint(
-            'Error fetching data from OpenFoodFacts on page $page in category $category: $e',
-          );
-        }
+        } catch (e) {}
 
         await Future.delayed(
           const Duration(seconds: 60),
@@ -176,9 +171,6 @@ class FoodService {
         );
 
         if (result.products != null && result.products!.isNotEmpty) {
-          debugPrint(
-            'Found ${result.products!.length} products on page $page in category $category',
-          );
           for (var product in result.products!) {
             await _importOrUpdateProduct(product, category);
           }
@@ -190,7 +182,6 @@ class FoodService {
               .products!
               .length; // Ritorna il numero di prodotti importati
         } else {
-          debugPrint('No products found on page $page in category $category');
           break; // Exit the loop if no products are found
         }
       } catch (e) {
@@ -198,14 +189,10 @@ class FoodService {
         if (attempts < retryCount) {
           final waitTimeMinutes = (5 * attempts).clamp(5, 30);
           final waitTime = Duration(minutes: waitTimeMinutes);
-          debugPrint(
-            'Error fetching data (attempt $attempts) from OpenFoodFacts on page $page in category $category: $e. Retrying in ${waitTime.inMinutes} minutes.',
-          );
+          // retry info (debug removed)
           await Future.delayed(waitTime); // Delay with exponential backoff
         } else {
-          debugPrint(
-            'Max retry attempts reached for page $page in category $category: $e',
-          );
+          // retries exceeded (debug removed)
           rethrow; // Rethrow the exception if max retries reached
         }
       }
@@ -234,16 +221,15 @@ class FoodService {
     try {
       var doc = await _firestore.collection('foods').doc(product.barcode).get();
       if (!doc.exists) {
-        debugPrint('Importing new product: ${product.barcode}');
         await _firestore
             .collection('foods')
             .doc(product.barcode)
             .set(_productToMap(product, category));
       } else {
-        debugPrint('Product already exists, skipping: ${product.barcode}');
+        // skipping existing product (debug removed)
       }
     } catch (e) {
-      debugPrint('Error importing product ${product.barcode}: $e');
+      // ignore import errors (debug removed)
     }
   }
 
@@ -294,7 +280,6 @@ class FoodService {
   }
 
   Future<void> updateFoodTranslations() async {
-    debugPrint('Updating food translations');
 
     final snapshot = await _firestore.collection('foods').get();
     for (var doc in snapshot.docs) {
@@ -320,12 +305,10 @@ class FoodService {
         if (attempts < retryCount) {
           final waitTimeMinutes = (5 * attempts).clamp(5, 30);
           final waitTime = Duration(minutes: waitTimeMinutes);
-          debugPrint(
-            'Error updating translations for product $barcode (attempt $attempts): $e. Retrying in ${waitTime.inMinutes} minutes.',
-          );
+          // retry info (debug removed)
           await Future.delayed(waitTime); // Delay with exponential backoff
         } else {
-          debugPrint('Max retry attempts reached for product $barcode: $e');
+          // retries exceeded (debug removed)
         }
       }
     }
@@ -344,7 +327,6 @@ class FoodService {
 
     // ignore: unrelated_type_equality_checks
     if (productResult.status == 1 && product != null) {
-      debugPrint('Updating product translations for: $barcode');
       await _firestore.collection('foods').doc(barcode).update({
         'name': product.productName ?? 'Unknown',
         'name_it':
@@ -365,13 +347,12 @@ class FoodService {
             'Unknown',
       });
     } else {
-      debugPrint('Product not found or status not OK for: $barcode');
+      // not found or not OK (debug removed)
     }
   }
 
   void stopImport() {
     _isImporting = false;
-    debugPrint('Import stopped');
   }
 
   Future<void> normalizeNames() async {
@@ -392,6 +373,5 @@ class FoodService {
     }
 
     await batch.commit();
-    debugPrint('Normalization completed.');
   }
 }

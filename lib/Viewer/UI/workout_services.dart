@@ -110,9 +110,7 @@ class WorkoutService {
       );
       workoutNames[workoutId] = workoutName;
       ref.read(workoutNameCacheProvider.notifier).state = workoutNames;
-    } catch (e) {
-      debugPrint('Error prefetching workout: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> prefetchWeekWorkouts(List<String> workoutIds) async {

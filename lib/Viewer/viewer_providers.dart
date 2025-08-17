@@ -65,8 +65,6 @@ final timerPresetRepositoryFallbackProvider = Provider<TimerPresetRepository?>((
     data: (prefs) => TimerPresetRepositoryImpl(firestore, prefs),
     loading: () => null, // Restituisce null durante il caricamento
     error: (err, stack) {
-      // Log dell'errore per debugging
-      debugPrint("Errore nel caricamento di SharedPreferences: $err");
       return null; // Restituisce null in caso di errore
     },
   );

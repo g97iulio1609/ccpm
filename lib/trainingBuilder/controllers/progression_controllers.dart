@@ -42,7 +42,6 @@ class ProgressionControllers {
       weight.min.text = tb_format.FormatUtils.formatNumber(series.weight.toString());
       weight.max.text = tb_format.FormatUtils.formatNumber(series.maxWeight?.toString() ?? '');
     } catch (e) {
-      debugPrint('WARNING: Error updating controllers from series: $e');
       // Set safe defaults in case of error
       _setSafeDefaults();
     }
@@ -73,7 +72,6 @@ class ProgressionControllers {
         latestMaxWeight: latestMaxWeight,
       );
     } catch (e) {
-      debugPrint('WARNING: Error getting load display text: $e');
       return 'N/A';
     }
   }

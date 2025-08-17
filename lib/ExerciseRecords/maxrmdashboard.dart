@@ -54,9 +54,7 @@ class MaxRMDashboard extends HookConsumerWidget {
             );
             ref.read(userListProvider.notifier).state = users;
             ref.read(filteredUserListProvider.notifier).state = users;
-          } catch (e) {
-            debugPrint('Error fetching users: $e');
-          }
+          } catch (e) {}
         }
         userFetchComplete.value = true;
       }

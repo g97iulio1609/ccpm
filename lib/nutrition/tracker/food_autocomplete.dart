@@ -31,7 +31,6 @@ class AutoTypeField extends ConsumerWidget {
         try {
           return await macrosService.searchFoods(pattern).first;
         } catch (e) {
-          debugPrint('Error fetching suggestions: $e');
           return [];
         }
       },

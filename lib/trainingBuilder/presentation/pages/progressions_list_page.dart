@@ -198,7 +198,6 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
 
       setState(() {});
     } catch (e) {
-      debugPrint('ERROR: Failed to update series: $e');
       _showErrorMessage('Error updating series: ${e.toString()}');
     }
   }
@@ -267,8 +266,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
         );
       }
     } catch (e) {
-      debugPrint('WARNING: Failed to update controllers: $e');
-      // Don't throw here, just log the warning
+      // Ignore controller update failures silently
     }
   }
 
@@ -305,7 +303,6 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
       _showSuccessMessage('Progressions saved successfully');
       Navigator.of(context).pop();
     } catch (e) {
-      debugPrint('ERROR: Failed to save changes: $e');
       if (!mounted) return;
       _showErrorMessage('Error saving progressions: $e');
     }

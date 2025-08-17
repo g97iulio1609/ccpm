@@ -20,7 +20,6 @@ class SeriesController {
     BuildContext context,
   ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -31,7 +30,6 @@ class SeriesController {
 
     // Use the exerciseId as originalExerciseId
     final originalExerciseId = exercise.exerciseId;
-    debugPrint('Original Exercise ID: $originalExerciseId');
 
     final latestMaxWeight = await ExerciseService.getLatestMaxWeight(
       exerciseRecordService,
@@ -108,7 +106,6 @@ class SeriesController {
     num latestMaxWeight,
   ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -170,7 +167,6 @@ class SeriesController {
     int exerciseIndex,
   ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -194,7 +190,6 @@ class SeriesController {
     int seriesIndex,
   ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -205,7 +200,6 @@ class SeriesController {
     final totalIndex = groupIndex * 1 + seriesIndex;
 
     if (totalIndex < 0 || totalIndex >= exercise.series.length) {
-      debugPrint('Invalid series index');
       return;
     }
 
@@ -237,7 +231,6 @@ class SeriesController {
     List<Series> updatedSeries,
   ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -258,7 +251,6 @@ class SeriesController {
     int startIndex,
   ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -284,7 +276,6 @@ class SeriesController {
     int newIndex,
   ) {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -297,7 +288,6 @@ class SeriesController {
         oldIndex >= exercise.series.length ||
         newIndex < 0 ||
         newIndex > exercise.series.length) {
-      debugPrint('Invalid oldIndex or newIndex');
       return;
     }
 
@@ -337,7 +327,6 @@ class SeriesController {
     int exerciseIndex,
   ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -361,7 +350,6 @@ class SeriesController {
     dynamic maxValue,
   ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
-      debugPrint('Invalid indices provided');
       return;
     }
 
@@ -370,7 +358,6 @@ class SeriesController {
         .workouts[workoutIndex]
         .exercises[exerciseIndex];
     if (seriesIndex < 0 || seriesIndex >= exercise.series.length) {
-      debugPrint('Invalid series index');
       return;
     }
 

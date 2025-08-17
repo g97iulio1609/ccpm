@@ -70,14 +70,7 @@ class TDEEService {
             .collection('mynutrition')
             .doc(docId)
             .update(nutritionData)
-            .then(
-              (_) => debugPrint(
-                'Nutrition data updated successfully for docId: $docId',
-              ),
-            )
-            .catchError(
-              (error) => debugPrint('Failed to update document: $error'),
-            );
+            .catchError((_) {});
       } else {
         // Create a new document for today
         await _firestore
@@ -85,17 +78,9 @@ class TDEEService {
             .doc(userId)
             .collection('mynutrition')
             .add(nutritionData)
-            .then(
-              (docRef) =>
-                  debugPrint('New nutrition data added with ID: ${docRef.id}'),
-            )
-            .catchError(
-              (error) => debugPrint('Failed to add new document: $error'),
-            );
+            .catchError((_) {});
       }
-    } catch (e) {
-      debugPrint('Error saving nutrition data: $e');
-    }
+    } catch (e) {}
   }
 
   // Helper function to round to two decimal places

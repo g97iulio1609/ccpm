@@ -129,8 +129,7 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
               consentGiven: true,
             );
           } catch (consentError) {
-            // Log dell'errore ma non bloccare il processo di registrazione
-            debugPrint('Errore nel salvare il consenso privacy: $consentError');
+            // Non bloccare il processo di registrazione
           }
         }
 

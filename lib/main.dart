@@ -60,14 +60,7 @@ void main() async {
   final prefs = await initializeServices();
 
   // Inizializza i servizi essenziali in modo asincrono
-  appServices
-      .initialize()
-      .then((_) {
-        // Inizializzazione completata
-      })
-      .catchError((error) {
-        debugPrint('Errore nell\'inizializzazione dei servizi: $error');
-      });
+  appServices.initialize().catchError((_) {});
 
   final bool isVersionSupported = await appServices.isAppVersionSupported();
   if (isVersionSupported) {
@@ -85,14 +78,7 @@ void main() async {
     );
 
     // Controlla lo stato dell'abbonamento dopo che l'app è stata renderizzata
-    appServices
-        .checkSubscriptionStatus()
-        .then((_) {
-          // Gestione dello stato dell'abbonamento completata
-        })
-        .catchError((error) {
-          debugPrint('Errore nel controllo dell\'abbonamento: $error');
-        });
+    appServices.checkSubscriptionStatus().catchError((_) {});
   } else {
     runApp(const UnsupportedVersionApp());
   }

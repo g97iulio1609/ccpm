@@ -192,7 +192,6 @@ class SeriesUtils {
     String exerciseId,
   ) async {
     if (userId.isEmpty || exerciseId.isEmpty) {
-      debugPrint('UserID o ExerciseID mancanti per getLatestMaxWeight.');
       return 0.0;
     }
     try {
@@ -203,9 +202,6 @@ class SeriesUtils {
       );
       return value.toDouble().clamp(0.0, double.maxFinite);
     } catch (error, stackTrace) {
-      debugPrint(
-        'Errore durante il recupero del massimale (delegato) per exerciseId $exerciseId, userId $userId: $error\n$stackTrace',
-      );
       return 0.0;
     }
   }
@@ -346,9 +342,6 @@ class SeriesUtils {
         exerciseIndex < 0 ||
         exerciseIndex >=
             program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
-      debugPrint(
-        "Indici non validi per updateSeriesWeights: w:$weekIndex, wo:$workoutIndex, ex:$exerciseIndex",
-      );
       return;
     }
 
