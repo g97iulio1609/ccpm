@@ -800,13 +800,31 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void importProgramModel(TrainingProgram imported) {
-    if (_disposed) return;
+    if (_disposed) {
+      debugPrint('Tentativo di import su controller dismesso - operazione ignorata');
+      return;
+    }
     
     try {
       state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+      
+      // Controlla di nuovo se il controller è stato dismesso durante l'operazione
+      if (_disposed) {
+        debugPrint('Controller dismesso durante import - operazione interrotta');
+        return;
+      }
+      
       _updateProgram();
+      
+      if (_disposed) {
+        debugPrint('Controller dismesso durante aggiornamento program - operazione interrotta');
+        return;
+      }
+      
       _superSetController.loadSuperSets(state);
       _emit();
+      
+      debugPrint('Import programma completato con successo');
     } catch (e) {
       // Se succede un errore durante l'import, mantieni lo stato corrente
       debugPrint('Errore durante import programma: $e');

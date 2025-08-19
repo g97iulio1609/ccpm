@@ -224,7 +224,7 @@ class _ProgramOptions extends StatelessWidget {
   }
 }
 
-class _ActionButtons extends StatelessWidget {
+class _ActionButtons extends ConsumerWidget {
   final TrainingProgramController controller;
   final ThemeData theme;
   final ColorScheme colorScheme;
@@ -236,7 +236,7 @@ class _ActionButtons extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
         Row(
@@ -320,7 +320,7 @@ class _ActionButtons extends StatelessWidget {
                 icon: Icons.file_upload_outlined,
                 label: 'Import',
                 variant: AppButtonVariant.subtle,
-                onPressed: () => _showImportDialog(context),
+                onPressed: () => _showImportDialog(context, ref),
                 block: true,
               ),
             ),
@@ -465,7 +465,7 @@ class _ActionButtons extends StatelessWidget {
     );
   }
 
-  void _showImportDialog(BuildContext context) {
+  void _showImportDialog(BuildContext context, WidgetRef ref) {
     final inputCtrl = TextEditingController();
     String format = 'json';
     Map<String, dynamic>? previewData;
@@ -620,6 +620,9 @@ class _ActionButtons extends StatelessWidget {
                   label: 'Importa',
                   icon: Icons.check,
                   onPressed: () async {
+                    // Chiudi il dialog immediatamente per evitare problemi di lifecycle
+                    Navigator.of(context, rootNavigator: true).pop();
+                    
                     try {
                       TrainingProgram program;
                       if (format == 'json') {
@@ -641,10 +644,18 @@ class _ActionButtons extends StatelessWidget {
                             : 'Programma Importato',
                       );
                       
-                      // Importa PRIMA di chiudere il dialog per evitare problemi con il controller
-                      controller.importProgramModel(importedProgram);
+                      // Usa ref.read per ottenere una referenza fresca del controller
+                      // Questo evita problemi con il lifecycle del StateNotifier
+                      try {
+                        final controllerNotifier = ref.read(trainingProgramControllerProvider.notifier);
+                        controllerNotifier.importProgramModel(importedProgram);
+                      } catch (e) {
+                        // Fallback: se il controller non è disponibile, aggiorna direttamente lo stato
+                        debugPrint('Fallback: aggiornamento diretto dello stato - $e');
+                        final stateNotifier = ref.read(trainingProgramStateProvider.notifier);
+                        stateNotifier.updateProgram(importedProgram);
+                      }
                       
-                      Navigator.of(context, rootNavigator: true).pop();
                       messenger.showSnackBar(
                         const SnackBar(content: Text('Programma importato con successo')),
                       );
