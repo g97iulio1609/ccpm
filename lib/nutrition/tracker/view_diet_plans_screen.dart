@@ -11,6 +11,7 @@ import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/badge.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
 import 'package:go_router/go_router.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class ViewDietPlansScreen extends ConsumerStatefulWidget {
   const ViewDietPlansScreen({super.key});
@@ -179,35 +180,33 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
                                 onPressed: () async {
                                   final confirm =
                                       await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text(
-                                            'Elimina Piano Dietetico',
-                                          ),
-                                          content: const Text(
-                                            'Sei sicuro di voler eliminare questo piano dietetico?',
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                              child: const Text('Annulla'),
-                                            ),
-                                            ElevatedButton(
-                                              onPressed: () => Navigator.of(
-                                                context,
-                                              ).pop(true),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    theme.colorScheme.error,
+                                            context: context,
+                                            builder: (context) => AppDialog(
+                                              title: const Text(
+                                                'Elimina Piano Dietetico',
                                               ),
-                                              child: const Text('Elimina'),
+                                              actions: [
+                                                AppDialogHelpers
+                                                    .buildCancelButton(
+                                                  context: context,
+                                                ),
+                                                AppDialogHelpers
+                                                    .buildActionButton(
+                                                  context: context,
+                                                  label: 'Elimina',
+                                                  onPressed: () =>
+                                                      Navigator.of(context)
+                                                          .pop(true),
+                                                  isPrimary: false,
+                                                  isDestructive: true,
+                                                ),
+                                              ],
+                                              child: const Text(
+                                                'Sei sicuro di voler eliminare questo piano dietetico?',
+                                              ),
                                             ),
-                                          ],
-                                        ),
-                                      ) ??
-                                      false;
+                                          ) ??
+                                          false;
                                   if (confirm) {
                                     await ref
                                         .read(dietPlanServiceProvider)
@@ -303,12 +302,23 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
     return showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return AppDialog(
           title: Text(
             'Duplicate Diet Plan',
             style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
           ),
-          content: TextField(
+          actions: [
+            AppDialogHelpers.buildCancelButton(
+              context: context,
+              label: 'Cancel',
+            ),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Duplicate',
+              onPressed: () => Navigator.of(context).pop(newName),
+            ),
+          ],
+          child: TextField(
             decoration: const InputDecoration(
               labelText: 'New Diet Plan Name',
               border: OutlineInputBorder(),
@@ -318,16 +328,6 @@ class _ViewDietPlansScreenState extends ConsumerState<ViewDietPlansScreen> {
             },
             controller: TextEditingController(text: '$originalName (Copy)'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: GoogleFonts.roboto()),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(newName),
-              child: Text('Duplicate', style: GoogleFonts.roboto()),
-            ),
-          ],
         );
       },
     );

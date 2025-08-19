@@ -18,6 +18,7 @@ import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 const Map<int, String> genderMap = {0: 'Altro', 1: 'Maschio', 2: 'Femmina'};
 
@@ -253,17 +254,17 @@ class UserProfileState extends ConsumerState<UserProfile>
       title: const Text('Conferma eliminazione'),
       child: const Text('Sei sicuro di voler eliminare questo utente?'),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context, label: 'Annulla'),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Elimina',
           onPressed: () {
             Navigator.of(context).pop();
             final currentUser = FirebaseAuth.instance.currentUser!;
             _reauthenticateAndDelete(_isGoogleUser(currentUser));
           },
-          child: const Text('Elimina'),
+          isPrimary: false,
+          isDestructive: true,
         ),
       ],
     );
@@ -420,20 +421,23 @@ class UserProfileState extends ConsumerState<UserProfile>
                 spacing: AppTheme.spacing.md,
                 runSpacing: AppTheme.spacing.sm,
                 children: [
-                  FilledButton.icon(
+                  AppButton(
+                    label: 'Cambia foto',
+                    icon: Icons.photo_camera_outlined,
                     onPressed: _uploadProfilePicture,
-                    icon: const Icon(Icons.photo_camera_outlined),
-                    label: const Text('Cambia foto'),
+                    variant: AppButtonVariant.primary,
                   ),
-                  OutlinedButton.icon(
+                  AppButton(
+                    label: 'Copia email',
+                    icon: Icons.copy,
                     onPressed: _copyEmailToClipboard,
-                    icon: const Icon(Icons.copy),
-                    label: const Text('Copia email'),
+                    variant: AppButtonVariant.outline,
                   ),
-                  TextButton.icon(
+                  AppButton(
+                    label: 'Abbonamenti',
+                    icon: Icons.subscriptions_outlined,
                     onPressed: () => _tabController.animateTo(3),
-                    icon: const Icon(Icons.subscriptions_outlined),
-                    label: const Text('Abbonamenti'),
+                    variant: AppButtonVariant.subtle,
                   ),
                 ],
               ),

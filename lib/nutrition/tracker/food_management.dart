@@ -7,6 +7,7 @@ import 'package:multi_select_flutter/multi_select_flutter.dart';
 import '../services/food_services.dart';
 import 'package:alphanessone/UI/components/glass.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 final foodServiceProvider = Provider<FoodService>((ref) {
   return FoodService(FirebaseFirestore.instance);
@@ -325,28 +326,32 @@ class FoodManagement extends HookConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Start Import',
                       onPressed: startImport,
-                      child: const Text('Start Import'),
+                      variant: AppButtonVariant.primary,
                     ),
-                    ElevatedButton(
+                    AppButton(
+                      label: 'Stop Import',
                       onPressed: stopImport,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: cs.error,
-                      ),
-                      child: const Text('Stop Import'),
+                      variant: AppButtonVariant.filled,
+                      glass: false,
+                      backgroundColor: cs.error,
+                      iconColor: cs.onError,
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                AppButton(
+                  label: 'Update Translations',
                   onPressed: updateTranslations,
-                  child: const Text('Update Translations'),
+                  variant: AppButtonVariant.primary,
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                AppButton(
+                  label: 'Normalize Names',
                   onPressed: normalizeNames,
-                  child: const Text('Normalize Names'),
+                  variant: AppButtonVariant.primary,
                 ),
                 const SizedBox(height: 24),
                 StreamBuilder<Map<String, int>>(

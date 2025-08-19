@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 import 'meal_selection_dialog.dart'; // Assicurati che questo dialog esista
 
@@ -253,9 +254,10 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                       style: GoogleFonts.roboto(fontSize: 16),
                     ),
                   ),
-                  FilledButton(
+                  AppButton(
+                    label: 'Select Date',
                     onPressed: _pickStartDate,
-                    child: Text('Select Date', style: GoogleFonts.roboto()),
+                    variant: AppButtonVariant.primary,
                   ),
                 ],
               ),
@@ -378,13 +380,11 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                           // Bottone per selezionare nuovi pasti
                           Align(
                             alignment: Alignment.centerRight,
-                            child: FilledButton.icon(
+                            child: AppButton(
+                              label: 'Select Meals',
+                              icon: Icons.add,
                               onPressed: () => _selectMeals(dayIndex),
-                              icon: const Icon(Icons.add),
-                              label: Text(
-                                'Select Meals',
-                                style: GoogleFonts.roboto(),
-                              ),
+                              variant: AppButtonVariant.primary,
                             ),
                           ),
                         ],
@@ -396,14 +396,14 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
               const SizedBox(height: 24),
 
               // Bottone di salvataggio
-              FilledButton(
+              AppButton(
+                label: isEditing
+                    ? 'Update & Apply Diet Plan'
+                    : 'Save & Apply Diet Plan',
                 onPressed: _saveDietPlan,
-                child: Text(
-                  isEditing
-                      ? 'Update & Apply Diet Plan'
-                      : 'Save & Apply Diet Plan',
-                  style: GoogleFonts.roboto(fontSize: 18),
-                ),
+                variant: AppButtonVariant.primary,
+                size: AppButtonSize.lg,
+                block: true,
               ),
             ],
           ),

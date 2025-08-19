@@ -12,6 +12,7 @@ import 'Main/app_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'providers/theme_provider.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (ref) => throw UnimplementedError(
@@ -122,28 +123,13 @@ class UnsupportedVersionApp extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 if (!kIsWeb)
-                  ElevatedButton(
+                  AppButton(
+                    label: 'Aggiorna',
                     onPressed: () async {
                       await appServices.checkForUpdate();
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF2196F3),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: const Text(
-                      'Aggiorna',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    variant: AppButtonVariant.primary,
+                    size: AppButtonSize.lg,
                   ),
               ],
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:alphanessone/Store/payment_success_screen.dart';
 import 'package:alphanessone/Store/payment_failure_screen.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class StripeCheckoutWidget extends StatefulWidget {
   final String clientSecret;
@@ -137,34 +138,13 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
+                AppButton(
+                  label: 'Paga Ora',
                   onPressed: _isLoading ? null : _handlePayment,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Text(
-                          'Paga Ora',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  isLoading: _isLoading,
+                  variant: AppButtonVariant.primary,
+                  size: AppButtonSize.lg,
+                  block: true,
                 ),
                 const SizedBox(height: 16),
                 Row(

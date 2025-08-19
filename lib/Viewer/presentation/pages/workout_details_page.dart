@@ -637,16 +637,17 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         builder: (context) => AppDialog(
           title: const Text('Conferma'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annulla'),
+            AppDialogHelpers.buildCancelButton(
+              context: context,
+              label: 'Annulla',
             ),
-            FilledButton(
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Conferma',
               onPressed: () {
                 notifier.completeSeries(series.id ?? '', false, 0, 0);
                 Navigator.of(context).pop();
               },
-              child: const Text('Conferma'),
             ),
           ],
           child: const Text('Vuoi segnare questa serie come non completata?'),

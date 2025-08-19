@@ -178,10 +178,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
+        AppDialogHelpers.buildCancelButton(context: context),
       ],
     ).then((destinationWorkoutIndex) {
       if (destinationWorkoutIndex != null &&
@@ -265,13 +262,12 @@ class ExerciseOptionsDialog extends ConsumerWidget {
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
-            child: const Text('Annulla'),
-          ),
+      actions: [
+          AppDialogHelpers.buildCancelButton(context: context),
           if (superSets?.isNotEmpty == true)
-            TextButton(
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Crea Nuovo Superset',
               onPressed: () {
                 controller.createSuperSet(weekIndex, workoutIndex);
                 Navigator.of(context).pop(
@@ -280,11 +276,12 @@ class ExerciseOptionsDialog extends ConsumerWidget {
                       : null,
                 );
               },
-              child: const Text('Crea Nuovo Superset'),
+              isPrimary: false,
             ),
-          TextButton(
+          AppDialogHelpers.buildActionButton(
+            context: context,
+            label: 'Aggiungi',
             onPressed: () => Navigator.of(context).pop(selectedSuperSetId),
-            child: const Text('Aggiungi'),
           ),
         ],
       ).then((result) {
@@ -328,6 +325,13 @@ class ExerciseOptionsDialog extends ConsumerWidget {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(dialogContext).viewInsets.bottom,
+          ),
           title: const Text('Aggiorna Max RM'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -477,6 +481,13 @@ class ExerciseOptionsDialog extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
+        insetPadding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+        ),
         title: const Text('Elimina Esercizio'),
         content: Text('Sei sicuro di voler eliminare "${exercise.name}"?'),
         actions: [

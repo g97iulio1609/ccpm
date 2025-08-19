@@ -22,11 +22,20 @@ Future<Map<String, dynamic>> parseJsonToExportMapAsync(String jsonString) {
 
 Map<String, dynamic> _parseJsonIsolate(String jsonString) {
   final parsed = json.decode(jsonString);
-  if (parsed is! Map || parsed['program'] == null) {
-    throw ArgumentError('JSON non valido: manca la chiave program');
+  if (parsed is! Map) {
+    throw ArgumentError('JSON non valido: root non è un oggetto');
   }
-  final p = Map<String, dynamic>.from(parsed['program']);
-  return {'program': p};
+  // Accetta sia il formato con root {"program": {...}} sia direttamente l'oggetto programma {...}
+  if (parsed.containsKey('program')) {
+    final p = Map<String, dynamic>.from(parsed['program'] as Map);
+    return {'program': p};
+  }
+  // Fallback: se è un programma diretto (contiene settimane o metadati previsti), wrappalo
+  if (parsed.containsKey('weeks') || parsed.containsKey('name')) {
+    final p = Map<String, dynamic>.from(parsed);
+    return {'program': p};
+  }
+  throw ArgumentError('JSON non valido: atteso {"program": {...}} o un oggetto programma');
 }
 
 // CSV builder from export map

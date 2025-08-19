@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class AppDialog extends StatelessWidget {
   // Title/subtitle accettano sia Widget che String per compat
@@ -35,6 +37,15 @@ class AppDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final media = MediaQuery.of(context);
+    final viewInsets = media.viewInsets;
+    // Build an inset padding that respects the keyboard (viewInsets)
+    final effectiveInsetPadding = EdgeInsets.only(
+      left: AppTheme.spacing.xl + viewInsets.left,
+      right: AppTheme.spacing.xl + viewInsets.right,
+      top: AppTheme.spacing.lg + viewInsets.top,
+      bottom: AppTheme.spacing.lg + viewInsets.bottom,
+    );
 
     final Widget? resolvedTitleWidget = title == null
         ? null
@@ -132,30 +143,43 @@ class AppDialog extends StatelessWidget {
       child: effectiveChild,
     );
 
-    final content = (maxWidth != null || maxHeight != null)
-        ? ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: maxWidth ?? double.infinity,
-              maxHeight: maxHeight ?? double.infinity,
-            ),
-            child: contentCore,
-          )
-        : contentCore;
+    // Content should always be scrollable to avoid overflows when space is tight
+    final Widget content = Flexible(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.zero,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+          child: contentCore,
+        ),
+      ),
+    );
+
+    // Compute a robust max dialog height that respects keyboard and insets
+    final availableHeight = media.size.height - effectiveInsetPadding.vertical;
+    final maxDialogHeight = math.max(
+      0.0,
+      (maxHeight != null)
+          ? math.min(maxHeight!, availableHeight)
+          : availableHeight,
+    );
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.xl,
-        vertical: AppTheme.spacing.lg,
-      ),
+      insetPadding: effectiveInsetPadding,
       child: GlassLite(
         padding: EdgeInsets.zero,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [header, content, footer],
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              // Cap height to the available area to enable scrolling inside
+              maxHeight: maxDialogHeight,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [header, content, footer],
+            ),
           ),
         ),
       ),
@@ -200,22 +224,10 @@ extension AppDialogHelpers on AppDialog {
     String label = 'Annulla',
     VoidCallback? onPressed,
   }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return TextButton(
-      onPressed: onPressed ?? () => Navigator.pop(context),
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppTheme.spacing.lg,
-          vertical: AppTheme.spacing.md,
-        ),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
-      ),
+    return AppButton(
+      label: label,
+      variant: AppButtonVariant.subtle,
+      onPressed: onPressed ?? () => Navigator.of(context, rootNavigator: true).pop(),
     );
   }
 
@@ -229,74 +241,22 @@ extension AppDialogHelpers on AppDialog {
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: isPrimary && !isDestructive
-            ? LinearGradient(
-                colors: [
-                  isDestructive ? colorScheme.error : colorScheme.primary,
-                  (isDestructive ? colorScheme.error : colorScheme.primary)
-                      .withAlpha(204),
-                ],
-              )
-            : null,
-        color: !isPrimary
-            ? colorScheme.surfaceContainerHighest.withAlpha(76)
-            : null,
-        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        boxShadow: isPrimary
-            ? [
-                BoxShadow(
-                  color:
-                      (isDestructive ? colorScheme.error : colorScheme.primary)
-                          .withAlpha(51),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing.lg,
-              vertical: AppTheme.spacing.md,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : isDestructive
-                        ? colorScheme.error
-                        : colorScheme.onSurfaceVariant,
-                    size: 20,
-                  ),
-                  SizedBox(width: AppTheme.spacing.sm),
-                ],
-                Text(
-                  label,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : isDestructive
-                        ? colorScheme.error
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    if (isDestructive) {
+      return AppButton(
+        label: label,
+        icon: icon,
+        onPressed: onPressed,
+        glass: false,
+        variant: AppButtonVariant.filled,
+        backgroundColor: colorScheme.error,
+        iconColor: colorScheme.onError,
+      );
+    }
+    return AppButton(
+      label: label,
+      icon: icon,
+      onPressed: onPressed,
+      variant: isPrimary ? AppButtonVariant.primary : AppButtonVariant.subtle,
     );
   }
 }

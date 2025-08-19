@@ -24,6 +24,7 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/snackbar.dart';
 import 'package:alphanessone/Main/route_metadata.dart';
 import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class CustomAppBar extends ConsumerStatefulWidget
     implements PreferredSizeWidget {
@@ -97,9 +98,29 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
+        return AppDialog(
           title: const Text('Add User'),
-          content: Form(
+          actions: [
+            AppDialogHelpers.buildCancelButton(
+              context: dialogContext,
+              label: 'Cancel',
+            ),
+            AppDialogHelpers.buildActionButton(
+              context: dialogContext,
+              label: 'Add',
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(dialogContext).pop({
+                    'name': nameController.text,
+                    'email': emailController.text,
+                    'password': passwordController.text,
+                    'role': roleController.text,
+                  });
+                }
+              },
+            ),
+          ],
+          child: Form(
             key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -147,25 +168,6 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.of(dialogContext).pop({
-                    'name': nameController.text,
-                    'email': emailController.text,
-                    'password': passwordController.text,
-                    'role': roleController.text,
-                  });
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
         );
       },
     );
@@ -203,9 +205,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       if (mounted) {
         final selectedFavorite = await showDialog<FavoriteDay>(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => AppDialog(
             title: const Text('Seleziona un giorno preferito'),
-            content: SizedBox(
+            child: SizedBox(
               width: double.maxFinite,
               child: ListView.builder(
                 shrinkWrap: true,
@@ -242,26 +244,27 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     return showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
+        return AppDialog(
           title: const Text('Save as Favorite', style: TextStyle(fontSize: 16)),
-          content: TextField(
+          actions: <Widget>[
+            AppDialogHelpers.buildCancelButton(
+              context: dialogContext,
+              label: 'Cancel',
+            ),
+            AppDialogHelpers.buildActionButton(
+              context: dialogContext,
+              label: 'Save',
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(nameController.text),
+            ),
+          ],
+          child: TextField(
             controller: nameController,
             decoration: const InputDecoration(
               labelText: 'Favorite Name',
               hintText: 'Enter a name for this favorite day',
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(nameController.text),
-              child: const Text('Save'),
-            ),
-          ],
         );
       },
     );
@@ -824,6 +827,13 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           title: Text(
             'Select a Template',
             style: GoogleFonts.roboto(fontWeight: FontWeight.bold),

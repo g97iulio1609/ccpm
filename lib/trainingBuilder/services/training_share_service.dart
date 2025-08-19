@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 
 import '../../shared/shared.dart';
@@ -11,21 +12,51 @@ class TrainingShareService {
   TrainingShareService._();
 
   // -------------------------
+  // ID Generation Utilities
+  // -------------------------
+
+  /// Genera un nuovo ID univoco
+  static String _generateId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    return List.generate(20, (_) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  /// Genera un mapping per rinominare gli ID dei superset
+  static Map<String, String> _generateSuperSetIdMapping(List<Week> weeks) {
+    final Map<String, String> mapping = {};
+    for (final week in weeks) {
+      for (final workout in week.workouts) {
+        for (final exercise in workout.exercises) {
+          if (exercise.superSetId != null && exercise.superSetId!.isNotEmpty) {
+            mapping.putIfAbsent(exercise.superSetId!, () => _generateId());
+          }
+        }
+      }
+    }
+    return mapping;
+  }
+
+  // -------------------------
   // JSON
   // -------------------------
 
   static Map<String, dynamic> programToExportMap(TrainingProgram program) {
+    // Genera nuovi ID per evitare conflitti durante l'importazione
+    final newProgramId = _generateId();
+    final superSetMapping = _generateSuperSetIdMapping(program.weeks);
+    
     return {
       'formatVersion': 1,
       'program': {
-        'id': program.id,
+        'id': newProgramId,
         'name': program.name,
         'description': program.description,
         'athleteId': program.athleteId,
         'mesocycleNumber': program.mesocycleNumber,
         'hide': program.hide,
         'status': program.status,
-        'weeks': program.weeks.map((w) => _weekToMap(w)).toList(),
+        'weeks': program.weeks.map((w) => _weekToMap(w, superSetMapping)).toList(),
       },
       'exportedAt': DateTime.now().toIso8601String(),
     };
@@ -36,39 +67,72 @@ class TrainingShareService {
     return const JsonEncoder.withIndent('  ').convert(map);
   }
 
-  static Map<String, dynamic> _weekToMap(Week week) {
+  static Map<String, dynamic> _weekToMap(Week week, Map<String, String> superSetMapping) {
     return {
-      'id': week.id,
+      'id': _generateId(),
       'number': week.number,
       'name': week.name,
       'description': week.description,
       'isCompleted': week.isCompleted,
-      'workouts': week.workouts.map((w) => _workoutToMap(w)).toList(),
+      'workouts': week.workouts.map((w) => _workoutToMap(w, superSetMapping)).toList(),
     };
   }
 
-  static Map<String, dynamic> _workoutToMap(Workout workout) {
+  static Map<String, dynamic> _workoutToMap(Workout workout, Map<String, String> superSetMapping) {
+    // Genera nuovi ID per i superset utilizzando il mapping
+    final newSuperSets = workout.superSets?.map((superSet) {
+      final oldId = superSet['id'] as String?;
+      final newId = oldId != null ? superSetMapping[oldId] ?? _generateId() : null;
+      return {
+        ...superSet,
+        if (newId != null) 'id': newId,
+        'exerciseIds': (superSet['exerciseIds'] as List?)?.map((exerciseId) {
+          // Manteniamo l'exerciseId per ora, verrà aggiornato dopo la rigenerazione degli ID degli esercizi
+          return exerciseId;
+        }).toList() ?? [],
+      };
+    }).toList();
+
     return {
-      'id': workout.id,
+      'id': _generateId(),
       'order': workout.order,
       'name': workout.name,
       'description': workout.description,
       'isCompleted': workout.isCompleted,
-      'superSets': workout.superSets,
-      'exercises': workout.exercises.map((e) => _exerciseToMap(e)).toList(),
+      'superSets': newSuperSets,
+      'exercises': workout.exercises.map((e) => _exerciseToMap(e, superSetMapping)).toList(),
     };
   }
 
-  static Map<String, dynamic> _exerciseToMap(Exercise e) {
+  static Map<String, dynamic> _exerciseToMap(Exercise e, Map<String, String> superSetMapping) {
+    // Genera nuovo ID per l'esercizio
+    final newExerciseId = _generateId();
+    
+    // Aggiorna superSetId se presente nel mapping
+    final newSuperSetId = e.superSetId != null && e.superSetId!.isNotEmpty
+        ? superSetMapping[e.superSetId!] ?? e.superSetId
+        : e.superSetId;
+    
+    // Genera nuovi ID per le serie
+    final newSeries = e.series.map((s) {
+      final seriesMap = s.toMap();
+      return {
+        ...seriesMap,
+        'id': _generateId(),
+        'serieId': _generateId(),
+        'exerciseId': newExerciseId, // Aggiorna con il nuovo ID dell'esercizio
+      };
+    }).toList();
+
     return {
-      'id': e.id,
+      'id': newExerciseId,
       'exerciseId': e.exerciseId,
       'name': e.name,
       'type': e.type,
       'variant': e.variant,
       'order': e.order,
-      'superSetId': e.superSetId,
-      'series': e.series.map((s) => s.toMap()).toList(),
+      'superSetId': newSuperSetId,
+      'series': newSeries,
       if (e.weekProgressions != null)
         'weekProgressions': e.weekProgressions!
             .map((week) => week.map((wp) => wp.toMap()).toList())
@@ -84,7 +148,7 @@ class TrainingShareService {
     final Map<String, dynamic> p = Map<String, dynamic>.from(parsed['program']);
 
     final program = TrainingProgram(
-      id: (p['id'] ?? '') as String?,
+      id: null, // Sempre null per evitare conflitti durante l'importazione
       name: (p['name'] ?? '') as String,
       description: (p['description'] ?? '') as String,
       athleteId: (p['athleteId'] ?? '') as String,
@@ -99,7 +163,7 @@ class TrainingShareService {
   /// Costruisce un TrainingProgram da una mappa export (programma già parsato)
   static TrainingProgram programFromExportMap(Map<String, dynamic> p) {
     final program = TrainingProgram(
-      id: (p['id'] ?? '') as String?,
+      id: null, // Sempre null per evitare conflitti durante l'importazione
       name: (p['name'] ?? '') as String,
       description: (p['description'] ?? '') as String,
       athleteId: (p['athleteId'] ?? '') as String,
@@ -119,7 +183,7 @@ class TrainingShareService {
 
   static Week _weekFromMap(Map<String, dynamic> map) {
     return Week(
-      id: map['id'],
+      id: null, // Sempre null per evitare conflitti durante l'importazione
       number: (map['number'] ?? 1) as int,
       name: map['name'],
       description: map['description'],
@@ -138,7 +202,7 @@ class TrainingShareService {
 
   static Workout _workoutFromMap(Map<String, dynamic> map) {
     return Workout(
-      id: map['id'],
+      id: null, // Sempre null per evitare conflitti durante l'importazione
       order: (map['order'] ?? 0) as int,
       name: (map['name'] ?? '') as String,
       description: map['description'],
@@ -159,7 +223,7 @@ class TrainingShareService {
   static Exercise _exerciseFromMap(Map<String, dynamic> map) {
     final series = _parseSeries(map['series']);
     return Exercise(
-      id: map['id'],
+      id: null, // Sempre null per evitare conflitti durante l'importazione
       exerciseId: map['exerciseId'],
       name: (map['name'] ?? '') as String,
       type: (map['type'] ?? 'weight') as String,
@@ -195,7 +259,15 @@ class TrainingShareService {
 
   /// Esporta il programma in CSV (una riga per serie).
   /// Delimitatore: ","; i campi testuali sono sempre tra doppi apici con escaping RFC4180.
+  /// Genera nuovi ID per evitare conflitti durante l'importazione.
   static String programToCsv(TrainingProgram program) {
+    // Usa il mapping di esportazione per garantire ID rigenerati
+    final exportMap = programToExportMap(program);
+    return _exportMapToCsv(exportMap);
+  }
+
+  /// Converte una mappa di esportazione in CSV
+  static String _exportMapToCsv(Map<String, dynamic> exportMap) {
     final headers = [
       'formatVersion',
       'programId',
@@ -230,22 +302,31 @@ class TrainingShareService {
     final rows = <List<String>>[];
     rows.add(headers);
 
-    for (final week in program.weeks) {
-      for (final workout in week.workouts) {
-        if (workout.exercises.isEmpty) {
+    final program = exportMap['program'] as Map<String, dynamic>;
+    final weeks = (program['weeks'] as List?) ?? [];
+
+    for (final weekData in weeks) {
+      final week = weekData as Map<String, dynamic>;
+      final workouts = (week['workouts'] as List?) ?? [];
+
+      for (final workoutData in workouts) {
+        final workout = workoutData as Map<String, dynamic>;
+        final exercises = (workout['exercises'] as List?) ?? [];
+
+        if (exercises.isEmpty) {
           // Riga placeholder per workout senza esercizi
           rows.add([
             '1',
-            program.id ?? '',
-            _q(program.name),
-            _q(program.description),
-            program.athleteId,
-            program.mesocycleNumber.toString(),
-            program.hide.toString(),
-            program.status,
-            week.number.toString(),
-            workout.order.toString(),
-            _q(workout.name),
+            program['id']?.toString() ?? '',
+            _q(program['name']?.toString() ?? ''),
+            _q(program['description']?.toString() ?? ''),
+            program['athleteId']?.toString() ?? '',
+            program['mesocycleNumber']?.toString() ?? '0',
+            program['hide']?.toString() ?? 'false',
+            program['status']?.toString() ?? 'private',
+            week['number']?.toString() ?? '1',
+            workout['order']?.toString() ?? '1',
+            _q(workout['name']?.toString() ?? ''),
             '', // exerciseOrder
             '', // exerciseName
             '', // exerciseId
@@ -267,72 +348,67 @@ class TrainingShareService {
           continue;
         }
 
-        for (final exercise in workout.exercises) {
-          if (exercise.series.isEmpty) {
+        for (final exerciseData in exercises) {
+          final exercise = exerciseData as Map<String, dynamic>;
+          final series = (exercise['series'] as List?) ?? [];
+
+          if (series.isEmpty) {
             rows.add([
               '1',
-              program.id ?? '',
-              _q(program.name),
-              _q(program.description),
-              program.athleteId,
-              program.mesocycleNumber.toString(),
-              program.hide.toString(),
-              program.status,
-              week.number.toString(),
-              workout.order.toString(),
-              _q(workout.name),
-              exercise.order.toString(),
-              _q(exercise.name),
-              exercise.exerciseId ?? '',
-              exercise.type,
-              _q(exercise.variant ?? ''),
-              exercise.superSetId ?? '',
+              program['id']?.toString() ?? '',
+              _q(program['name']?.toString() ?? ''),
+              _q(program['description']?.toString() ?? ''),
+              program['athleteId']?.toString() ?? '',
+              program['mesocycleNumber']?.toString() ?? '0',
+              program['hide']?.toString() ?? 'false',
+              program['status']?.toString() ?? 'private',
+              week['number']?.toString() ?? '1',
+              workout['order']?.toString() ?? '1',
+              _q(workout['name']?.toString() ?? ''),
+              exercise['order']?.toString() ?? '1',
+              _q(exercise['name']?.toString() ?? ''),
+              exercise['exerciseId']?.toString() ?? '',
+              exercise['type']?.toString() ?? 'weight',
+              _q(exercise['variant']?.toString() ?? ''),
+              exercise['superSetId']?.toString() ?? '',
               '', // seriesOrder
               '0', // sets=0 per placeholder
-              '',
-              '',
-              '',
-              '',
-              '',
-              '',
-              '',
-              '',
-              '',
+              '', '', '', '', '', '', '', '', '',
             ]);
             continue;
           }
 
-          for (var i = 0; i < exercise.series.length; i++) {
-            final s = exercise.series[i];
+          for (var i = 0; i < series.length; i++) {
+            final s = series[i] as Map<String, dynamic>;
             rows.add([
               '1',
-              program.id ?? '',
-              _q(program.name),
-              _q(program.description),
-              program.athleteId,
-              program.mesocycleNumber.toString(),
-              program.hide.toString(),
-              program.status,
-              week.number.toString(),
-              workout.order.toString(),
-              _q(workout.name),
-              exercise.order.toString(),
-              _q(exercise.name),
-              exercise.exerciseId ?? '',
-              exercise.type,
-              _q(exercise.variant ?? ''),
-              exercise.superSetId ?? '',
+              program['id']?.toString() ?? '',
+              _q(program['name']?.toString() ?? ''),
+              _q(program['description']?.toString() ?? ''),
+              program['athleteId']?.toString() ?? '',
+              program['mesocycleNumber']?.toString() ?? '0',
+              program['hide']?.toString() ?? 'false',
+              program['status']?.toString() ?? 'private',
+              week['number']?.toString() ?? '1',
+              workout['order']?.toString() ?? '1',
+              _q(workout['name']?.toString() ?? ''),
+              exercise['order']?.toString() ?? '1',
+              _q(exercise['name']?.toString() ?? ''),
+              exercise['exerciseId']?.toString() ?? '',
+              exercise['type']?.toString() ?? 'weight',
+              _q(exercise['variant']?.toString() ?? ''),
+              exercise['superSetId']?.toString() ?? '',
               (i + 1).toString(),
-              (s.sets).toString(),
-              (s.reps).toString(),
-              s.maxReps?.toString() ?? '',
-              s.weight.toString(),
-              s.maxWeight?.toString() ?? '',
-              s.intensity ?? '',
-              s.maxIntensity ?? '',
-              s.rpe ?? '',
-              s.maxRpe?.toString() ?? '',
-              s.restTimeSeconds?.toString() ?? '',
+              s['sets']?.toString() ?? '1',
+              s['reps']?.toString() ?? '0',
+              s['maxReps']?.toString() ?? '',
+              s['weight']?.toString() ?? '0.0',
+              s['maxWeight']?.toString() ?? '',
+              s['intensity']?.toString() ?? '',
+              s['maxIntensity']?.toString() ?? '',
+              s['rpe']?.toString() ?? '',
+              s['maxRpe']?.toString() ?? '',
+              s['restTimeSeconds']?.toString() ?? '',
             ]);
           }
         }

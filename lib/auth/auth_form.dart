@@ -5,6 +5,7 @@ import 'package:alphanessone/UI/legal/privacy_policy_link.dart';
 import 'auth_service.dart';
 import 'auth_buttons.dart';
 import 'form_fields.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class AuthForm extends HookConsumerWidget {
   const AuthForm({super.key, required this.authService});
@@ -251,25 +252,16 @@ class AuthForm extends HookConsumerWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              TextButton(
+              AppButton(
+                label: isLogin.value ? 'Registrati' : 'Accedi',
                 onPressed: () => isLogin.value = !isLogin.value,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: Size.zero,
-                ),
-                child: Text(
-                  isLogin.value ? 'Registrati' : 'Accedi',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                variant: AppButtonVariant.subtle,
               ),
             ],
           ),
 
           if (isLogin.value) ...[
-            TextButton(
+            AppButton(
               onPressed: () async {
                 final email = userEmail.value.trim();
                 if (email.isEmpty) {
@@ -299,17 +291,8 @@ class AuthForm extends HookConsumerWidget {
                   }
                 }
               },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                minimumSize: Size.zero,
-              ),
-              child: Text(
-                'Password dimenticata?',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              label: 'Password dimenticata?',
+              variant: AppButtonVariant.subtle,
             ),
           ],
 

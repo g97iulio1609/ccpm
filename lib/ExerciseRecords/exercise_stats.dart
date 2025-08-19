@@ -675,16 +675,19 @@ class ExerciseStats extends HookConsumerWidget {
       builder: (dialogContext) => AppDialog(
         title: const Text('Elimina Record'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Annulla'),
+          AppDialogHelpers.buildCancelButton(
+            context: dialogContext,
+            label: 'Annulla',
           ),
-          FilledButton(
+          AppDialogHelpers.buildActionButton(
+            context: dialogContext,
+            label: 'Elimina',
             onPressed: () {
               Navigator.of(dialogContext).pop();
               _performDelete(context, ref, record);
             },
-            child: const Text('Elimina'),
+            isPrimary: false,
+            isDestructive: true,
           ),
         ],
         child: Text(
@@ -767,11 +770,10 @@ class EditRecordDialog extends HookConsumerWidget {
     return AppDialog(
       title: const Text('Edit Record'),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Save',
           onPressed: () {
             Navigator.of(context).pop();
             _handleSave(
@@ -783,7 +785,6 @@ class EditRecordDialog extends HookConsumerWidget {
               keepWeight.value,
             );
           },
-          child: const Text('Save'),
         ),
       ],
       child: SingleChildScrollView(

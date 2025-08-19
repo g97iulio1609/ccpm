@@ -291,11 +291,18 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void _updateProgram() {
-    _nameController.text = program.name;
-    _descriptionController.text = program.description;
-    _athleteIdController.text = program.athleteId;
-    _mesocycleNumberController.text = program.mesocycleNumber.toString();
-    _programStateNotifier.updateProgram(program);
+    if (_disposed) return;
+    
+    try {
+      _nameController.text = program.name;
+      _descriptionController.text = program.description;
+      _athleteIdController.text = program.athleteId;
+      _mesocycleNumberController.text = program.mesocycleNumber.toString();
+      _programStateNotifier.updateProgram(program);
+    } catch (e) {
+      debugPrint('Errore durante aggiornamento controller UI: $e');
+      // Non propagare l'errore per evitare crash dell'UI
+    }
   }
 
   void updateHideProgram(bool value) {
@@ -775,6 +782,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void importProgramFromJson(String jsonString) {
+    if (_disposed) return;
     final imported = TrainingShareService.programFromJson(jsonString);
     state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
     _updateProgram();
@@ -783,6 +791,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void importProgramFromCsv(String csvString) {
+    if (_disposed) return;
     final imported = TrainingShareService.programFromCsv(csvString);
     state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
     _updateProgram();
@@ -791,10 +800,18 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void importProgramModel(TrainingProgram imported) {
-    state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
-    _updateProgram();
-    _superSetController.loadSuperSets(state);
-    _emit();
+    if (_disposed) return;
+    
+    try {
+      state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+      _updateProgram();
+      _superSetController.loadSuperSets(state);
+      _emit();
+    } catch (e) {
+      // Se succede un errore durante l'import, mantieni lo stato corrente
+      debugPrint('Errore durante import programma: $e');
+      rethrow;
+    }
   }
 
   void _emit() {

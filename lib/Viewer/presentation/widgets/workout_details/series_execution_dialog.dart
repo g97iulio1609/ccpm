@@ -33,11 +33,10 @@ Future<void> showSeriesExecutionDialog({
       ],
     ),
     actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
-        child: const Text('Annulla'),
-      ),
-      FilledButton(
+      AppDialogHelpers.buildCancelButton(context: context, label: 'Annulla'),
+      AppDialogHelpers.buildActionButton(
+        context: context,
+        label: 'Salva',
         onPressed: () async {
           final repsDone = int.tryParse(repsController.text.trim()) ?? 0;
           final weightDone =
@@ -47,7 +46,6 @@ Future<void> showSeriesExecutionDialog({
             Navigator.of(context, rootNavigator: true).pop();
           }
         },
-        child: const Text('Salva'),
       ),
     ],
   );

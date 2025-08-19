@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../Main/app_theme.dart';
 
 import '../../utils/subscription_checker.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 final expandedWeekProvider = StateProvider<String?>((ref) => null);
 final trainingLoadingProvider = StateProvider<bool>((ref) => false);
@@ -111,11 +112,7 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
+        return AppDialog(
           title: Text(
             'Abbonamento Scaduto',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -123,35 +120,32 @@ class UnifiedTrainingViewerState extends ConsumerState<UnifiedTrainingViewer> {
               color: theme.colorScheme.onSurface,
             ),
           ),
-          content: Text(
+          actions: [
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Rinnova Abbonamento',
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                context.go('/subscriptions');
+              },
+            ),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Torna Indietro',
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                context.go('/');
+              },
+              isPrimary: false,
+            ),
+          ],
+          child: Text(
             'Il tuo abbonamento è scaduto. Per continuare ad accedere ai contenuti, '
             'è necessario rinnovare l\'abbonamento.',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.go('/subscriptions');
-              },
-              child: Text(
-                'Rinnova Abbonamento',
-                style: TextStyle(color: theme.colorScheme.primary),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.go('/');
-              },
-              child: Text(
-                'Torna Indietro',
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-            ),
-          ],
         );
       },
     );

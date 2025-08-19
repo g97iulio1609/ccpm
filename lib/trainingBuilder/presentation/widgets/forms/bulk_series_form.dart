@@ -9,6 +9,7 @@ import 'package:alphanessone/shared/services/weight_calculation_service.dart';
 
 import 'package:alphanessone/providers/providers.dart';
 import '../../../shared/widgets/number_input_field.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class BulkSeriesForm extends HookConsumerWidget {
   final List<Exercise> exercises;
@@ -135,7 +136,8 @@ class BulkSeriesForm extends HookConsumerWidget {
           // Pulsante di applicazione
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: AppButton(
+              label: 'Applica Serie',
               onPressed: () => _handleApply(
                 exercises,
                 repsController.text,
@@ -147,12 +149,8 @@ class BulkSeriesForm extends HookConsumerWidget {
                 maxRpeController.text,
                 maxWeights.value,
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
-              ),
-              child: const Text('Applica Serie'),
+              variant: AppButtonVariant.primary,
+              block: true,
             ),
           ),
         ],

@@ -621,6 +621,13 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
+        insetPadding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: 24 + MediaQuery.of(dialogContext).viewInsets.bottom,
+        ),
         title: Text(
           'Approve Exercise',
           style: theme.textTheme.titleLarge?.copyWith(

@@ -31,26 +31,30 @@ Future<void> showNoteDialog({
     ),
     actions: [
       if (existingNote != null)
-        TextButton(
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Elimina',
           onPressed: () async {
             await onDelete();
-            if (context.mounted) Navigator.of(context).pop();
+            if (context.mounted) {
+              Navigator.of(context, rootNavigator: true).pop();
+            }
           },
-          child: Text('Elimina', style: TextStyle(color: colorScheme.error)),
+          isDestructive: true,
         ),
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Annulla'),
-      ),
-      FilledButton(
+      AppDialogHelpers.buildCancelButton(context: context),
+      AppDialogHelpers.buildActionButton(
+        context: context,
+        label: 'Salva',
         onPressed: () async {
           final note = noteController.text.trim();
           if (note.isNotEmpty) {
             await onSave(note);
           }
-          if (context.mounted) Navigator.of(context).pop();
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
         },
-        child: const Text('Salva'),
       ),
     ],
   );

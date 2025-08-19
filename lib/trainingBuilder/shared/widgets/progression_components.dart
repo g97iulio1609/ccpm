@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/range_controllers.dart';
 
 /// Component for displaying progression table header
@@ -262,7 +263,8 @@ class _ProgressionRangeEditDialogState
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: AppButton(
+                label: 'Save',
                 onPressed: () {
                   final min = _minController.text.trim();
                   final max = _maxController.text.trim();
@@ -271,7 +273,8 @@ class _ProgressionRangeEditDialogState
                     max.isNotEmpty ? max : null,
                   );
                 },
-                child: const Text('Save'),
+                variant: AppButtonVariant.primary,
+                block: true,
               ),
             ),
           ],
@@ -559,23 +562,11 @@ class _ProgressionCombinedLoadDialogState
   Widget _buildConfirmButton() {
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
+      child: AppButton(
+        label: 'Conferma',
         onPressed: () => Navigator.pop(context),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: widget.colorScheme.primary,
-          foregroundColor: widget.colorScheme.onPrimary,
-          padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          ),
-        ),
-        child: Text(
-          'Conferma',
-          style: widget.theme.textTheme.titleMedium?.copyWith(
-            color: widget.colorScheme.onPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        variant: AppButtonVariant.primary,
+        block: true,
       ),
     );
   }

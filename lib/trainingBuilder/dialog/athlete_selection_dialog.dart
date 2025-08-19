@@ -40,13 +40,11 @@ class AthleteSelectionDialog extends ConsumerWidget {
         child: Icon(Icons.person_search, color: colorScheme.primary, size: 20),
       ),
       actions: [
-        TextButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Conferma',
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Conferma'),
         ),
       ],
       child: FutureBuilder<String>(

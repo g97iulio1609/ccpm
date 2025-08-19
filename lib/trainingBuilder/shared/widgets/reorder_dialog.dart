@@ -40,8 +40,15 @@ class ReorderDialogState extends State<ReorderDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final viewInsets = MediaQuery.of(context).viewInsets;
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.only(
+        left: AppTheme.spacing.xl + viewInsets.left,
+        right: AppTheme.spacing.xl + viewInsets.right,
+        top: AppTheme.spacing.lg + viewInsets.top,
+        bottom: AppTheme.spacing.lg + viewInsets.bottom,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,

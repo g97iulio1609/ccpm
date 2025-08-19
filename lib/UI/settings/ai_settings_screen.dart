@@ -338,6 +338,13 @@ class AISettingsScreen extends HookConsumerWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           title: Text(title),
           content: Text(content),
           actions: [
