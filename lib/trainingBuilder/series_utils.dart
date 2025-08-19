@@ -201,7 +201,7 @@ class SeriesUtils {
         exerciseId,
       );
       return value.toDouble().clamp(0.0, double.maxFinite);
-    } catch (error, stackTrace) {
+    } catch (error) {
       return 0.0;
     }
   }

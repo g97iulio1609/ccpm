@@ -35,7 +35,7 @@ Future<String> buildCsvAsync(Map<String, dynamic> exportMap) {
 }
 
 String _buildCsvIsolate(Map<String, dynamic> exportMap) {
-  String q(String v) => '"' + v.replaceAll('"', '""') + '"';
+  String q(String v) => '"${v.replaceAll('"', '""')}"';
 
   final headers = [
     'formatVersion','programId','programName','programDescription','athleteId','mesocycleNumber','hide','status','weekNumber','workoutOrder','workoutName','exerciseOrder','exerciseName','exerciseId','type','variant','superSetId','seriesOrder','sets','reps','maxReps','weight','maxWeight','intensity','maxIntensity','rpe','maxRpe','restTimeSeconds'
@@ -127,7 +127,7 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
   int idx(String h) => headers.indexOf(h);
   final iWeek = idx('weekNumber');
   final iWO = idx('workoutOrder');
-  final iWOName = idx('workoutName');
+  // workoutName present but ignored; will be rebuilt deterministically
   final iEOrder = idx('exerciseOrder');
   final iEName = idx('exerciseName');
   final iEId = idx('exerciseId');
@@ -148,7 +148,7 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
 
   String? g(List<String> row, int index) => (index >= 0 && index < row.length) ? (row[index].isEmpty ? null : row[index]) : null;
 
-  final Map<int, Map<int, Map<int, Map<String, dynamic>>>>> weeks = {};
+  final Map<int, Map<int, Map<int, Map<String, dynamic>>>> weeks = {};
   String programName = ''; String programDescription = ''; String athleteId = ''; int meso = 0; bool hide = false; String status = 'private';
 
   // pick program-level fields from first content row
@@ -164,7 +164,7 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
 
     final wk = int.tryParse(g(row, iWeek) ?? '1') ?? 1;
     final wod = int.tryParse(g(row, iWO) ?? '1') ?? 1;
-    final wodName = g(row, iWOName) ?? 'Workout $wod';
+    // workout name is rebuilt deterministically; header value ignored
     final eOrder = int.tryParse(g(row, iEOrder) ?? '0') ?? 0;
     final eName = g(row, iEName) ?? '';
     final eId = g(row, iEId);
@@ -184,9 +184,10 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
     final maxRpe = g(row, iMaxRpe);
     final rest = int.tryParse(g(row, iRest) ?? '');
 
-    weeks.putIfAbsent(wk, () => {});
-    final wodMap = weeks[wk]!..putIfAbsent(wod, () => {});
-    final exMap = wodMap![wod]!..putIfAbsent(eOrder, () => {
+    weeks.putIfAbsent(wk, () => <int, Map<int, Map<String, dynamic>>>{});
+    weeks[wk]!.putIfAbsent(wod, () => <int, Map<String, dynamic>>{});
+    final exLevel = weeks[wk]![wod]!;
+    exLevel.putIfAbsent(eOrder, () => {
       'order': eOrder,
       'name': eName,
       'exerciseId': eId,
@@ -197,8 +198,8 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
     });
 
     if (sOrder > 0 || sets > 0 || reps > 0 || weight > 0) {
-      (exMap![eOrder]!['series'] as List).add({
-        'order': sOrder == 0 ? ( (exMap[eOrder]!['series'] as List).length + 1) : sOrder,
+      (exLevel[eOrder]!['series'] as List).add({
+        'order': sOrder == 0 ? ((exLevel[eOrder]!['series'] as List).length + 1) : sOrder,
         'sets': sets,
         'reps': reps,
         'maxReps': maxReps,
@@ -256,4 +257,3 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
     }
   };
 }
-

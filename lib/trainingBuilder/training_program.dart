@@ -592,13 +592,13 @@ class _ActionButtons extends StatelessWidget {
                         final program = TrainingShareService.programFromExportMap(
                           Map<String, dynamic>.from(map['program'] as Map),
                         );
-                        this.controller.importProgramModel(program);
+                        controller.importProgramModel(program);
                       } else {
                         final map = await parseCsvToExportMapAsync(inputCtrl.text);
                         final program = TrainingShareService.programFromExportMap(
                           Map<String, dynamic>.from(map['program'] as Map),
                         );
-                        this.controller.importProgramModel(program);
+                        controller.importProgramModel(program);
                       }
                       if (context.mounted) {
                         Navigator.pop(context);

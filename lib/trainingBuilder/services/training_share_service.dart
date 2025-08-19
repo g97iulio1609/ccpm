@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 
 import '../../shared/shared.dart';
 
@@ -360,7 +359,7 @@ class TrainingShareService {
     String status = 'private';
 
     // Aggregazioni: week -> workout -> exercise -> series
-    final Map<int, Map<int, Map<int, _ExerciseAgg>>>> agg = {};
+    final Map<int, Map<int, Map<int, _ExerciseAgg>>> agg = {};
 
     for (final row in rows) {
       if (row.isEmpty) continue;
@@ -374,7 +373,6 @@ class TrainingShareService {
 
       final weekNumber = int.tryParse(_get(row, idx.weekNumber) ?? '1') ?? 1;
       final workoutOrder = int.tryParse(_get(row, idx.workoutOrder) ?? '1') ?? 1;
-      final workoutName = _get(row, idx.workoutName) ?? '';
       final exerciseOrder = int.tryParse(_get(row, idx.exerciseOrder) ?? '0') ?? 0;
       final exerciseName = _get(row, idx.exerciseName) ?? '';
       final exerciseId = _get(row, idx.exerciseId);

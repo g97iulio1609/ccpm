@@ -23,7 +23,8 @@ class BulkExerciseDeleteDialog extends HookConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final screenHeight = MediaQuery.of(context).size.height;
-    final double listHeight = (screenHeight * 0.45).clamp(240.0, 520.0) as double;
+    final double listHeight =
+        (screenHeight * 0.45).clamp(240.0, 520.0).toDouble();
 
     final allSelected = selected.value.length == workoutExercises.length;
 
@@ -115,7 +116,7 @@ class BulkExerciseDeleteDialog extends HookConsumerWidget {
                   secondary: Container(
                     padding: EdgeInsets.all(AppTheme.spacing.xs),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
+                      color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                     ),
                     child: Text(

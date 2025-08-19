@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'dart:async';
 
@@ -139,7 +138,11 @@ class FoodService {
           _importProgressController.add({
             category: importedProducts,
           }); // Aggiorna il progresso
-        } catch (e) {}
+        } catch (e, st) {
+          // Log import failure for the category/page so it can be retried later
+          // ignore: avoid_print
+          print('Failed importing category "$category" page $page: $e\n$st');
+        }
 
         await Future.delayed(
           const Duration(seconds: 60),
@@ -228,8 +231,10 @@ class FoodService {
       } else {
         // skipping existing product (debug removed)
       }
-    } catch (e) {
-      // ignore import errors (debug removed)
+    } catch (e, st) {
+      // Log product import errors to help debugging
+      // ignore: avoid_print
+      print('Error importing product ${product.barcode}: $e\n$st');
     }
   }
 

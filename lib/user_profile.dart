@@ -721,7 +721,7 @@ class UserProfileState extends ConsumerState<UserProfile>
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<int>(
-        value: _selectedGender,
+        initialValue: _selectedGender,
         onChanged: (value) {
           setState(() {
             _selectedGender = value;

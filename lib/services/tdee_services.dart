@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 class TDEEService {
   final FirebaseFirestore _firestore;
@@ -69,18 +68,20 @@ class TDEEService {
             .doc(userId)
             .collection('mynutrition')
             .doc(docId)
-            .update(nutritionData)
-            .catchError((_) {});
+            .update(nutritionData);
       } else {
         // Create a new document for today
         await _firestore
             .collection('users')
             .doc(userId)
             .collection('mynutrition')
-            .add(nutritionData)
-            .catchError((_) {});
+            .add(nutritionData);
       }
-    } catch (e) {}
+    } catch (e) {
+      // Log the error to aid debugging
+      // ignore: avoid_print
+      print('Failed to save nutrition data: $e');
+    }
   }
 
   // Helper function to round to two decimal places

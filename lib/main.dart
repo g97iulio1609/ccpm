@@ -78,7 +78,7 @@ void main() async {
     );
 
     // Controlla lo stato dell'abbonamento dopo che l'app è stata renderizzata
-    appServices.checkSubscriptionStatus().catchError((_) {});
+    appServices.checkSubscriptionStatus().catchError((_) => false);
   } else {
     runApp(const UnsupportedVersionApp());
   }

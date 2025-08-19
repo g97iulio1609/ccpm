@@ -382,7 +382,19 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
-    } catch (e) {}
+    } catch (e, st) {
+      // Se possibile mostrare un messaggio all'utente e loggare per il debug
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nel salvare modifica: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      // ignore: avoid_print
+      print('Error saving program after editExercise: $e\n$st');
+    }
     
     _emit();
   }
@@ -398,7 +410,11 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
-    } catch (e) {}
+    } catch (e, st) {
+      // Log error — questa funzione non ha context per mostrare snackbar
+      // ignore: avoid_print
+      print('Error saving program after removeExercise: $e\n$st');
+    }
     
     _emit();
   }
@@ -815,7 +831,6 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
 
       // Use WeekUtils for consistent copying and proper reset of completion data
       newProgram.weeks = newProgram.weeks.asMap().entries.map<Week>((entry) {
-        final weekIndex = entry.key;
         final week = entry.value;
         return WeekUtils.resetWeek(WeekUtils.duplicateWeek(week, newNumber: week.number));
       }).toList();

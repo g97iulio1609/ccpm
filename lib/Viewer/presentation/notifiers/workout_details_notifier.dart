@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart'; // Per caricare il workout completo

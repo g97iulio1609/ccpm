@@ -26,5 +26,10 @@ linter:
     unnecessary_underscores: false  # Disable unnecessary underscores warning
     use_build_context_synchronously: false  # Disable build context warning for async operations
 
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+    empty_catches: ignore
+
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

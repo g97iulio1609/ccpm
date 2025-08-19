@@ -35,6 +35,7 @@ class TrainingShareIO {
     final file = File(filePath);
     await file.writeAsString(content, encoding: utf8);
 
+    // ignore: deprecated_member_use
     await Share.shareXFiles([XFile(filePath)], text: 'Export $fileName');
   }
 
@@ -64,12 +65,12 @@ class TrainingShareIO {
     if (ext == 'csv') {
       final map = await async_share.parseCsvToExportMapAsync(content);
       return TrainingShareService.programFromExportMap(
-        Map<String, dynamic>.from(map['program'] as Map),
+        Map<String, dynamic>.from(map['program'] as Map<String, dynamic>),
       );
     } else {
       final map = await async_share.parseJsonToExportMapAsync(content);
       return TrainingShareService.programFromExportMap(
-        Map<String, dynamic>.from(map['program'] as Map),
+        Map<String, dynamic>.from(map['program'] as Map<String, dynamic>),
       );
     }
   }

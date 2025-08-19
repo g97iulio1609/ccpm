@@ -108,7 +108,11 @@ class MacrosNotifier extends StateNotifier<MacroData> {
         };
         await tdeeService.saveNutritionData(userId, sanitizedData);
       }
-    } catch (e) {}
+    } catch (e, st) {
+      // Log for debugging
+      // ignore: avoid_print
+      print('Error saving macros to firebase: $e\n$st');
+    }
   }
 }
 
@@ -651,7 +655,11 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
         _updateInputFields();
       });
-    } catch (e) {}
+    } catch (e, st) {
+      // Log failure while updating macro state
+      // ignore: avoid_print
+      print('Error updating macro: $e\n$st');
+    }
   }
 
   void _applyChanges() async {
@@ -890,7 +898,11 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
           offset: min(cursorPosition, cleanedValue.length),
         ),
       );
-    } catch (e) {}
+    } catch (e, st) {
+      // Log input handling errors for diagnostics
+      // ignore: avoid_print
+      print('Error handling text field change: $e\n$st');
+    }
   }
 
   double _getMacroValue(MacroData macros, String macro) {
