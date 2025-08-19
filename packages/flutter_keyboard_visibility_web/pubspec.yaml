@@ -1,0 +1,17 @@
+name: flutter_keyboard_visibility_web
+description: WASM-safe stub implementation overriding the web plugin to avoid dart:html
+version: 0.0.1
+publish_to: 'none'
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_keyboard_visibility_platform_interface: ^2.0.0
+flutter:
+  plugin:
+    platforms:
+      web:
+        pluginClass: FlutterKeyboardVisibilityWeb
+        fileName: flutter_keyboard_visibility_web.dart
+

@@ -147,7 +147,7 @@ class CoachingScreen extends HookConsumerWidget {
         boxShadow: AppTheme.elevations.small,
       ),
       padding: EdgeInsets.all(AppTheme.spacing.md),
-      child: UserTypeAheadField(
+      child: UserAutocompleteField(
         controller: controller,
         focusNode: focusNode,
         onSelected: (UserModel selectedUser) {

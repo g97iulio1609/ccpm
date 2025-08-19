@@ -132,7 +132,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
                 padding: EdgeInsets.all(AppTheme.spacing.md),
                 child: AppCard(
                   background: colorScheme.surfaceContainerHighest.withAlpha(38),
-                  child: UserTypeAheadField(
+                  child: UserAutocompleteField(
                     controller: _userSearchController,
                     focusNode: _userSearchFocusNode,
                     onSelected: (UserModel selectedUser) {

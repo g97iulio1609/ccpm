@@ -4,13 +4,13 @@ import '../../../models/user_model.dart';
 import '../../../common/generic_autocomplete.dart';
 import '../../../providers/providers.dart';
 
-class UserTypeAheadField extends ConsumerWidget {
+class UserAutocompleteField extends ConsumerWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final void Function(UserModel) onSelected;
   final void Function(String) onChanged;
 
-  const UserTypeAheadField({
+  const UserAutocompleteField({
     required this.controller,
     required this.focusNode,
     required this.onSelected,

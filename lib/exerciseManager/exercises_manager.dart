@@ -9,7 +9,7 @@ import 'exercise_model.dart';
 import '../providers/providers.dart';
 import 'widgets/exercise_widgets.dart';
 import 'controllers/exercise_list_controller.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:alphanessone/common/app_autocomplete.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/icon_button_with_background.dart';
@@ -103,7 +103,7 @@ class ExercisesList extends HookConsumerWidget {
       child: Column(
         children: [
           const SizedBox(height: 24),
-          TypeAheadField<ExerciseModel>(
+          AppAutocompleteField<ExerciseModel>(
             builder: (context, controller, focusNode) {
               return GlassLite(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -175,11 +175,11 @@ class ExercisesList extends HookConsumerWidget {
                 controller.updateFilters(searchText: exercise.name);
               });
             },
-            debounceDuration: const Duration(milliseconds: 500),
+            debounceDuration: const Duration(milliseconds: 350),
             hideOnEmpty: false,
-            hideOnLoading: false,
-            hideOnError: false,
-            animationDuration: const Duration(milliseconds: 300),
+            hideOnLoading: true,
+            hideOnError: true,
+            animationDuration: const Duration(milliseconds: 180),
             constraints: const BoxConstraints(maxHeight: 300),
             decorationBuilder: (context, child) {
               return GlassLite(
@@ -198,17 +198,6 @@ class ExercisesList extends HookConsumerWidget {
                 ),
               );
             },
-            loadingBuilder: (context) => const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            errorBuilder: (context, error) => Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Error: $error',
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-            ),
             emptyBuilder: (context) => const Padding(
               padding: EdgeInsets.all(16.0),
               child: Text('No exercises found'),

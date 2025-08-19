@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'app_autocomplete.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:alphanessone/UI/components/glass.dart';
@@ -30,7 +30,7 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final focusNode = useFocusNode();
 
-    return TypeAheadField<T>(
+    return AppAutocompleteField<T>(
       controller: controller,
       suggestionsCallback: suggestionsCallback,
       itemBuilder: itemBuilder,
@@ -39,9 +39,6 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
         FocusScope.of(context).unfocus();
       },
       emptyBuilder: (context) => emptyBuilder ?? const SizedBox.shrink(),
-      hideWithKeyboard: true,
-      hideOnSelect: true,
-      retainOnLoading: false,
       decorationBuilder: (context, child) {
         final colorScheme = Theme.of(context).colorScheme;
         return GlassLite(
