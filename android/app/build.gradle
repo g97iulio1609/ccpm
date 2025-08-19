@@ -26,13 +26,13 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace 'com.alphaness.alphanessone'
-    compileSdkVersion 35
+    compileSdkVersion 36
     ndkVersion "27.0.12077973"
 
     defaultConfig {
         applicationId 'com.alphaness.alphanessone'
-        minSdkVersion 23
-        targetSdkVersion 35
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
