@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../common/generic_autocomplete.dart';
+import '../common/app_search_field.dart';
 import '../exerciseManager/exercise_model.dart';
 import '../trainingBuilder/dialog/add_exercise_dialog.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
@@ -24,9 +24,9 @@ class ExerciseAutocompleteBox extends HookConsumerWidget {
     final exercisesService = ref.watch(exerciseServiceProvider);
     final userId = FirebaseAuth.instance.currentUser?.uid;
 
-    return GenericAutocompleteField<ExerciseModel>(
+    return AppSearchField<ExerciseModel>(
       controller: controller,
-      labelText: 'Search Exercise',
+      hintText: 'Search Exercise',
       suggestionsCallback: (search) async {
         final exercisesList = await exercisesService.getExercises().first;
         final suggestions = exercisesList

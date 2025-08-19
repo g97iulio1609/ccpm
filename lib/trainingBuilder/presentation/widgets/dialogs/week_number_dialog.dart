@@ -83,8 +83,15 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final viewInsets = MediaQuery.of(context).viewInsets;
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.only(
+        left: AppTheme.spacing.xl + viewInsets.left,
+        right: AppTheme.spacing.xl + viewInsets.right,
+        top: AppTheme.spacing.lg + viewInsets.top,
+        bottom: AppTheme.spacing.lg + viewInsets.bottom,
+      ),
       child: Container(
         width: 400,
         decoration: BoxDecoration(
@@ -93,7 +100,12 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
           border: Border.all(color: colorScheme.outline.withAlpha(26)),
           boxShadow: AppTheme.elevations.large,
         ),
-        child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxDialogHeight = constraints.maxHeight;
+            return ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxDialogHeight),
+              child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -136,11 +148,12 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
             ),
 
             // Content
-            Padding(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(AppTheme.spacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   Text(
                     'Numero Settimana',
                     style: theme.textTheme.labelLarge?.copyWith(
@@ -240,7 +253,8 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
                       ],
                     ),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -327,6 +341,9 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
               ),
             ),
           ],
+              ),
+            );
+          },
         ),
       ),
     );

@@ -39,23 +39,23 @@ class WorkoutDialogs {
       ),
       actions: [
         if (existingNote != null)
-          TextButton(
+          AppDialogHelpers.buildActionButton(
+            context: context,
+            label: 'Elimina',
             onPressed: () async {
               await ref
                   .read(workout_provider.workoutServiceProvider)
                   .deleteNote(exerciseId, workoutId);
-              if (context.mounted) Navigator.of(context).pop();
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
             },
-            child: Text(
-              'Elimina',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+            isDestructive: true,
           ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Annulla'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Salva',
           onPressed: () async {
             final note = noteController.text.trim();
             if (note.isNotEmpty) {
@@ -63,9 +63,10 @@ class WorkoutDialogs {
                   .read(workout_provider.workoutServiceProvider)
                   .showNoteDialog(exerciseId, exerciseName, workoutId, note);
             }
-            if (context.mounted) Navigator.of(context).pop();
+            if (context.mounted) {
+              Navigator.of(context, rootNavigator: true).pop();
+            }
           },
-          child: const Text('Salva'),
         ),
       ],
     );
@@ -149,11 +150,10 @@ class WorkoutDialogs {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Salva',
           onPressed: () async {
             final maxWeight = calculatedMaxWeight.value;
             final weight = double.tryParse(weightController.text);
@@ -174,10 +174,9 @@ class WorkoutDialogs {
                     .read(workoutDetailsNotifierProvider(workoutId).notifier)
                     .refreshWorkout();
               }
-              Navigator.pop(context);
+              Navigator.of(context, rootNavigator: true).pop();
             }
           },
-          child: const Text('Salva'),
         ),
       ],
     );
@@ -392,11 +391,10 @@ class WorkoutDialogs {
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Salva',
           onPressed: () {
             final reps = double.tryParse(repsController.text);
             final weight = double.tryParse(weightController.text);
@@ -411,9 +409,8 @@ class WorkoutDialogs {
                   .read(workout_provider.workoutServiceProvider)
                   .updateSeriesData(seriesData['exerciseId'], seriesData);
             }
-            Navigator.pop(context);
+            Navigator.of(context, rootNavigator: true).pop();
           },
-          child: const Text('Salva'),
         ),
       ],
     );

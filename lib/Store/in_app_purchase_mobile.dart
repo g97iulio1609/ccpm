@@ -77,9 +77,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       final ProductDetailsResponse response = await _inAppPurchase
           .queryProductDetails(kIds);
 
-      if (response.notFoundIDs.isNotEmpty) {
-        debugPrint('Prodotti non trovati: ${response.notFoundIDs}');
-      }
+      // Silently ignore missing product IDs in release
 
       setState(() {
         _products = response.productDetails;

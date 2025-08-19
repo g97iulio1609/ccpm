@@ -144,10 +144,9 @@ class ProgressionGroupFields extends StatelessWidget {
           _handleRpeUpdate(params);
           break;
         default:
-          debugPrint('WARNING: Unknown load update type: ${params.type}');
+          // Unknown type: ignore silently
       }
     } catch (e) {
-      debugPrint('ERROR: Failed to handle load update: $e');
       // Show user-friendly error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

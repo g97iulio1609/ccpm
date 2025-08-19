@@ -6,6 +6,8 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
 import 'package:alphanessone/Viewer/presentation/notifiers/exercise_timer_notifier.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 // Costanti per il layout (manteniamo quelle esistenti)
 class TimerConstants {
@@ -168,46 +170,13 @@ class _ExerciseTimerBottomSheetState
     return showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return AppDialog(
           title: const Text('Aggiungi Preset'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: labelController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome preset',
-                  hintText: 'es. Recupero breve',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: minutesController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Minuti'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(
-                      controller: secondsController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Secondi'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annulla'),
-            ),
-            TextButton(
+            AppDialogHelpers.buildCancelButton(context: context),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Salva',
               onPressed: () {
                 final minutes = int.tryParse(minutesController.text) ?? 0;
                 final seconds = int.tryParse(secondsController.text) ?? 0;
@@ -228,29 +197,9 @@ class _ExerciseTimerBottomSheetState
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Salva'),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showEditPresetDialog(TimerPreset preset) async {
-    final minutesController = TextEditingController(
-      text: ((preset.seconds) ~/ 60).toString(),
-    );
-    final secondsController = TextEditingController(
-      text: ((preset.seconds) % 60).toString(),
-    );
-    final labelController = TextEditingController(text: preset.label);
-
-    return showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Modifica Preset'),
-          content: Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
@@ -282,12 +231,30 @@ class _ExerciseTimerBottomSheetState
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showEditPresetDialog(TimerPreset preset) async {
+    final minutesController = TextEditingController(
+      text: ((preset.seconds) ~/ 60).toString(),
+    );
+    final secondsController = TextEditingController(
+      text: ((preset.seconds) % 60).toString(),
+    );
+    final labelController = TextEditingController(text: preset.label);
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AppDialog(
+          title: const Text('Modifica Preset'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annulla'),
-            ),
-            TextButton(
+            AppDialogHelpers.buildCancelButton(context: context),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Salva',
               onPressed: () {
                 final minutes = int.tryParse(minutesController.text) ?? 0;
                 final seconds = int.tryParse(secondsController.text) ?? 0;
@@ -308,9 +275,40 @@ class _ExerciseTimerBottomSheetState
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Salva'),
             ),
           ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome preset',
+                  hintText: 'es. Recupero breve',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: minutesController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Minuti'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: secondsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Secondi'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -488,43 +486,25 @@ class _ExerciseTimerBottomSheetState
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: FilledButton(
+                                      child: AppButton(
+                                        label: 'ANNULLA',
                                         onPressed: () {
                                           timerNotifier.resetTimer();
                                         },
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: colorScheme.error,
-                                          foregroundColor: colorScheme.onError,
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: AppTheme.spacing.lg,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              AppTheme.radii.lg,
-                                            ),
-                                          ),
-                                        ),
-                                        child: const Text('ANNULLA'),
+                                        variant: AppButtonVariant.filled,
+                                        glass: false,
+                                        backgroundColor: colorScheme.error,
+                                        iconColor: colorScheme.onError,
+                                        size: AppButtonSize.lg,
                                       ),
                                     ),
                                     SizedBox(width: AppTheme.spacing.md),
                                     Expanded(
-                                      child: FilledButton(
+                                      child: AppButton(
+                                        label: 'SERIE COMPLETATA',
                                         onPressed: _handleTimerComplete,
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: colorScheme.primary,
-                                          foregroundColor:
-                                              colorScheme.onPrimary,
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: AppTheme.spacing.lg,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              AppTheme.radii.lg,
-                                            ),
-                                          ),
-                                        ),
-                                        child: const Text('SERIE COMPLETATA'),
+                                        variant: AppButtonVariant.primary,
+                                        size: AppButtonSize.lg,
                                       ),
                                     ),
                                   ],
@@ -782,13 +762,11 @@ class _ExerciseTimerBottomSheetState
           ),
         ),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
+        AppButton(
+          label: 'Aggiungi preset',
+          icon: Icons.add,
           onPressed: _showAddPresetDialog,
-          icon: const Icon(Icons.add),
-          label: const Text('Aggiungi preset'),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: colorScheme.primary.withAlpha(128)),
-          ),
+          variant: AppButtonVariant.outline,
         ),
       ],
     );
@@ -886,7 +864,8 @@ class _ExerciseTimerBottomSheetState
   ) {
     return SizedBox(
       width: double.infinity,
-      child: FilledButton(
+      child: AppButton(
+        label: 'AVVIA TIMER',
         onPressed: () {
           // Avvia il timer con l'opzione EMOM
           timerNotifier.startTimer();
@@ -898,21 +877,8 @@ class _ExerciseTimerBottomSheetState
             // Potremmo passare isEmom al notifier, o gestire le notifiche qui
           }
         },
-        style: FilledButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.lg),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          ),
-        ),
-        child: Text(
-          'AVVIA TIMER',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        variant: AppButtonVariant.primary,
+        size: AppButtonSize.lg,
       ),
     );
   }

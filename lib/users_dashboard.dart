@@ -386,16 +386,16 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
       title: const Text('Delete User'),
       child: Text('Are you sure you want to delete ${user.name}?'),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Delete',
           onPressed: () {
             Navigator.of(context).pop();
             _deleteUser(user);
           },
-          child: const Text('Delete'),
+          isPrimary: false,
+          isDestructive: true,
         ),
       ],
     );

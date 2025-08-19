@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/privacy_consent_service.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class SubmitButton extends ConsumerStatefulWidget {
   const SubmitButton({
@@ -38,51 +39,16 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final userRole = ref.watch(userRoleProvider);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withAlpha(26),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withAlpha(77),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: MaterialButton(
-        onPressed: _isLoading ? null : () => _submit(userRole),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: _isLoading
-            ? SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    theme.colorScheme.onPrimary,
-                  ),
-                ),
-              )
-            : Text(
-                widget.isLogin.value ? 'Accedi' : 'Crea account',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-      ),
+    final label = widget.isLogin.value ? 'Accedi' : 'Crea account';
+    return AppButton(
+      label: label,
+      onPressed: _isLoading ? null : () => _submit(userRole),
+      isLoading: _isLoading,
+      variant: AppButtonVariant.primary,
+      size: AppButtonSize.lg,
+      block: true,
     );
   }
 
@@ -129,8 +95,7 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
               consentGiven: true,
             );
           } catch (consentError) {
-            // Log dell'errore ma non bloccare il processo di registrazione
-            debugPrint('Errore nel salvare il consenso privacy: $consentError');
+            // Non bloccare il processo di registrazione
           }
         }
 
@@ -199,7 +164,6 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final authService = ref.watch(authServiceProvider);
     final userRole = ref.watch(userRoleProvider);
 
@@ -210,43 +174,13 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
       );
     }
 
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: MaterialButton(
-        onPressed: () => _handleGoogleSignIn(context, authService, userRole),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: theme.colorScheme.outline.withAlpha(26)),
-        ),
-        color: theme.colorScheme.surface,
-        elevation: 0,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 16,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: FaIcon(
-                  FontAwesomeIcons.google,
-                  size: 24,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            Center(
-              child: Text(
-                'Accedi con Google',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppButton(
+      label: 'Accedi con Google',
+      icon: FontAwesomeIcons.google,
+      onPressed: () => _handleGoogleSignIn(context, authService, userRole),
+      variant: AppButtonVariant.outline,
+      size: AppButtonSize.md,
+      block: true,
     );
   }
 
@@ -309,45 +243,13 @@ class SignInWithGoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: MaterialButton(
-        onPressed: onPressed,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: theme.colorScheme.outline.withAlpha(51)),
-        ),
-        color: theme.colorScheme.surface,
-        elevation: 0,
-        child: Stack(
-          children: [
-            Positioned(
-              left: 16,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Image.asset(
-                  'assets/images/google_g_logo.png',
-                  height: 24,
-                  width: 24,
-                ),
-              ),
-            ),
-            Center(
-              child: Text(
-                'Accedi con Google',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppButton(
+      label: 'Accedi con Google',
+      icon: Icons.login,
+      onPressed: onPressed,
+      variant: AppButtonVariant.outline,
+      size: AppButtonSize.md,
+      block: true,
     );
   }
 }

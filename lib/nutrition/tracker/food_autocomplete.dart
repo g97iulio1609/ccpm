@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/macros_model.dart';
 import '../models/macros_services.dart';
-import 'package:alphanessone/common/generic_autocomplete.dart';
+import 'package:alphanessone/common/app_search_field.dart';
 
 class AutoTypeField extends ConsumerWidget {
   final TextEditingController controller;
@@ -22,16 +22,15 @@ class AutoTypeField extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final macrosService = ref.watch(macrosServiceProvider);
 
-    return GenericAutocompleteField<Food>(
+    return AppSearchField<Food>(
       controller: controller,
-      labelText: 'Search Food',
+      hintText: 'Search Food',
       prefixIcon: Icons.fastfood,
       suggestionsCallback: (pattern) async {
         onChanged(pattern);
         try {
           return await macrosService.searchFoods(pattern).first;
         } catch (e) {
-          debugPrint('Error fetching suggestions: $e');
           return [];
         }
       },

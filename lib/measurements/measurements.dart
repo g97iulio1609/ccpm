@@ -122,7 +122,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
         border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
-      child: UserTypeAheadField(
+      child: UserAutocompleteField(
         controller: _userSearchController,
         focusNode: _userSearchFocusNode,
         onSelected: (user) {

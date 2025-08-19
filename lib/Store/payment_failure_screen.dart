@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class PaymentFailureScreen extends StatefulWidget {
   final String error;
@@ -103,49 +104,21 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          ElevatedButton(
+                          AppButton(
+                            label: 'Indietro',
                             onPressed: () => Navigator.of(context).pop(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: AppTheme.error,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              'Indietro',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            variant: AppButtonVariant.filled,
+                            glass: false,
+                            backgroundColor: Colors.white,
+                            iconColor: AppTheme.error,
                           ),
                           const SizedBox(width: 16),
-                          OutlinedButton(
+                          AppButton(
+                            label: 'Riprova',
                             onPressed: () => Navigator.of(context).pop(true),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: const Text(
-                              'Riprova',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            variant: AppButtonVariant.outline,
+                            glass: true,
+                            iconColor: Colors.white,
                           ),
                         ],
                       ),

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 class TDEEService {
   final FirebaseFirestore _firestore;
@@ -69,32 +68,19 @@ class TDEEService {
             .doc(userId)
             .collection('mynutrition')
             .doc(docId)
-            .update(nutritionData)
-            .then(
-              (_) => debugPrint(
-                'Nutrition data updated successfully for docId: $docId',
-              ),
-            )
-            .catchError(
-              (error) => debugPrint('Failed to update document: $error'),
-            );
+            .update(nutritionData);
       } else {
         // Create a new document for today
         await _firestore
             .collection('users')
             .doc(userId)
             .collection('mynutrition')
-            .add(nutritionData)
-            .then(
-              (docRef) =>
-                  debugPrint('New nutrition data added with ID: ${docRef.id}'),
-            )
-            .catchError(
-              (error) => debugPrint('Failed to add new document: $error'),
-            );
+            .add(nutritionData);
       }
     } catch (e) {
-      debugPrint('Error saving nutrition data: $e');
+      // Log the error to aid debugging
+      // ignore: avoid_print
+      print('Failed to save nutrition data: $e');
     }
   }
 

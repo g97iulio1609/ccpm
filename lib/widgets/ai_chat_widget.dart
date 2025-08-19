@@ -468,7 +468,7 @@ class _AISettingsSelector extends ConsumerWidget {
         border: Border.all(color: colorScheme.outline.withAlpha(51)),
       ),
       child: DropdownButtonFormField<T>(
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: theme.textTheme.bodyMedium?.copyWith(

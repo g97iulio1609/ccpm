@@ -5,7 +5,7 @@ import '../controller/training_program_controller.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
-import 'package:alphanessone/common/generic_autocomplete.dart';
+import 'package:alphanessone/common/app_search_field.dart';
 
 class AthleteSelectionDialog extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -40,13 +40,11 @@ class AthleteSelectionDialog extends ConsumerWidget {
         child: Icon(Icons.person_search, color: colorScheme.primary, size: 20),
       ),
       actions: [
-        TextButton(
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Conferma',
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Conferma'),
         ),
       ],
       child: FutureBuilder<String>(
@@ -60,9 +58,9 @@ class AthleteSelectionDialog extends ConsumerWidget {
             builder: (context, AsyncSnapshot<List<UserModel>> snap) {
               if (snap.hasData) {
                 final users = snap.data!;
-                return GenericAutocompleteField<UserModel>(
+                return AppSearchField<UserModel>(
                   controller: athleteNameController,
-                  labelText: 'Cerca atleta...',
+                  hintText: 'Cerca atleta...',
                   prefixIcon: Icons.search,
                   suggestionsCallback: (pattern) async {
                     return users

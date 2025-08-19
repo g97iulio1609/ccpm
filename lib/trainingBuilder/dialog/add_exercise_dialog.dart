@@ -5,7 +5,7 @@ import '../../exerciseManager/exercises_services.dart';
 import '../../exerciseManager/exercises_manager.dart';
 import '../../Main/app_theme.dart';
 import '../../UI/components/app_dialog.dart';
-import '../../common/generic_autocomplete.dart';
+import '../../common/app_search_field.dart';
 
 class AddExerciseDialog extends HookConsumerWidget {
   final ExercisesService exercisesService;
@@ -74,9 +74,9 @@ class AddExerciseDialog extends HookConsumerWidget {
         data: (muscleGroups) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GenericAutocompleteField<String>(
+            AppSearchField<String>(
               controller: muscleGroupController,
-              labelText: 'Muscolo Target',
+              hintText: 'Muscolo Target',
               prefixIcon: Icons.sports_gymnastics,
               suggestionsCallback: (pattern) async {
                 return muscleGroups
@@ -195,9 +195,9 @@ class AddExerciseDialog extends HookConsumerWidget {
 
     Widget buildTypeSelector() {
       return exerciseTypesStream.when(
-        data: (types) => GenericAutocompleteField<String>(
+        data: (types) => AppSearchField<String>(
           controller: typeController,
-          labelText: 'Tipologia Esercizio',
+          hintText: 'Tipologia Esercizio',
           prefixIcon: Icons.category_outlined,
           suggestionsCallback: (pattern) async {
             return types

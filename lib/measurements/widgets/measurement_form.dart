@@ -5,6 +5,7 @@ import '../measurement_constants.dart';
 import '../measurement_controller.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/models/measurement_model.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class MeasurementForm extends ConsumerStatefulWidget {
   final ScrollController scrollController;
@@ -280,59 +281,16 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          TextButton(
+          AppButton(
+            label: 'Annulla',
             onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppTheme.spacing.lg,
-                vertical: AppTheme.spacing.md,
-              ),
-            ),
-            child: Text(
-              'Annulla',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
+            variant: AppButtonVariant.subtle,
           ),
           SizedBox(width: AppTheme.spacing.md),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary.withAlpha(204),
-                  colorScheme.primary.withAlpha(204),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withAlpha(204),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _submitMeasurement,
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacing.lg,
-                    vertical: AppTheme.spacing.md,
-                  ),
-                  child: Text(
-                    widget.measurement == null ? 'Aggiungi' : 'Aggiorna',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          AppButton(
+            label: widget.measurement == null ? 'Aggiungi' : 'Aggiorna',
+            onPressed: _submitMeasurement,
+            variant: AppButtonVariant.primary,
           ),
         ],
       ),

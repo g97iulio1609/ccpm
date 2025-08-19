@@ -100,7 +100,6 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         _weightController.text = _weight.toString();
       });
     } catch (e) {
-      debugPrint('Error loading TDEE data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -181,7 +180,6 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           );
         }
       } catch (e) {
-        debugPrint('Error saving TDEE data: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

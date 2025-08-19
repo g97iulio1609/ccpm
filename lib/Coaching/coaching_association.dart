@@ -324,6 +324,13 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
+      insetPadding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+      ),
       title: const Text('Cerca Coach'),
       content: SizedBox(
         width: double.maxFinite,

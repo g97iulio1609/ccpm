@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart'; // Per caricare il workout completo
@@ -100,14 +99,9 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
       try {
         _updateSeriesInLocalState(seriesId, isDone, repsDone, weightDone);
       } catch (localUpdateError) {
-        debugPrint("Errore aggiornamento locale, ricarico workout: $localUpdateError");
         await _loadWorkout();
       }
     } catch (e) {
-      // Logging dell'errore per debugging
-      debugPrint("Errore completamento serie - ID: $seriesId, Done: $isDone, Reps: $repsDone, Weight: $weightDone");
-      debugPrint("Errore: ${e.toString()}");
-      
       state = state.copyWith(
         error: "Errore nel completare la serie: ${e.toString()}",
       );
@@ -182,7 +176,6 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
     double weightDone,
   ) {
     if (seriesId.isEmpty) {
-      debugPrint("Errore: seriesId è vuoto");
       return null;
     }
 
@@ -210,7 +203,6 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
         return workout.copyWith(exercises: updatedExercises);
       }
     } catch (e) {
-      debugPrint("Errore aggiornamento serie locale: $e");
       // In caso di errore, ricarichiamo tutto per sicurezza
       _loadWorkout();
       return null;
@@ -234,7 +226,6 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
       final updatedWorkout = state.workout!.copyWith(exercises: updatedExercises);
       state = state.copyWith(workout: updatedWorkout);
     } catch (e) {
-      debugPrint("Errore aggiornamento nota locale: $e");
       // In caso di errore, ricarichiamo tutto per sicurezza
       _loadWorkout();
     }

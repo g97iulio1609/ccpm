@@ -108,8 +108,10 @@ class MacrosNotifier extends StateNotifier<MacroData> {
         };
         await tdeeService.saveNutritionData(userId, sanitizedData);
       }
-    } catch (e) {
-      debugPrint('Error saving macros to Firebase: $e');
+    } catch (e, st) {
+      // Log for debugging
+      // ignore: avoid_print
+      print('Error saving macros to firebase: $e\n$st');
     }
   }
 }
@@ -192,13 +194,11 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    debugPrint('_loadUserData chiamato');
 
     try {
       ref.read(tdeeServiceProvider);
       final measurementsService = ref.read(measurementsServiceProvider);
       final nutritionData = await _getMostRecentNutritionData(widget.userId);
-      debugPrint('nutritionData $nutritionData');
 
       final measurements = await measurementsService
           .getMeasurements(userId: widget.userId)
@@ -208,7 +208,6 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
           : 0.0;
 
       if (nutritionData != null) {
-        debugPrint('nutritionData non è null');
         ref
             .read(userDataProvider.notifier)
             .updateUserData(
@@ -222,7 +221,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
           fat: nutritionData['fat']?.toDouble() ?? 0.0,
         );
 
-        debugPrint('MacroData creato: ${macroData.toMap()}');
+        
 
         if (!mounted) return;
 
@@ -235,11 +234,9 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         ref.read(macrosProvider.notifier).updateMacros(macroData);
         _updateInputFields();
       } else {
-        debugPrint('Nessun dato di nutrizione trovato per l\'utente.');
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      debugPrint('Errore durante il caricamento dei dati: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -296,20 +293,15 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
                 .roundToDouble(),
       );
     } catch (e) {
-      debugPrint('Error in _calculatePercentagesFromGrams: $e');
       return MacroData(carbs: 0, protein: 0, fat: 0);
     }
   }
 
   void _updateInputFields() {
-    debugPrint('_updateInputFields chiamato');
     final userData = ref.read(userDataProvider);
 
     void updateController(String macro, MacroUpdateType type, double value) {
       _controllers[macro]![type]?.text = value.toStringAsFixed(2);
-      debugPrint(
-        'Controller aggiornato - Macro: $macro, Tipo: $type, Valore: ${value.toStringAsFixed(2)}',
-      );
     }
 
     for (var macro in ['carbs', 'protein', 'fat']) {
@@ -333,7 +325,6 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     }
 
     setState(() {});
-    debugPrint('_updateInputFields completato');
   }
 
   @override
@@ -664,8 +655,10 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
         _updateInputFields();
       });
-    } catch (e) {
-      debugPrint('Error in _updateMacro: $e');
+    } catch (e, st) {
+      // Log failure while updating macro state
+      // ignore: avoid_print
+      print('Error updating macro: $e\n$st');
     }
   }
 
@@ -771,7 +764,6 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         }
       }
     } catch (e) {
-      debugPrint('Error saving nutrition data: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -906,8 +898,10 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
           offset: min(cursorPosition, cleanedValue.length),
         ),
       );
-    } catch (e) {
-      debugPrint('Error in _handleTextFieldChange: $e');
+    } catch (e, st) {
+      // Log input handling errors for diagnostics
+      // ignore: avoid_print
+      print('Error handling text field change: $e\n$st');
     }
   }
 

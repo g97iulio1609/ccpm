@@ -1,5 +1,4 @@
 import '../../../shared/shared.dart';
-import '../../utility_functions.dart';
 
 /// Simple copy service following KISS, SOLID, DRY principles
 /// Single Responsibility: Only handles copying operations
@@ -18,12 +17,18 @@ class SimpleCopyService {
 
   /// Creates a complete copy of a workout with all new IDs
   static Workout _copyWorkout(Workout sourceWorkout) {
+    // Copy exercises first
+    final copiedExercises =
+        sourceWorkout.exercises.map((e) => _copyExercise(e)).toList();
+
+    // Do not carry over superset mapping as-is to avoid stale IDs.
+    // Supersets will be reconstructed from exercise.superSetId when needed.
     return Workout(
       id: null, // Always null - new workout gets new ID from database
       name: sourceWorkout.name,
       order: sourceWorkout.order,
-      exercises: sourceWorkout.exercises.map((exercise) => _copyExercise(exercise)).toList(),
-      superSets: sourceWorkout.superSets?.map((superSetData) => Map<String, dynamic>.from(superSetData)).toList(),
+      exercises: copiedExercises,
+      superSets: null,
     );
   }
 

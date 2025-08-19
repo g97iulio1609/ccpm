@@ -1,6 +1,7 @@
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class WeekController {
   void addWeek(TrainingProgram program) {
@@ -93,6 +94,13 @@ class WeekController {
       context: context,
       builder: (context) {
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           title: const Text('Copy Week'),
           content: DropdownButtonFormField<int>(
             value: null,
@@ -113,10 +121,7 @@ class WeekController {
             decoration: const InputDecoration(labelText: 'Destination Week'),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
           ],
         );
       },

@@ -54,8 +54,10 @@ class MaxRMDashboard extends HookConsumerWidget {
             );
             ref.read(userListProvider.notifier).state = users;
             ref.read(filteredUserListProvider.notifier).state = users;
-          } catch (e) {
-            debugPrint('Error fetching users: $e');
+          } catch (e, st) {
+            // Log the error in debug to aid troubleshooting
+            // ignore: avoid_print
+            print('Failed fetching users in MaxRMDashboard: $e\n$st');
           }
         }
         userFetchComplete.value = true;
@@ -297,11 +299,10 @@ class EditRecordDialog extends HookConsumerWidget {
     return AppDialog(
       title: const Text('Edit Record'),
       actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Save',
           onPressed: () {
             Navigator.of(context).pop();
             _handleSave(
@@ -313,7 +314,6 @@ class EditRecordDialog extends HookConsumerWidget {
               keepWeight.value,
             );
           },
-          child: const Text('Save'),
         ),
       ],
       child: SingleChildScrollView(

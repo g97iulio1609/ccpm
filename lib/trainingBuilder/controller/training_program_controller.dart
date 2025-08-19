@@ -15,6 +15,7 @@ import '../infrastructure/repositories/firestore_training_repository.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
 import 'package:alphanessone/providers/providers.dart';
+import '../services/training_share_service.dart';
 
 final firestoreServiceProvider = Provider<FirestoreService>(
   (ref) => FirestoreService(),
@@ -41,6 +42,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   final SuperSetController _superSetController;
   late final TrainingBusinessService _trainingBusinessService;
   final Ref ref;
+  bool _disposed = false;
 
   TrainingProgramController(
     FirestoreService service,
@@ -71,6 +73,12 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       trainingRepository: FirestoreTrainingRepository(),
       exerciseRecordService: _exerciseRecordService,
     );
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   void _initControllers() {
@@ -283,11 +291,18 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void _updateProgram() {
-    _nameController.text = program.name;
-    _descriptionController.text = program.description;
-    _athleteIdController.text = program.athleteId;
-    _mesocycleNumberController.text = program.mesocycleNumber.toString();
-    _programStateNotifier.updateProgram(program);
+    if (_disposed) return;
+    
+    try {
+      _nameController.text = program.name;
+      _descriptionController.text = program.description;
+      _athleteIdController.text = program.athleteId;
+      _mesocycleNumberController.text = program.mesocycleNumber.toString();
+      _programStateNotifier.updateProgram(program);
+    } catch (e) {
+      debugPrint('Errore durante aggiornamento controller UI: $e');
+      // Non propagare l'errore per evitare crash dell'UI
+    }
   }
 
   void updateHideProgram(bool value) {
@@ -344,7 +359,6 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
     } catch (e) {
-      debugPrint("Errore salvando esercizio: $e");
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -375,8 +389,18 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
-    } catch (e) {
-      debugPrint("Errore salvando modifica esercizio: $e");
+    } catch (e, st) {
+      // Se possibile mostrare un messaggio all'utente e loggare per il debug
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nel salvare modifica: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      // ignore: avoid_print
+      print('Error saving program after editExercise: $e\n$st');
     }
     
     _emit();
@@ -393,8 +417,10 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
-    } catch (e) {
-      debugPrint("Errore salvando rimozione esercizio: $e");
+    } catch (e, st) {
+      // Log error — questa funzione non ha context per mostrare snackbar
+      // ignore: avoid_print
+      print('Error saving program after removeExercise: $e\n$st');
     }
     
     _emit();
@@ -492,6 +518,48 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       latestMaxWeight,
     );
     _emit();
+  }
+
+  Future<void> removeExercisesBulk(
+    int weekIndex,
+    int workoutIndex,
+    List<String> exerciseIds,
+    BuildContext context,
+  ) async {
+    if (exerciseIds.isEmpty) return;
+    if (_disposed) return;
+    final prog = program; // snapshot to avoid accessing state after dispose
+    // Update in-memory state first for snappy UI
+    _trainingBusinessService.removeExercisesBulkByIds(
+      prog,
+      weekIndex,
+      workoutIndex,
+      exerciseIds,
+    );
+    _emit();
+
+    // Persist asynchronously with optimized batching
+    try {
+      await _trainingService.removeToDeleteItems(prog);
+      await _trainingService.addOrUpdateTrainingProgram(prog);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eliminati ${exerciseIds.length} esercizi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore eliminando esercizi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void removeSeries(
@@ -703,7 +771,69 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     }
   }
 
+  // ===== Export / Import =====
+
+  String exportProgramToJson() {
+    return TrainingShareService.programToJson(program);
+  }
+
+  String exportProgramToCsv() {
+    return TrainingShareService.programToCsv(program);
+  }
+
+  void importProgramFromJson(String jsonString) {
+    if (_disposed) return;
+    final imported = TrainingShareService.programFromJson(jsonString);
+    state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+    _updateProgram();
+    _superSetController.loadSuperSets(state);
+    _emit();
+  }
+
+  void importProgramFromCsv(String csvString) {
+    if (_disposed) return;
+    final imported = TrainingShareService.programFromCsv(csvString);
+    state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+    _updateProgram();
+    _superSetController.loadSuperSets(state);
+    _emit();
+  }
+
+  void importProgramModel(TrainingProgram imported) {
+    if (_disposed) {
+      debugPrint('Tentativo di import su controller dismesso - operazione ignorata');
+      return;
+    }
+    
+    try {
+      state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+      
+      // Controlla di nuovo se il controller è stato dismesso durante l'operazione
+      if (_disposed) {
+        debugPrint('Controller dismesso durante import - operazione interrotta');
+        return;
+      }
+      
+      _updateProgram();
+      
+      if (_disposed) {
+        debugPrint('Controller dismesso durante aggiornamento program - operazione interrotta');
+        return;
+      }
+      
+      _superSetController.loadSuperSets(state);
+      _emit();
+      
+      debugPrint('Import programma completato con successo');
+    } catch (e) {
+      // Se succede un errore durante l'import, mantieni lo stato corrente
+      debugPrint('Errore durante import programma: $e');
+      rethrow;
+    }
+  }
+
   void _emit() {
+    if (_disposed) return;
     // Forza un nuovo stato immutabile per notificare i listener
     state = state.copyWith();
     _programStateNotifier.updateProgram(state);
@@ -736,7 +866,6 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
 
       // Use WeekUtils for consistent copying and proper reset of completion data
       newProgram.weeks = newProgram.weeks.asMap().entries.map<Week>((entry) {
-        final weekIndex = entry.key;
         final week = entry.value;
         return WeekUtils.resetWeek(WeekUtils.duplicateWeek(week, newNumber: week.number));
       }).toList();

@@ -457,6 +457,13 @@ class UserProgramsScreen extends HookConsumerWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           title: const Text('Conferma eliminazione'),
           content: const Text(
             'Sei sicuro di voler eliminare questo programma?',
@@ -499,6 +506,13 @@ class UserProgramsScreen extends HookConsumerWidget {
       builder: (BuildContext context) {
         TextEditingController nameController = TextEditingController();
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           title: const Text('Duplica Programma'),
           content: TextField(
             controller: nameController,
@@ -593,6 +607,13 @@ class AddProgramDialogState extends State<AddProgramDialog> {
     final colorScheme = theme.colorScheme;
 
     return AlertDialog(
+      scrollable: true,
+      insetPadding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+      ),
       backgroundColor: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radii.xl),

@@ -49,7 +49,9 @@ class WorkoutService {
     try {
       final notes = await _notesService.fetchNotesForWorkout(workoutId);
       ref.read(exerciseNotesProvider.notifier).state = notes;
-    } catch (_) {}
+    } catch (e, st) {
+      _logger.warning('Failed to load exercise notes for workout $workoutId', e, st);
+    }
   }
 
   Future<void> showNoteDialog(
@@ -81,7 +83,9 @@ class WorkoutService {
       );
       currentNotes.remove(exerciseId);
       ref.read(exerciseNotesProvider.notifier).state = currentNotes;
-    } catch (_) {}
+    } catch (e, st) {
+      _logger.warning('Failed to delete note for exercise $exerciseId in workout $workoutId', e, st);
+    }
   }
 
   Future<void> prefetchWorkout(String workoutId) async {
@@ -110,8 +114,8 @@ class WorkoutService {
       );
       workoutNames[workoutId] = workoutName;
       ref.read(workoutNameCacheProvider.notifier).state = workoutNames;
-    } catch (e) {
-      debugPrint('Error prefetching workout: $e');
+    } catch (e, st) {
+      _logger.warning('Failed prefetching workout $workoutId', e, st);
     }
   }
 
@@ -221,8 +225,8 @@ class WorkoutService {
       for (final exercise in exercises) {
         subscribeToSeriesUpdates(exercise, workoutId);
       }
-    } catch (e) {
-      // Handle error
+    } catch (e, st) {
+      _logger.severe('Error fetching exercises for workout $workoutId', e, st);
     } finally {
       ref.read(loadingProvider.notifier).state = false;
     }

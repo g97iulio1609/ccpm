@@ -332,6 +332,13 @@ class ExerciseControllerRefactored {
       context: context,
       builder: (context) {
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           title: const Text('Conferma Rimozione'),
           content: Text(
             'Sei sicuro di voler rimuovere l\'esercizio "$exerciseName"?\n\n'
@@ -381,6 +388,13 @@ class ExerciseControllerRefactored {
       context: context,
       builder: (context) {
         return AlertDialog(
+          scrollable: true,
+          insetPadding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           title: const Text('Seleziona Esercizio da Copiare'),
           content: SizedBox(
             width: double.maxFinite,

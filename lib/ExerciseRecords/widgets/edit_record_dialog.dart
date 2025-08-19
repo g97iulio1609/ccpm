@@ -40,11 +40,10 @@ class EditRecordDialog extends HookConsumerWidget {
     return AppDialog(
       title: const Text('Edit Record'),
       actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
+        AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Save',
           onPressed: () {
             Navigator.of(context).pop();
             _handleSave(
@@ -56,7 +55,6 @@ class EditRecordDialog extends HookConsumerWidget {
               keepWeight.value,
             );
           },
-          child: const Text('Save'),
         ),
       ],
       child: SingleChildScrollView(
@@ -174,5 +172,4 @@ class EditRecordDialog extends HookConsumerWidget {
     }
   }
 }
-
 

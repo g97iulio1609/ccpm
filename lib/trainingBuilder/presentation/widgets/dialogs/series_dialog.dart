@@ -74,11 +74,12 @@ class _SeriesDialogState extends State<SeriesDialog> {
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Conferma',
+          onPressed: _handleSubmit,
         ),
-        FilledButton(onPressed: _handleSubmit, child: const Text('Conferma')),
       ],
       child: SingleChildScrollView(
         child: Column(

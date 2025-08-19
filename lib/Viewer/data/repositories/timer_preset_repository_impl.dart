@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
 import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,8 +29,7 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
             )
             .toList();
       } catch (e) {
-        debugPrint('Errore decodifica cache TimerPresets: $e');
-        // Non bloccare, procedi a caricare da Firestore
+        // Ignore cache decode errors in release
       }
     }
 
@@ -53,7 +51,6 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
         cachedPresets,
       ); // Se Firestore è vuoto, usa la cache
     } catch (e) {
-      debugPrint('Errore caricamento TimerPresets da Firestore: $e');
       return _removeDuplicatePresetsAndSort(
         cachedPresets,
       ); // Fallback sulla cache
@@ -100,7 +97,6 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
   Future<void> updateTimerPreset(String userId, TimerPreset preset) async {
     // Assicurati che l'ID esista per l'update
     if (preset.id.isEmpty) {
-      debugPrint("Errore: ID del TimerPreset mancante per l'aggiornamento.");
       return;
     }
     await _firestore

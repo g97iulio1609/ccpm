@@ -13,6 +13,13 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
+        insetPadding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+        ),
         title: Text(title),
         content: Text(content),
         actions: [

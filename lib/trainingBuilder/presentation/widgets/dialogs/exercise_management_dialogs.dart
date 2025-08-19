@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 
 // Include anche i dialog bulk già consolidati
@@ -67,11 +68,12 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
     return AppDialog(
       title: const Text('Aggiorna Max RM'),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Annulla'),
+        AppDialogHelpers.buildCancelButton(context: context),
+        AppDialogHelpers.buildActionButton(
+          context: context,
+          label: 'Salva',
+          onPressed: _handleSave,
         ),
-        FilledButton(onPressed: _handleSave, child: const Text('Salva')),
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -223,14 +225,13 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
     return AppDialog(
       title: const Text('Aggiungi al Superset'),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
+        AppDialogHelpers.buildCancelButton(context: context),
         if (widget.superSets.isNotEmpty)
-          FilledButton(
-            onPressed: selectedSuperSetId != null ? _handleAddToSuperSet : null,
-            child: const Text('Aggiungi'),
+          AppDialogHelpers.buildActionButton(
+            context: context,
+            label: 'Aggiungi',
+            onPressed: selectedSuperSetId != null ? _handleAddToSuperSet : () {},
+            isPrimary: true,
           ),
       ],
       child: Column(
@@ -285,18 +286,12 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
   Widget _buildCreateNewButton() {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
+      child: AppButton(
+        icon: Icons.add,
+        label: 'Crea Nuovo Superset',
+        variant: AppButtonVariant.outline,
         onPressed: _handleCreateNewSuperSet,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: widget.colorScheme.primary,
-          side: BorderSide(color: widget.colorScheme.primary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          ),
-          padding: EdgeInsets.all(AppTheme.spacing.md),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Crea Nuovo Superset'),
+        block: true,
       ),
     );
   }

@@ -20,7 +20,7 @@ class MaxRMSearchBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return GlassLite(
       padding: EdgeInsets.all(AppTheme.spacing.md),
-      child: UserTypeAheadField(
+      child: UserAutocompleteField(
         controller: controller,
         focusNode: focusNode,
         onSelected: (UserModel user) {
@@ -42,5 +42,4 @@ class MaxRMSearchBar extends ConsumerWidget {
     );
   }
 }
-
 

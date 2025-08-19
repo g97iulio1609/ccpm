@@ -8,6 +8,8 @@ import 'food_selector.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:alphanessone/UI/components/skeleton.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/UI/components/button.dart';
 
 class FoodList extends ConsumerStatefulWidget {
   final DateTime selectedDate;
@@ -628,9 +630,9 @@ class FoodListState extends ConsumerState<FoodList> {
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return AppDialog(
           title: Text(title, style: GoogleFonts.roboto()),
-          content: SizedBox(
+          child: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
@@ -653,9 +655,9 @@ class FoodListState extends ConsumerState<FoodList> {
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return AppDialog(
           title: Text('Select Favorite Meal', style: GoogleFonts.roboto()),
-          content: SizedBox(
+          child: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
@@ -681,22 +683,25 @@ class FoodListState extends ConsumerState<FoodList> {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return AppDialog(
           title: Text('Overwrite Existing Foods?', style: GoogleFonts.roboto()),
-          content: Text(
+          actions: <Widget>[
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Add to Existing',
+              onPressed: () => Navigator.of(context).pop(false),
+              isPrimary: false,
+            ),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Overwrite',
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+          child: Text(
             'Do you want to overwrite existing foods in the selected meal or add the new foods to it?',
             style: GoogleFonts.roboto(),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Add to Existing', style: GoogleFonts.roboto()),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Overwrite', style: GoogleFonts.roboto()),
-            ),
-          ],
         );
       },
     );
@@ -752,19 +757,19 @@ class FoodListState extends ConsumerState<FoodList> {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return AppDialog(
           title: Text(title, style: GoogleFonts.roboto()),
-          content: Text(content, style: GoogleFonts.roboto()),
           actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel', style: GoogleFonts.roboto()),
-            ),
-            TextButton(
+            AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Delete',
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Delete', style: GoogleFonts.roboto()),
+              isPrimary: false,
+              isDestructive: true,
             ),
           ],
+          child: Text(content, style: GoogleFonts.roboto()),
         );
       },
     );
@@ -775,25 +780,23 @@ class FoodListState extends ConsumerState<FoodList> {
     return showDialog<String>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return AppDialog(
           title: Text('Save as Favorite', style: GoogleFonts.roboto()),
-          content: TextField(
+          actions: <Widget>[
+            AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Save',
+              onPressed: () => Navigator.of(context).pop(nameController.text),
+            ),
+          ],
+          child: TextField(
             controller: nameController,
             decoration: const InputDecoration(
               labelText: 'Favorite Name',
               hintText: 'Enter a name for this favorite meal',
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: GoogleFonts.roboto()),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(nameController.text),
-              child: Text('Save', style: GoogleFonts.roboto()),
-            ),
-          ],
         );
       },
     );
@@ -1039,7 +1042,9 @@ class FoodListState extends ConsumerState<FoodList> {
   ) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: FilledButton.icon(
+      child: AppButton(
+        label: 'Aggiungi Snack',
+        icon: Icons.add,
         onPressed: () async {
           if (dailyStatsId.isNotEmpty) {
             final mealsService = ref.read(mealsServiceProvider);
@@ -1050,14 +1055,7 @@ class FoodListState extends ConsumerState<FoodList> {
             );
           }
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Aggiungi Snack'),
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+        variant: AppButtonVariant.primary,
       ),
     );
   }

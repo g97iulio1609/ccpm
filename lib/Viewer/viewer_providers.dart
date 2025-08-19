@@ -3,7 +3,6 @@ import 'package:alphanessone/Viewer/data/repositories/workout_repository_impl.da
 import 'package:alphanessone/Viewer/domain/repositories/timer_preset_repository.dart';
 import 'package:alphanessone/Viewer/domain/repositories/workout_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alphanessone/Viewer/domain/usecases/complete_series_use_case.dart';
@@ -65,8 +64,6 @@ final timerPresetRepositoryFallbackProvider = Provider<TimerPresetRepository?>((
     data: (prefs) => TimerPresetRepositoryImpl(firestore, prefs),
     loading: () => null, // Restituisce null durante il caricamento
     error: (err, stack) {
-      // Log dell'errore per debugging
-      debugPrint("Errore nel caricamento di SharedPreferences: $err");
       return null; // Restituisce null in caso di errore
     },
   );

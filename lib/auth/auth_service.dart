@@ -113,7 +113,6 @@ class AuthService {
       await updateUserDataIfNeeded(userCredential.user!);
       return userCredential;
     } catch (error) {
-      debugPrint('CHECK ERROR: Failed to sign in with Google: $error');
       return null;
     }
   }
