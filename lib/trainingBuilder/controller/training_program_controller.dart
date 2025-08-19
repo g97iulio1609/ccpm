@@ -15,6 +15,7 @@ import '../infrastructure/repositories/firestore_training_repository.dart';
 import 'series_controller.dart';
 import 'super_set_controller.dart';
 import 'package:alphanessone/providers/providers.dart';
+import '../services/training_share_service.dart';
 
 final firestoreServiceProvider = Provider<FirestoreService>(
   (ref) => FirestoreService(),
@@ -745,6 +746,39 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
         }
       }
     }
+  }
+
+  // ===== Export / Import =====
+
+  String exportProgramToJson() {
+    return TrainingShareService.programToJson(program);
+  }
+
+  String exportProgramToCsv() {
+    return TrainingShareService.programToCsv(program);
+  }
+
+  void importProgramFromJson(String jsonString) {
+    final imported = TrainingShareService.programFromJson(jsonString);
+    state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+    _updateProgram();
+    _superSetController.loadSuperSets(state);
+    _emit();
+  }
+
+  void importProgramFromCsv(String csvString) {
+    final imported = TrainingShareService.programFromCsv(csvString);
+    state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+    _updateProgram();
+    _superSetController.loadSuperSets(state);
+    _emit();
+  }
+
+  void importProgramModel(TrainingProgram imported) {
+    state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
+    _updateProgram();
+    _superSetController.loadSuperSets(state);
+    _emit();
   }
 
   void _emit() {

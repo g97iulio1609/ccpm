@@ -10,6 +10,11 @@ import 'package:alphanessone/trainingBuilder/presentation/pages/exercises_page.d
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/widgets/page_scaffold.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:flutter/services.dart';
+import 'package:alphanessone/trainingBuilder/services/io/training_share_io.dart' as share_io;
+import 'package:alphanessone/trainingBuilder/services/training_share_service.dart';
+import 'package:alphanessone/trainingBuilder/services/training_share_service_async.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
   final String programId;
@@ -232,48 +237,389 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: FilledButton.tonal(
-            onPressed: controller.addWeek,
-            style: FilledButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: controller.addWeek,
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Add Week'),
+                  ],
+                ),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.add),
-                SizedBox(width: AppTheme.spacing.sm),
-                const Text('Add Week'),
-              ],
+            SizedBox(width: AppTheme.spacing.md),
+            Expanded(
+              child: FilledButton(
+                onPressed: () => controller.submitProgram(context),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.save),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Save Program'),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-        SizedBox(width: AppTheme.spacing.md),
-        Expanded(
-          child: FilledButton(
-            onPressed: () => controller.submitProgram(context),
-            style: FilledButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+        SizedBox(height: AppTheme.spacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: () async {
+                  try {
+                    final exportMap = 
+                        TrainingShareService.programToExportMap(controller.program);
+                    final content = await encodeJsonAsync(exportMap);
+                    if (context.mounted) {
+                      _showExportDialog(context, title: 'Export JSON', content: content);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Errore export JSON: $e')),
+                      );
+                    }
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.code),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Export JSON'),
+                  ],
+                ),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.save),
-                SizedBox(width: AppTheme.spacing.sm),
-                const Text('Save Program'),
-              ],
+            SizedBox(width: AppTheme.spacing.md),
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: () async {
+                  try {
+                    final exportMap = 
+                        TrainingShareService.programToExportMap(controller.program);
+                    final content = await buildCsvAsync(exportMap);
+                    if (context.mounted) {
+                      _showExportDialog(context, title: 'Export CSV', content: content);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Errore export CSV: $e')),
+                      );
+                    }
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.table_chart_outlined),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Export CSV'),
+                  ],
+                ),
+              ),
             ),
-          ),
+            SizedBox(width: AppTheme.spacing.md),
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: () => _showImportDialog(context),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.file_upload_outlined),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Import'),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppTheme.spacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: () async {
+                  try {
+                    await const share_io.TrainingShareIO().exportProgramFile(
+                      controller.program,
+                      format: 'json',
+                      suggestedFileName: controller.program.name,
+                    );
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Errore export file JSON: $e')),
+                      );
+                    }
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.file_download_outlined),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Export .json'),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(width: AppTheme.spacing.md),
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: () async {
+                  try {
+                    await const share_io.TrainingShareIO().exportProgramFile(
+                      controller.program,
+                      format: 'csv',
+                      suggestedFileName: controller.program.name,
+                    );
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Errore export file CSV: $e')),
+                      );
+                    }
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.file_download_outlined),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Export .csv'),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(width: AppTheme.spacing.md),
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: () async {
+                  try {
+                    final imported =
+                        await const share_io.TrainingShareIO().importProgramFromFile();
+                    if (imported != null) {
+                      controller.importProgramFromJson(
+                        TrainingShareService.programToJson(imported),
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Programma importato da file')),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Errore import da file: $e')),
+                      );
+                    }
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.md),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.file_upload_outlined),
+                    SizedBox(width: AppTheme.spacing.sm),
+                    const Text('Import da file'),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ],
+    );
+  }
+
+  void _showExportDialog(BuildContext context,
+      {required String title, required String content}) {
+    final controller = TextEditingController(text: content);
+    showAppDialog(
+      context: context,
+      title: title,
+      subtitle: 'Copia e salva in un file',
+      maxWidth: 900,
+      maxHeight: 640,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: controller,
+            readOnly: true,
+            minLines: 12,
+            maxLines: 20,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: AppTheme.spacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              AppDialogHelpers.buildCancelButton(context: context),
+              AppDialogHelpers.buildActionButton(
+                context: context,
+                label: 'Copia',
+                icon: Icons.copy,
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: controller.text));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Contenuto copiato')),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImportDialog(BuildContext context) {
+    final inputCtrl = TextEditingController();
+    String format = 'json';
+    showAppDialog(
+      context: context,
+      title: 'Import Program',
+      subtitle: 'Incolla contenuto JSON o CSV',
+      maxWidth: 900,
+      maxHeight: 700,
+      child: StatefulBuilder(
+        builder: (context, setState) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                ChoiceChip(
+                  label: const Text('JSON'),
+                  selected: format == 'json',
+                  onSelected: (_) => setState(() => format = 'json'),
+                ),
+                SizedBox(width: AppTheme.spacing.sm),
+                ChoiceChip(
+                  label: const Text('CSV'),
+                  selected: format == 'csv',
+                  onSelected: (_) => setState(() => format = 'csv'),
+                ),
+              ],
+            ),
+            SizedBox(height: AppTheme.spacing.md),
+            TextField(
+              controller: inputCtrl,
+              minLines: 14,
+              maxLines: 24,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Incolla qui il contenuto...',
+              ),
+            ),
+            SizedBox(height: AppTheme.spacing.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                AppDialogHelpers.buildCancelButton(context: context),
+                AppDialogHelpers.buildActionButton(
+                  context: context,
+                  label: 'Importa',
+                  icon: Icons.check,
+                  onPressed: () async {
+                    try {
+                      if (format == 'json') {
+                        final map = await parseJsonToExportMapAsync(inputCtrl.text);
+                        final program = TrainingShareService.programFromExportMap(
+                          Map<String, dynamic>.from(map['program'] as Map),
+                        );
+                        this.controller.importProgramModel(program);
+                      } else {
+                        final map = await parseCsvToExportMapAsync(inputCtrl.text);
+                        final program = TrainingShareService.programFromExportMap(
+                          Map<String, dynamic>.from(map['program'] as Map),
+                        );
+                        this.controller.importProgramModel(program);
+                      }
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Programma importato')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Errore import: $e')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
