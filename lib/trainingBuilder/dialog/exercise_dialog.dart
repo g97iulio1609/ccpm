@@ -99,58 +99,78 @@ class ExerciseDialog extends HookConsumerWidget {
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 border: Border.all(color: colorScheme.outline.withAlpha(26)),
               ),
-              child: SearchAnchor(
-                isFullScreen: false,
-                builder: (context, controller) {
-                  return SearchBar(
-                    controller: controller,
-                    hintText: 'Cerca esercizio',
-                    leading: Icon(Icons.search, color: colorScheme.primary),
-                    onTap: controller.openView,
-                    onChanged: (_) => controller.openView(),
-                    onSubmitted: (value) {
-                      exerciseNameController.text = value;
-                    },
-                    padding: WidgetStatePropertyAll(
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  searchViewTheme: SearchViewThemeData(
+                    // Slightly higher opacity for better readability
+                    backgroundColor: colorScheme.surfaceContainerHighest.withAlpha(184),
+                    elevation: 0,
+                    surfaceTintColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                      side: BorderSide(color: colorScheme.outline.withAlpha(90)),
+                    ),
+                  ),
+                ),
+                child: SearchAnchor(
+                  isFullScreen: false,
+                  builder: (context, controller) {
+                    return SearchBar(
+                      controller: controller,
+                      hintText: 'Cerca esercizio',
+                      leading: Icon(Icons.search, color: colorScheme.primary),
+                      onTap: controller.openView,
+                      onChanged: (_) => controller.openView(),
+                      onSubmitted: (value) {
+                        exerciseNameController.text = value;
+                      },
+                    padding: MaterialStatePropertyAll(
                       EdgeInsets.all(AppTheme.spacing.md),
                     ),
-                    elevation: const WidgetStatePropertyAll(0),
-                    backgroundColor: WidgetStatePropertyAll(
-                      colorScheme.surfaceContainerHighest.withAlpha(26),
+                    elevation: const MaterialStatePropertyAll(0),
+                    backgroundColor: MaterialStatePropertyAll(
+                      // Match the overlay with higher opacity
+                      colorScheme.surfaceContainerHighest.withAlpha(184),
                     ),
-                    shape: WidgetStatePropertyAll(
+                    shape: MaterialStatePropertyAll(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                        side: BorderSide(
-                          color: colorScheme.outline.withAlpha(26),
+                      side: BorderSide(
+                        color: colorScheme.outline.withAlpha(90),
+                      ),
+                       ),
+                     ),
+                   );
+                 },
+                  suggestionsBuilder: (context, controller) {
+                    final query = controller.text.toLowerCase();
+                    final filtered = query.isEmpty
+                        ? exercisesList
+                        : exercisesList
+                              .where((e) => e.name.toLowerCase().contains(query))
+                              .toList();
+                    return filtered.map((e) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withAlpha(196),
                         ),
-                      ),
-                    ),
-                  );
-                },
-                suggestionsBuilder: (context, controller) {
-                  final query = controller.text.toLowerCase();
-                  final filtered = query.isEmpty
-                      ? exercisesList
-                      : exercisesList
-                            .where((e) => e.name.toLowerCase().contains(query))
-                            .toList();
-                  return filtered.map((e) {
-                    return ListTile(
-                      leading: Icon(
-                        Icons.fitness_center,
-                        color: colorScheme.primary,
-                      ),
-                      title: Text(e.name),
-                      onTap: () {
-                        controller.closeView(e.name);
-                        exerciseNameController.text = e.name;
-                        selectedExerciseId.value = e.id;
-                        selectedExerciseType.value = e.type;
-                      },
-                    );
-                  });
-                },
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.fitness_center,
+                            color: colorScheme.primary,
+                          ),
+                          title: Text(e.name),
+                          onTap: () {
+                            controller.closeView(e.name);
+                            exerciseNameController.text = e.name;
+                            selectedExerciseId.value = e.id;
+                            selectedExerciseType.value = e.type;
+                          },
+                        ),
+                      );
+                    });
+                  },
+                ),
               ),
             ),
           ],

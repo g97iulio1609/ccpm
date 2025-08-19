@@ -9,7 +9,7 @@ import 'exercise_model.dart';
 import '../providers/providers.dart';
 import 'widgets/exercise_widgets.dart';
 import 'controllers/exercise_list_controller.dart';
-import 'package:alphanessone/common/app_autocomplete.dart';
+import 'package:alphanessone/common/app_search_field.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/icon_button_with_background.dart';
@@ -103,47 +103,11 @@ class ExercisesList extends HookConsumerWidget {
       child: Column(
         children: [
           const SizedBox(height: 24),
-          AppAutocompleteField<ExerciseModel>(
-            builder: (context, controller, focusNode) {
-              return GlassLite(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    hintText: 'Search exercise...',
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    suffixIcon: controller.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.close,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            onPressed: () {
-                              controller.clear();
-                              Future.microtask(() {
-                                ref
-                                    .read(
-                                      exerciseListControllerProvider.notifier,
-                                    )
-                                    .resetFilters();
-                              });
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    filled: false,
-                  ),
-                ),
-              );
-            },
+          AppSearchField<ExerciseModel>(
+            controller: searchController,
+            hintText: 'Search exercise...',
             suggestionsCallback: (pattern) async {
-              if (pattern.length < 2) return [];
+              if (pattern.isEmpty) return [];
 
               final exercises = await ref
                   .read(exercisesServiceProvider)
@@ -175,30 +139,13 @@ class ExercisesList extends HookConsumerWidget {
                 controller.updateFilters(searchText: exercise.name);
               });
             },
-            debounceDuration: const Duration(milliseconds: 350),
-            hideOnEmpty: false,
-            hideOnLoading: true,
-            hideOnError: true,
-            animationDuration: const Duration(milliseconds: 180),
-            constraints: const BoxConstraints(maxHeight: 300),
-            decorationBuilder: (context, child) {
-              return GlassLite(
-                padding: EdgeInsets.zero,
-                child: Material(
-                  color: Colors.transparent,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withAlpha(38),
-                      ),
-                    ),
-                    child: child,
-                  ),
-                ),
-              );
+            onChanged: (value) {
+              if (value.isEmpty) {
+                controller.updateFilters(searchText: '');
+              }
             },
-            emptyBuilder: (context) => const Padding(
+            // Empty state inline with previous behavior
+            emptyBuilder: const Padding(
               padding: EdgeInsets.all(16.0),
               child: Text('No exercises found'),
             ),

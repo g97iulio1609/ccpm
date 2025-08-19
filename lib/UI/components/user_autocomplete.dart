@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/user_model.dart';
-import '../../../common/generic_autocomplete.dart';
+import '../../../common/app_search_field.dart';
 import '../../../providers/providers.dart';
 
 class UserAutocompleteField extends ConsumerWidget {
@@ -20,15 +20,19 @@ class UserAutocompleteField extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filteredUsers = ref.watch(filteredUserListProvider);
-
-    return GenericAutocompleteField<UserModel>(
+    return AppSearchField<UserModel>(
       controller: controller,
-      labelText: 'Search User',
+      hintText: 'Search User',
       prefixIcon: Icons.person,
       suggestionsCallback: (pattern) async {
+        // Calcolo sempre dai dati sorgente per avere aggiornamenti coerenti
+        final allUsers = ref.read(userListProvider);
+        final q = pattern.toLowerCase();
+        final matches = allUsers.where(
+          (u) => u.name.toLowerCase().contains(q) || u.email.toLowerCase().contains(q),
+        );
         onChanged(pattern);
-        return filteredUsers;
+        return matches.toList();
       },
       itemBuilder: (context, suggestion) {
         return ListTile(
