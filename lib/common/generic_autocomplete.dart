@@ -3,6 +3,7 @@ import 'app_autocomplete.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:alphanessone/UI/components/glass.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 class GenericAutocompleteField<T> extends HookConsumerWidget {
   final TextEditingController controller;
@@ -29,6 +30,7 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final focusNode = useFocusNode();
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     return AppAutocompleteField<T>(
       controller: controller,
@@ -41,18 +43,28 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
       emptyBuilder: (context) => emptyBuilder ?? const SizedBox.shrink(),
       decorationBuilder: (context, child) {
         final colorScheme = Theme.of(context).colorScheme;
-        return GlassLite(
-          padding: EdgeInsets.zero,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colorScheme.outline.withAlpha(38)),
+        if (glassEnabled) {
+          return GlassLite(
+            padding: EdgeInsets.zero,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorScheme.outline.withAlpha(38)),
+                ),
+                child: child,
               ),
-              child: child,
             ),
+          );
+        }
+        return Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.outline.withAlpha(38)),
           ),
+          child: child,
         );
       },
       offset: const Offset(0, 8),
@@ -61,41 +73,44 @@ class GenericAutocompleteField<T> extends HookConsumerWidget {
       builder: (context, controller, focusNode) {
         final theme = Theme.of(context);
         final colorScheme = theme.colorScheme;
-        return GlassLite(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          child: TextField(
-            controller: this.controller,
-            focusNode: focusNode,
-            onChanged: onChanged,
-            decoration: InputDecoration(
-              labelText: labelText,
-              filled: false,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outline.withAlpha(64),
-                ),
+        final input = TextField(
+          controller: this.controller,
+          focusNode: focusNode,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            labelText: labelText,
+            filled: false,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withAlpha(64),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outline.withAlpha(38),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.primary, width: 2),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, color: colorScheme.onSurfaceVariant)
-                  : null,
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withAlpha(38),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            prefixIcon: prefixIcon != null
+                ? Icon(prefixIcon, color: colorScheme.onSurfaceVariant)
+                : null,
           ),
         );
+        return glassEnabled
+            ? GlassLite(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: input,
+              )
+            : input;
       },
     );
   }

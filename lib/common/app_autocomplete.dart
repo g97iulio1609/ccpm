@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:alphanessone/UI/components/glass.dart';
 import 'package:alphanessone/Main/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
+import 'package:alphanessone/providers/ui_settings_provider.dart';
 
 typedef SuggestionsCallback<T> = Future<List<T>> Function(String pattern);
 typedef ItemBuilder<T> = Widget Function(BuildContext context, T suggestion);
@@ -12,7 +15,7 @@ typedef FieldBuilder = Widget Function(
 );
 typedef OverlayDecorator = Widget Function(BuildContext context, Widget child);
 
-class AppAutocompleteField<T> extends StatefulWidget {
+class AppAutocompleteField<T> extends ConsumerStatefulWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final FieldBuilder builder;
@@ -49,10 +52,10 @@ class AppAutocompleteField<T> extends StatefulWidget {
   });
 
   @override
-  State<AppAutocompleteField<T>> createState() => _AppAutocompleteFieldState<T>();
+  ConsumerState<AppAutocompleteField<T>> createState() => _AppAutocompleteFieldState<T>();
 }
 
-class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
+class _AppAutocompleteFieldState<T> extends ConsumerState<AppAutocompleteField<T>> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   late final LayerLink _layerLink;
@@ -62,6 +65,8 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
   // Keep minimal state; last query not needed currently
   bool _loading = false;
   bool _error = false;
+  int _highlightIndex = -1;
+  late final FocusNode _overlayFocusNode;
 
   @override
   void initState() {
@@ -71,6 +76,7 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
     _layerLink = LayerLink();
     _controller.addListener(_onTextChanged);
     _focusNode.addListener(_handleFocusChange);
+    _overlayFocusNode = FocusNode(debugLabel: 'autocompleteOverlay');
   }
 
   @override
@@ -79,6 +85,7 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
     _removeOverlay();
     _controller.removeListener(_onTextChanged);
     _focusNode.removeListener(_handleFocusChange);
+    _overlayFocusNode.dispose();
     if (widget.controller == null) _controller.dispose();
     if (widget.focusNode == null) _focusNode.dispose();
     super.dispose();
@@ -122,6 +129,7 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
         _options = result;
         _loading = false;
         _error = false;
+        _highlightIndex = result.isEmpty ? -1 : 0;
       });
     } catch (_) {
       if (!mounted) return;
@@ -129,6 +137,7 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
         _options = const [];
         _loading = false;
         _error = true;
+        _highlightIndex = -1;
       });
     }
     _maybeShowOverlay();
@@ -152,6 +161,12 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
     if (_overlayEntry == null) {
       _overlayEntry = OverlayEntry(builder: (_) => _buildOverlay());
       Overlay.of(context, debugRequiredFor: widget).insert(_overlayEntry!);
+      // Focus overlay for keyboard navigation
+      Future.microtask(() {
+        if (_overlayFocusNode.canRequestFocus) {
+          _overlayFocusNode.requestFocus();
+        }
+      });
     } else {
       _overlayEntry!.markNeedsBuild();
     }
@@ -163,6 +178,7 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
   }
 
   Widget _buildOverlay() {
+    final glassEnabled = ref.watch(uiGlassEnabledProvider);
     final overlayChild = CompositedTransformFollower(
       link: _layerLink,
       showWhenUnlinked: false,
@@ -172,14 +188,23 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
         child: AnimatedOpacity(
           opacity: 1.0,
           duration: widget.animationDuration,
-          child: GlassLite(
-            radius: AppTheme.radii.lg,
-            blur: 12,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              child: _buildOptionsList(),
-            ),
-          ),
+          child: glassEnabled
+              ? GlassLite(
+                  radius: AppTheme.radii.lg,
+                  blur: 12,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    child: _buildFocusableOptions(),
+                  ),
+                )
+              : Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                    side: BorderSide(color: Theme.of(context).colorScheme.outline.withAlpha(38)),
+                  ),
+                  child: _buildFocusableOptions(),
+                ),
         ),
       ),
     );
@@ -187,6 +212,39 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
       return widget.decorationBuilder!(context, overlayChild);
     }
     return overlayChild;
+  }
+
+  Widget _buildFocusableOptions() {
+    return Focus(
+      focusNode: _overlayFocusNode,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        if (_options.isEmpty) return KeyEventResult.ignored;
+        final key = event.logicalKey;
+        if (key == LogicalKeyboardKey.arrowDown) {
+          setState(() {
+            _highlightIndex = (_highlightIndex + 1) % _options.length;
+          });
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.arrowUp) {
+          setState(() {
+            _highlightIndex = (_highlightIndex - 1) < 0 ? _options.length - 1 : _highlightIndex - 1;
+          });
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+          if (_highlightIndex >= 0 && _highlightIndex < _options.length) {
+            final item = _options[_highlightIndex];
+            widget.onSelected(item);
+            _removeOverlay();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: _buildOptionsList(),
+    );
   }
 
   Widget _buildOptionsList() {
@@ -222,23 +280,48 @@ class _AppAutocompleteFieldState<T> extends State<AppAutocompleteField<T>> {
       ),
       itemBuilder: (context, index) {
         final item = _options[index];
-        return InkWell(
+        final bool selected = index == _highlightIndex;
+        final bg = selected ? cs.primary.withAlpha(28) : Colors.transparent;
+        return MouseRegion(
+          onEnter: (_) => setState(() => _highlightIndex = index),
+          child: InkWell(
           onTap: () {
             widget.onSelected(item);
             _removeOverlay();
           },
-          hoverColor: cs.primary.withAlpha(24),
-          splashColor: cs.primary.withAlpha(48),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppTheme.spacing.md,
-              vertical: AppTheme.spacing.sm,
-            ),
-            child: DefaultTextStyle.merge(
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurface,
+            hoverColor: cs.primary.withAlpha(18),
+            splashColor: cs.primary.withAlpha(48),
+            child: Container(
+              color: bg,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.spacing.md,
+                vertical: AppTheme.spacing.sm,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 120),
+                    width: 4,
+                    height: 20,
+                    margin: EdgeInsets.only(right: AppTheme.spacing.md),
+                    decoration: BoxDecoration(
+                      color: selected ? cs.primary : Colors.transparent,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-              child: widget.itemBuilder(context, item),
+                  Expanded(
+                    child: DefaultTextStyle.merge(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                          ),
+                      child: widget.itemBuilder(context, item),
+                    ),
+                  ),
+                  if (selected)
+                    Icon(Icons.keyboard_return, size: 16, color: cs.primary),
+                ],
+              ),
             ),
           ),
         );
