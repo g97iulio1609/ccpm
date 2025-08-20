@@ -15,6 +15,8 @@ import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
 import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/shared/widgets/page_scaffold.dart';
 import 'package:alphanessone/shared/widgets/empty_state.dart';
+import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
+import 'package:alphanessone/trainingBuilder/widgets/exercise_list_widgets.dart' show ReorderExercisesFAB;
 
 class ExercisesPage extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -41,7 +43,7 @@ class ExercisesPage extends ConsumerWidget {
   final bool useGrid = screenWidth >= 900;
   final bool compact = screenWidth < 700; // mobile stretto => compatto
 
-    return PageScaffold(
+    final page = PageScaffold(
       colorScheme: colorScheme,
       slivers: [
         // Header con titolo contestuale e CTA aggiungi (layout/densità automatici)
@@ -53,39 +55,71 @@ class ExercisesPage extends ConsumerWidget {
               left: AppTheme.spacing.lg,
               bottom: AppTheme.spacing.md,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Esercizi',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      // Sottotitolo rimosso su richiesta (niente dicitura vista compatta/dettagliata)
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: 220,
-                  child: AppButton(
-                    label: 'Aggiungi Esercizio',
-                    icon: Icons.add_circle_outline,
-                    variant: AppButtonVariant.primary,
-                    size: AppButtonSize.md,
-                    block: true,
-                    onPressed: () => controller.addExercise(
-                      weekIndex,
-                      workoutIndex,
-                      context,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 780;
+                final actions = [
+                  SizedBox(
+                    width: isNarrow ? 160 : 200,
+                    child: AppButton(
+                      label: isNarrow ? 'Riordina' : 'Riordina Esercizi',
+                      icon: Icons.reorder,
+                      variant: AppButtonVariant.ghost,
+                      size: compact ? AppButtonSize.sm : AppButtonSize.md,
+                      block: true,
+                      onPressed: () => _showReorderDialog(context, exercises),
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(width: AppTheme.spacing.md),
+                  SizedBox(
+                    width: isNarrow ? 160 : 200,
+                    child: AppButton(
+                      label: isNarrow ? 'Aggiungi' : 'Aggiungi Esercizio',
+                      icon: Icons.add_circle_outline,
+                      variant: AppButtonVariant.primary,
+                      size: compact ? AppButtonSize.sm : AppButtonSize.md,
+                      block: true,
+                      onPressed: () => controller.addExercise(
+                        weekIndex,
+                        workoutIndex,
+                        context,
+                      ),
+                    ),
+                  ),
+                ];
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Esercizi',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isNarrow)
+                      // In stretto, metti le azioni su due righe usando Wrap
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 340),
+                        child: Wrap(
+                          spacing: AppTheme.spacing.md,
+                          runSpacing: AppTheme.spacing.sm,
+                          children: actions,
+                        ),
+                      )
+                    else
+                      Row(children: actions),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -121,6 +155,44 @@ class ExercisesPage extends ConsumerWidget {
                     )),
         ),
       ],
+    );
+
+    // Su schermi compatti, mostra un FAB per il riordino come azione rapida
+    final showFab = compact && exercises.isNotEmpty;
+    if (!showFab) return page;
+
+    return Stack(
+      children: [
+        page,
+        Positioned(
+          right: AppTheme.spacing.lg,
+          bottom: AppTheme.spacing.lg,
+          child: ReorderExercisesFAB(
+            onPressed: () => _showReorderDialog(context, exercises),
+            isCompact: true,
+            colorScheme: colorScheme,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showReorderDialog(BuildContext context, List<Exercise> exercises) {
+    if (exercises.isEmpty) return;
+    final labels = exercises.map((e) => e.name).toList();
+    showDialog(
+      context: context,
+      builder: (context) => ReorderDialog(
+        items: labels,
+        onReorder: (oldIndex, newIndex) {
+          controller.reorderExercises(
+            weekIndex,
+            workoutIndex,
+            oldIndex,
+            newIndex,
+          );
+        },
+      ),
     );
   }
 

@@ -10,6 +10,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
+import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
 
 class ExerciseOptionsDialog extends ConsumerWidget {
   final Exercise exercise;
@@ -68,6 +69,14 @@ class ExerciseOptionsDialog extends ConsumerWidget {
           onTap: () {
             Navigator.pop(context);
             onEdit();
+          },
+        ),
+        BottomMenuItem(
+          title: 'Riordina Esercizi',
+          icon: Icons.reorder,
+          onTap: () {
+            Navigator.pop(context);
+            _showReorderExercisesDialog(context);
           },
         ),
         BottomMenuItem(
@@ -152,6 +161,28 @@ class ExerciseOptionsDialog extends ConsumerWidget {
           isDestructive: true,
         ),
       ],
+    );
+  }
+
+  void _showReorderExercisesDialog(BuildContext context) {
+    final exercises =
+        controller.program.weeks[weekIndex].workouts[workoutIndex].exercises;
+    if (exercises.isEmpty) return;
+
+    final labels = exercises.map((e) => e.name).toList();
+    showDialog(
+      context: context,
+      builder: (context) => ReorderDialog(
+        items: labels,
+        onReorder: (oldIndex, newIndex) {
+          controller.reorderExercises(
+            weekIndex,
+            workoutIndex,
+            oldIndex,
+            newIndex,
+          );
+        },
+      ),
     );
   }
 
