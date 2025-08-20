@@ -11,11 +11,7 @@ class AddExerciseDialog extends HookConsumerWidget {
   final ExercisesService exercisesService;
   final String userId;
 
-  const AddExerciseDialog({
-    required this.exercisesService,
-    required this.userId,
-    super.key,
-  });
+  const AddExerciseDialog({required this.exercisesService, required this.userId, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,6 +24,8 @@ class AddExerciseDialog extends HookConsumerWidget {
 
     // State per i muscoli target selezionati
     final selectedMuscleGroups = useState<List<String>>([]);
+    // State per bodyweight checkbox
+    final isBodyweight = useState<bool>(false);
 
     final muscleGroupsStream = ref.watch(muscleGroupsProvider);
     final exerciseTypesStream = ref.watch(exerciseTypesProvider);
@@ -46,9 +44,7 @@ class AddExerciseDialog extends HookConsumerWidget {
         ),
         child: TextFormField(
           controller: controller,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurface,
-          ),
+          style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
           decoration: InputDecoration(
             border: InputBorder.none,
             contentPadding: EdgeInsets.all(AppTheme.spacing.md),
@@ -57,11 +53,7 @@ class AddExerciseDialog extends HookConsumerWidget {
               color: colorScheme.onSurfaceVariant.withAlpha(179),
             ),
             prefixIcon: icon != null
-                ? Icon(
-                    icon,
-                    color: colorScheme.onSurfaceVariant.withAlpha(128),
-                    size: 20,
-                  )
+                ? Icon(icon, color: colorScheme.onSurfaceVariant.withAlpha(128), size: 20)
                 : null,
           ),
           validator: validator,
@@ -82,24 +74,17 @@ class AddExerciseDialog extends HookConsumerWidget {
                 return muscleGroups
                     .where(
                       (muscleGroup) =>
-                          muscleGroup.toLowerCase().contains(
-                            pattern.toLowerCase(),
-                          ) &&
+                          muscleGroup.toLowerCase().contains(pattern.toLowerCase()) &&
                           !selectedMuscleGroups.value.contains(muscleGroup),
                     )
                     .toList();
               },
-              itemBuilder: (context, muscleGroup) => ListTile(
-                title: Text(muscleGroup),
-                leading: const Icon(Icons.fitness_center),
-              ),
+              itemBuilder: (context, muscleGroup) =>
+                  ListTile(title: Text(muscleGroup), leading: const Icon(Icons.fitness_center)),
               onSelected: (muscleGroup) {
                 muscleGroupController.clear();
                 if (!selectedMuscleGroups.value.contains(muscleGroup)) {
-                  selectedMuscleGroups.value = [
-                    ...selectedMuscleGroups.value,
-                    muscleGroup,
-                  ];
+                  selectedMuscleGroups.value = [...selectedMuscleGroups.value, muscleGroup];
                 }
               },
             ),
@@ -117,12 +102,9 @@ class AddExerciseDialog extends HookConsumerWidget {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radii.full,
-                        ),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.full),
                         onTap: () {
-                          selectedMuscleGroups.value = selectedMuscleGroups
-                              .value
+                          selectedMuscleGroups.value = selectedMuscleGroups.value
                               .where((m) => m != muscleGroup)
                               .toList();
                         },
@@ -134,11 +116,7 @@ class AddExerciseDialog extends HookConsumerWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.fitness_center,
-                                size: 16,
-                                color: colorScheme.primary,
-                              ),
+                              Icon(Icons.fitness_center, size: 16, color: colorScheme.primary),
                               SizedBox(width: AppTheme.spacing.xs),
                               Text(
                                 muscleGroup,
@@ -147,11 +125,7 @@ class AddExerciseDialog extends HookConsumerWidget {
                                 ),
                               ),
                               SizedBox(width: AppTheme.spacing.xs),
-                              Icon(
-                                Icons.close,
-                                size: 16,
-                                color: colorScheme.primary,
-                              ),
+                              Icon(Icons.close, size: 16, color: colorScheme.primary),
                             ],
                           ),
                         ),
@@ -164,10 +138,7 @@ class AddExerciseDialog extends HookConsumerWidget {
           ],
         ),
         loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: CircularProgressIndicator(),
-          ),
+          child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()),
         ),
         error: (error, stack) => Container(
           padding: const EdgeInsets.all(16.0),
@@ -182,12 +153,39 @@ class AddExerciseDialog extends HookConsumerWidget {
               Expanded(
                 child: Text(
                   'Errore nel caricamento: $error',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.error,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.error),
                 ),
               ),
             ],
+          ),
+        ),
+      );
+    }
+
+    Widget buildBodyweightCheckbox() {
+      return Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withAlpha(26),
+          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+          border: Border.all(color: colorScheme.outline.withAlpha(26)),
+        ),
+        child: CheckboxListTile(
+          title: Text(
+            'Esercizio a corpo libero',
+            style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
+          ),
+          subtitle: Text(
+            'Senza peso aggiuntivo',
+            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          value: isBodyweight.value,
+          onChanged: (value) => isBodyweight.value = value ?? false,
+          controlAffinity: ListTileControlAffinity.leading,
+          activeColor: colorScheme.primary,
+          checkColor: colorScheme.onPrimary,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing.md,
+            vertical: AppTheme.spacing.xs,
           ),
         ),
       );
@@ -201,24 +199,17 @@ class AddExerciseDialog extends HookConsumerWidget {
           prefixIcon: Icons.category_outlined,
           suggestionsCallback: (pattern) async {
             return types
-                .where(
-                  (type) => type.toLowerCase().contains(pattern.toLowerCase()),
-                )
+                .where((type) => type.toLowerCase().contains(pattern.toLowerCase()))
                 .toList();
           },
-          itemBuilder: (context, type) => ListTile(
-            title: Text(type),
-            leading: const Icon(Icons.category_outlined),
-          ),
+          itemBuilder: (context, type) =>
+              ListTile(title: Text(type), leading: const Icon(Icons.category_outlined)),
           onSelected: (type) {
             typeController.text = type;
           },
         ),
         loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: CircularProgressIndicator(),
-          ),
+          child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()),
         ),
         error: (error, stack) => Container(
           padding: const EdgeInsets.all(16.0),
@@ -233,9 +224,7 @@ class AddExerciseDialog extends HookConsumerWidget {
               Expanded(
                 child: Text(
                   'Errore nel caricamento: $error',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.error,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.error),
                 ),
               ),
             ],
@@ -261,8 +250,7 @@ class AddExerciseDialog extends HookConsumerWidget {
           label: 'Crea',
           icon: Icons.add,
           onPressed: () {
-            if (formKey.currentState!.validate() &&
-                selectedMuscleGroups.value.isNotEmpty) {
+            if (formKey.currentState!.validate() && selectedMuscleGroups.value.isNotEmpty) {
               final name = nameController.text.trim();
               final type = typeController.text.trim();
 
@@ -273,16 +261,15 @@ class AddExerciseDialog extends HookConsumerWidget {
                 selectedMuscleGroups.value,
                 type,
                 userId,
+                isBodyweight: isBodyweight.value,
+                repType: 'fixed',
               );
             } else if (selectedMuscleGroups.value.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Row(
                     children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: colorScheme.onError,
-                      ),
+                      Icon(Icons.warning_amber_rounded, color: colorScheme.onError),
                       const SizedBox(width: 8),
                       const Text('Seleziona almeno un muscolo target'),
                     ],
@@ -324,6 +311,8 @@ class AddExerciseDialog extends HookConsumerWidget {
               buildMuscleGroupsSelector(),
               SizedBox(height: AppTheme.spacing.lg),
               buildTypeSelector(),
+              SizedBox(height: AppTheme.spacing.lg),
+              buildBodyweightCheckbox(),
             ],
           ),
         ),

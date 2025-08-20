@@ -10,11 +10,7 @@ class ExercisesService {
     return _firestore
         .collection('exercises')
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => ExerciseModel.fromFirestore(doc))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => ExerciseModel.fromFirestore(doc)).toList());
   }
 
   Future<ExerciseModel?> getExerciseById(String id) async {
@@ -26,8 +22,10 @@ class ExercisesService {
     String name,
     List<String> muscleGroups,
     String type,
-    String userId,
-  ) async {
+    String userId, {
+    bool isBodyweight = false,
+    String repType = 'fixed',
+  }) async {
     try {
       await _firestore.collection('exercises').add({
         'name': name,
@@ -35,6 +33,8 @@ class ExercisesService {
         'type': type,
         'status': 'pending',
         'userId': userId,
+        'isBodyweight': isBodyweight,
+        'repType': repType,
       });
     } catch (e) {
       rethrow;
@@ -76,8 +76,6 @@ class ExercisesService {
   }
 
   Future<void> approveExercise(String id) async {
-    await _firestore.collection('exercises').doc(id).update({
-      'status': 'approved',
-    });
+    await _firestore.collection('exercises').doc(id).update({'status': 'approved'});
   }
 }

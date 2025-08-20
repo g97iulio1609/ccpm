@@ -9,35 +9,27 @@ class MetaChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCardio = exercise.type.toLowerCase() == 'cardio';
+    final isBodyweight = exercise.isBodyweight == true;
+    
     final reps = exercise.series.isNotEmpty ? exercise.series.first.reps : null;
-    final weight = exercise.series.isNotEmpty
-        ? exercise.series.first.weight
-        : null;
+    final weight = exercise.series.isNotEmpty ? exercise.series.first.weight : null;
     final rest = exercise.series
-        .firstWhere(
-          (s) => s.restTimeSeconds != null,
-          orElse: () => exercise.series.first,
-        )
+        .firstWhere((s) => s.restTimeSeconds != null, orElse: () => exercise.series.first)
         .restTimeSeconds;
 
     return Wrap(
       spacing: AppTheme.spacing.xs,
       runSpacing: AppTheme.spacing.xs,
       children: [
-        _chip(
-          context,
-          Icons.layers_outlined,
-          '${exercise.series.length} serie',
-        ),
-        if (reps != null) _chip(context, Icons.repeat, 'x$reps'),
-        if (weight != null)
+        _chip(context, Icons.layers_outlined, '${exercise.series.length} serie'),
+        if (reps != null && !isCardio) _chip(context, Icons.repeat, 'x$reps'),
+        if (weight != null && !isCardio && !isBodyweight)
           _chip(context, Icons.fitness_center, WorkoutFormatters.formatWeight(weight)),
-        if (rest != null)
-          _chip(context, Icons.timer_outlined, WorkoutFormatters.formatRest(rest)),
+        if (rest != null) _chip(context, Icons.timer_outlined, WorkoutFormatters.formatRest(rest)),
       ],
     );
   }
-
 
   Widget _chip(BuildContext context, IconData icon, String label) {
     final cs = Theme.of(context).colorScheme;
@@ -55,10 +47,9 @@ class MetaChips extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: cs.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600),
           ),
         ],
       ),

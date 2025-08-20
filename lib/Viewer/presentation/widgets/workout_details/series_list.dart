@@ -27,16 +27,19 @@ class SeriesList extends StatelessWidget {
   final List<Series> series;
   final void Function(Series series) onSeriesTap;
   final void Function(Series series) onToggleComplete;
+  final String? exerciseType; // 'cardio' | 'weight' | ...
   const SeriesList({
     super.key,
     required this.series,
     required this.onSeriesTap,
     required this.onToggleComplete,
+    this.exerciseType,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isCardio = (exerciseType ?? '').toLowerCase() == 'cardio';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -49,14 +52,20 @@ class SeriesList extends StatelessWidget {
             color: colorScheme.surfaceContainerHighest.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
           ),
-          child: const SeriesHeader(),
+          child: SeriesHeader(
+            labels: isCardio
+                ? const ['#', 'Durata', 'Distanza', 'Effettivo']
+                : const ['#', 'Reps', 'Peso', 'Fatti'],
+          ),
         ),
         SizedBox(height: AppTheme.spacing.sm),
         ...series.asMap().entries.map((entry) {
           final index = entry.key;
           final s = entry.value;
-          final done = _isStrictlyDone(s);
-          final attempted = s.hasExecutionData && !done;
+          final done = isCardio ? _isCardioDone(s) : _isStrictlyDone(s);
+          final attempted = isCardio
+              ? ((s.executedDurationSeconds != null || s.executedDistanceMeters != null) && !done)
+              : (s.hasExecutionData && !done);
           return Container(
             margin: EdgeInsets.only(bottom: AppTheme.spacing.xs),
             padding: EdgeInsets.symmetric(
@@ -65,19 +74,17 @@ class SeriesList extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: done
-                  ? Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer.withValues(alpha: 0.16)
+                  ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.16)
                   : attempted
-                      ? colorScheme.tertiaryContainer.withValues(alpha: 0.12)
-                      : Colors.transparent,
+                  ? colorScheme.tertiaryContainer.withValues(alpha: 0.12)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(AppTheme.radii.sm),
               border: Border.all(
                 color: attempted
                     ? colorScheme.tertiary.withValues(alpha: 0.5)
-                    : Theme.of(context).colorScheme.outlineVariant.withValues(
-                        alpha: done ? 0 : 0.3,
-                      ),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.outlineVariant.withValues(alpha: done ? 0 : 0.3),
               ),
             ),
             child: _SeriesRow(
@@ -85,6 +92,7 @@ class SeriesList extends StatelessWidget {
               series: s,
               onTap: () => onSeriesTap(s),
               onToggleComplete: () => onToggleComplete(s),
+              isCardio: isCardio,
             ),
           );
         }),
@@ -98,34 +106,37 @@ class _SeriesRow extends StatelessWidget {
   final Series series;
   final VoidCallback onTap;
   final VoidCallback onToggleComplete;
+  final bool isCardio;
   const _SeriesRow({
     required this.index,
     required this.series,
     required this.onTap,
     required this.onToggleComplete,
+    required this.isCardio,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final done = _isStrictlyDone(series);
-    final attempted = series.hasExecutionData && !done;
+    final done = isCardio ? _isCardioDone(series) : _isStrictlyDone(series);
+    final attempted = isCardio
+        ? ((series.executedDurationSeconds != null || series.executedDistanceMeters != null) && !done)
+        : (series.hasExecutionData && !done);
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 480;
-    
+
     return Row(
       children: [
         SizedBox(
           width: 32,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: done
-          ? colorScheme.primaryContainer
-          : (attempted
-            ? colorScheme.tertiaryContainer
-            : colorScheme.surfaceContainerHighest
-              .withValues(alpha: 0.4)),
+            decoration: BoxDecoration(
+              color: done
+                  ? colorScheme.primaryContainer
+                  : (attempted
+                        ? colorScheme.tertiaryContainer
+                        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -133,9 +144,7 @@ class _SeriesRow extends StatelessWidget {
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: done
                     ? colorScheme.onPrimaryContainer
-                    : (attempted
-                        ? colorScheme.onTertiaryContainer
-                        : colorScheme.onSurfaceVariant),
+                    : (attempted ? colorScheme.onTertiaryContainer : colorScheme.onSurfaceVariant),
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -148,11 +157,17 @@ class _SeriesRow extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onTap,
-            child: _pill(
-              context,
-              label: _formatRepsRange(context, series.reps, series.maxReps),
-              icon: Icons.repeat,
-            ),
+            child: isCardio
+                ? _pill(
+                    context,
+                    label: _formatCardioTarget(series, true),
+                    icon: Icons.timer,
+                  )
+                : _pill(
+                    context,
+                    label: _formatRepsRange(context, series.reps, series.maxReps),
+                    icon: Icons.repeat,
+                  ),
           ),
         ),
         SizedBox(width: isCompact ? 4 : 8),
@@ -161,11 +176,17 @@ class _SeriesRow extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onTap,
-            child: _pill(
-              context,
-              label: _formatWeightRange(context, series.weight, series.maxWeight),
-              icon: Icons.fitness_center,
-            ),
+            child: isCardio
+                ? _pill(
+                    context,
+                    label: _formatCardioTarget(series, false),
+                    icon: Icons.route,
+                  )
+                : _pill(
+                    context,
+                    label: _formatWeightRange(context, series.weight, series.maxWeight),
+                    icon: Icons.fitness_center,
+                  ),
           ),
         ),
         SizedBox(width: isCompact ? 4 : 8),
@@ -177,19 +198,19 @@ class _SeriesRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(
-        done
-          ? '${series.repsDone}×${_fmtNum(series.weightDone)}'
-          : (attempted
-            ? _attemptedText(series)
-            : '-'),
+                isCardio
+                    ? (done
+                        ? _formatExecutedCardio(series)
+                        : (attempted ? _formatExecutedCardio(series) : '-'))
+                    : (done
+                        ? '${series.repsDone}×${_fmtNum(series.weightDone)}'
+                        : (attempted ? _attemptedText(series) : '-')),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: done ? FontWeight.w600 : FontWeight.normal,
-          color: done
-            ? colorScheme.onSurface
-            : (attempted
-              ? colorScheme.tertiary
-              : colorScheme.onSurfaceVariant),
+                  fontWeight: done ? FontWeight.w600 : FontWeight.normal,
+                  color: done
+                      ? colorScheme.onSurface
+                      : (attempted ? colorScheme.tertiary : colorScheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -199,14 +220,10 @@ class _SeriesRow extends StatelessWidget {
           width: 40,
           child: IconButton(
             icon: Icon(
-              done
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked_outlined,
+              done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_outlined,
               color: done
                   ? colorScheme.primary
-                  : (attempted
-                      ? colorScheme.tertiary
-                      : colorScheme.onSurfaceVariant),
+                  : (attempted ? colorScheme.tertiary : colorScheme.onSurfaceVariant),
               size: 24,
             ),
             onPressed: onToggleComplete,
@@ -219,7 +236,7 @@ class _SeriesRow extends StatelessWidget {
   String _formatRepsRange(BuildContext context, int reps, int? maxReps) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isVeryCompact = screenWidth < 360;
-    
+
     if (maxReps != null && maxReps > reps) {
       return isVeryCompact ? '$reps~$maxReps' : '$reps-$maxReps';
     }
@@ -230,29 +247,25 @@ class _SeriesRow extends StatelessWidget {
     String fmt(num v) => (v % 1 == 0) ? v.toInt().toString() : v.toStringAsFixed(1);
     final screenWidth = MediaQuery.of(context).size.width;
     final isVeryCompact = screenWidth < 360;
-    
+
     if (maxWeight != null && maxWeight > weight) {
-      return isVeryCompact 
-        ? '${fmt(weight)}~${fmt(maxWeight)}' 
-        : '${fmt(weight)}-${fmt(maxWeight)}kg';
+      return isVeryCompact
+          ? '${fmt(weight)}~${fmt(maxWeight)}'
+          : '${fmt(weight)}-${fmt(maxWeight)}kg';
     }
     return '${fmt(weight)}${isVeryCompact ? '' : 'kg'}';
   }
 
-  Widget _pill(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-  }) {
+  Widget _pill(BuildContext context, {required String label, required IconData icon}) {
     final cs = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 480;
     final isVeryCompact = screenWidth < 360;
-    
+
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isVeryCompact ? 2 : (isCompact ? 4 : 8), 
-        vertical: isVeryCompact ? 3 : (isCompact ? 4 : 6)
+        horizontal: isVeryCompact ? 2 : (isCompact ? 4 : 8),
+        vertical: isVeryCompact ? 3 : (isCompact ? 4 : 6),
       ),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
@@ -295,4 +308,50 @@ class _SeriesRow extends StatelessWidget {
   }
 
   String _fmtNum(num v) => (v % 1 == 0) ? v.toInt().toString() : v.toStringAsFixed(1);
+
+  String _formatDuration(int? seconds) {
+    if (seconds == null || seconds <= 0) return '-';
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    if (h > 0) {
+      return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDistance(int? meters) {
+    if (meters == null || meters <= 0) return '-';
+    return '${(meters / 1000).toStringAsFixed(2)} km';
+  }
+
+  String _formatCardioTarget(Series series, bool isDuration) {
+    if (isDuration) {
+      final target = series.durationSeconds;
+      if (target != null && target > 0) {
+        return _formatDuration(target);
+      }
+      return 'Libera';
+    } else {
+      final target = series.distanceMeters;
+      if (target != null && target > 0) {
+        return _formatDistance(target);
+      }
+      return 'Libera';
+    }
+  }
+
+  String _formatExecutedCardio(Series s) {
+    final d = _formatDuration(s.executedDurationSeconds ?? 0);
+    final dist = _formatDistance(s.executedDistanceMeters ?? 0);
+    if (d == '-' && dist == '-') return '-';
+    if (d != '-' && dist != '-') return '$d • $dist';
+    return d != '-' ? d : dist;
+  }
+}
+
+bool _isCardioDone(Series s) {
+  final dur = s.executedDurationSeconds ?? 0;
+  final dist = s.executedDistanceMeters ?? 0;
+  return dur > 0 || dist > 0 || s.isCompleted || s.done;
 }

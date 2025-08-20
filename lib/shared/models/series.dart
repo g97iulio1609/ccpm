@@ -32,8 +32,31 @@ class Series {
   // Additional fields
   final int? restTimeSeconds;
   final String? type; // 'normal', 'drop_set', 'myo_reps', etc.
+  final String? seriesType; // 'standard', 'amrap', 'min_reps'
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  // Cardio target fields (optional, non-breaking)
+  final int? durationSeconds; // planned duration in seconds
+  final int? distanceMeters; // planned distance in meters
+  final double? speedKmh; // planned speed in km/h
+  final int? paceSecPerKm; // planned pace in sec/km
+  final double? inclinePercent; // treadmill incline %
+  final double? hrPercent; // target HR as % of HRmax
+  final int? hrBpm; // target HR in bpm
+  final int? avgHr; // target average HR in bpm
+  final int? kcal; // estimated calories
+
+  // Cardio execution fields
+  final int? executedDurationSeconds; // actual duration in seconds
+  final int? executedDistanceMeters; // actual distance in meters
+  final int? executedAvgHr; // actual avg HR in bpm
+
+  // HIIT cardio fields
+  final int? workIntervalSeconds; // work interval duration
+  final int? restIntervalSeconds; // rest interval duration
+  final int? rounds; // number of rounds/cycles
+  final String? cardioType; // 'steady', 'hiit'
 
   const Series({
     this.id,
@@ -58,8 +81,25 @@ class Series {
     this.isCompleted = false,
     this.restTimeSeconds,
     this.type,
+    this.seriesType = 'standard',
     this.createdAt,
     this.updatedAt,
+    this.durationSeconds,
+    this.distanceMeters,
+    this.speedKmh,
+    this.paceSecPerKm,
+    this.inclinePercent,
+    this.hrPercent,
+    this.hrBpm,
+    this.avgHr,
+    this.kcal,
+    this.executedDurationSeconds,
+    this.executedDistanceMeters,
+    this.executedAvgHr,
+    this.workIntervalSeconds,
+    this.restIntervalSeconds,
+    this.rounds,
+    this.cardioType = 'steady',
   });
 
   /// Factory constructor for empty series
@@ -98,8 +138,25 @@ class Series {
       isCompleted: map['isCompleted'] ?? map['done'] ?? false,
       restTimeSeconds: map['restTimeSeconds'],
       type: map['type'],
+      seriesType: map['seriesType'] ?? 'standard',
       createdAt: _parseTimestamp(map['createdAt']),
       updatedAt: _parseTimestamp(map['updatedAt']),
+      durationSeconds: map['durationSeconds'],
+      distanceMeters: map['distanceMeters'],
+      speedKmh: (map['speedKmh'] as num?)?.toDouble(),
+      paceSecPerKm: map['paceSecPerKm'],
+      inclinePercent: (map['inclinePercent'] as num?)?.toDouble(),
+      hrPercent: (map['hrPercent'] as num?)?.toDouble(),
+      hrBpm: map['hrBpm'],
+      avgHr: map['avgHr'],
+      kcal: map['kcal'],
+      executedDurationSeconds: map['executedDurationSeconds'],
+      executedDistanceMeters: map['executedDistanceMeters'],
+      executedAvgHr: map['executedAvgHr'],
+      workIntervalSeconds: map['workIntervalSeconds'],
+      restIntervalSeconds: map['restIntervalSeconds'],
+      rounds: map['rounds'],
+      cardioType: map['cardioType'] ?? 'steady',
     );
   }
 
@@ -127,8 +184,25 @@ class Series {
     bool? isCompleted,
     int? restTimeSeconds,
     String? type,
+    String? seriesType,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? durationSeconds,
+    int? distanceMeters,
+    double? speedKmh,
+    int? paceSecPerKm,
+    double? inclinePercent,
+    double? hrPercent,
+    int? hrBpm,
+    int? avgHr,
+    int? kcal,
+    int? executedDurationSeconds,
+    int? executedDistanceMeters,
+    int? executedAvgHr,
+    int? workIntervalSeconds,
+    int? restIntervalSeconds,
+    int? rounds,
+    String? cardioType,
   }) {
     return Series(
       id: id ?? this.id,
@@ -153,8 +227,25 @@ class Series {
       isCompleted: isCompleted ?? this.isCompleted,
       restTimeSeconds: restTimeSeconds ?? this.restTimeSeconds,
       type: type ?? this.type,
+      seriesType: seriesType ?? this.seriesType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+      speedKmh: speedKmh ?? this.speedKmh,
+      paceSecPerKm: paceSecPerKm ?? this.paceSecPerKm,
+      inclinePercent: inclinePercent ?? this.inclinePercent,
+      hrPercent: hrPercent ?? this.hrPercent,
+      hrBpm: hrBpm ?? this.hrBpm,
+      avgHr: avgHr ?? this.avgHr,
+      kcal: kcal ?? this.kcal,
+      executedDurationSeconds: executedDurationSeconds ?? this.executedDurationSeconds,
+      executedDistanceMeters: executedDistanceMeters ?? this.executedDistanceMeters,
+      executedAvgHr: executedAvgHr ?? this.executedAvgHr,
+      workIntervalSeconds: workIntervalSeconds ?? this.workIntervalSeconds,
+      restIntervalSeconds: restIntervalSeconds ?? this.restIntervalSeconds,
+      rounds: rounds ?? this.rounds,
+      cardioType: cardioType ?? this.cardioType,
     );
   }
 
@@ -183,8 +274,25 @@ class Series {
       'isCompleted': isCompleted,
       if (restTimeSeconds != null) 'restTimeSeconds': restTimeSeconds,
       if (type != null) 'type': type,
+      if (seriesType != null) 'seriesType': seriesType,
       if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
+      if (durationSeconds != null) 'durationSeconds': durationSeconds,
+      if (distanceMeters != null) 'distanceMeters': distanceMeters,
+      if (speedKmh != null) 'speedKmh': speedKmh,
+      if (paceSecPerKm != null) 'paceSecPerKm': paceSecPerKm,
+      if (inclinePercent != null) 'inclinePercent': inclinePercent,
+      if (hrPercent != null) 'hrPercent': hrPercent,
+      if (hrBpm != null) 'hrBpm': hrBpm,
+      if (avgHr != null) 'avgHr': avgHr,
+      if (kcal != null) 'kcal': kcal,
+      if (executedDurationSeconds != null) 'executedDurationSeconds': executedDurationSeconds,
+      if (executedDistanceMeters != null) 'executedDistanceMeters': executedDistanceMeters,
+      if (executedAvgHr != null) 'executedAvgHr': executedAvgHr,
+      if (workIntervalSeconds != null) 'workIntervalSeconds': workIntervalSeconds,
+      if (restIntervalSeconds != null) 'restIntervalSeconds': restIntervalSeconds,
+      if (rounds != null) 'rounds': rounds,
+      if (cardioType != null) 'cardioType': cardioType,
     };
   }
 
@@ -203,10 +311,7 @@ class Series {
 
   /// Check if series has range values (min-max)
   bool get hasRange =>
-      maxReps != null ||
-      maxWeight != null ||
-      maxIntensity != null ||
-      maxRpe != null;
+      maxReps != null || maxWeight != null || maxIntensity != null || maxRpe != null;
 
   /// Get completion status (unified from both naming conventions)
   bool get completionStatus => done || isCompleted;
@@ -236,24 +341,34 @@ class Series {
   }
 
   @override
-  int get hashCode {
-    return Object.hash(
-      id,
-      serieId,
-      exerciseId,
-      originalExerciseId,
-      order,
-      reps,
-      sets,
-      weight,
-      intensity,
-      rpe,
-      repsDone,
-      weightDone,
-      done,
-      isCompleted,
-    );
-  }
+  int get hashCode => Object.hashAll([
+    id,
+    serieId,
+    exerciseId,
+    originalExerciseId,
+    order,
+    reps,
+    sets,
+    weight,
+    intensity,
+    rpe,
+    repsDone,
+    weightDone,
+    done,
+    isCompleted,
+    durationSeconds,
+    distanceMeters,
+    speedKmh,
+    paceSecPerKm,
+    inclinePercent,
+    hrPercent,
+    hrBpm,
+    avgHr,
+    kcal,
+    executedDurationSeconds,
+    executedDistanceMeters,
+    executedAvgHr,
+  ]);
 
   @override
   String toString() {
@@ -300,5 +415,28 @@ extension SeriesCompatibility on Series {
       return '$rpeValue-$maxRpeValue';
     }
     return rpeValue;
+  }
+
+  /// Cardio helpers (formatted display)
+  String get durationDisplay {
+    final sec = durationSeconds ?? executedDurationSeconds;
+    if (sec == null) return '';
+    final m = (sec ~/ 60).toString().padLeft(2, '0');
+    final s = (sec % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  String get distanceDisplay {
+    final m = distanceMeters ?? executedDistanceMeters;
+    if (m == null) return '';
+    return (m / 1000).toStringAsFixed(2);
+  }
+
+  String get paceDisplayCardio {
+    final p = paceSecPerKm;
+    if (p == null) return '';
+    final m = (p ~/ 60).toString().padLeft(2, '0');
+    final s = (p % 60).toString().padLeft(2, '0');
+    return '$m:$s/km';
   }
 }

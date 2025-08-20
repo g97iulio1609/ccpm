@@ -7,6 +7,8 @@ class ExerciseModel {
   final List<String> muscleGroups;
   final String? status;
   final String? userId;
+  final bool isBodyweight;
+  final String repType;
 
   ExerciseModel({
     required this.id,
@@ -15,6 +17,8 @@ class ExerciseModel {
     required this.muscleGroups,
     this.status,
     this.userId,
+    this.isBodyweight = false,
+    this.repType = 'fixed',
   });
 
   factory ExerciseModel.fromJson(Map<String, dynamic> json) {
@@ -35,6 +39,8 @@ class ExerciseModel {
       muscleGroups: getMuscleGroups(),
       status: json['status'],
       userId: json['userId'],
+      isBodyweight: json['isBodyweight'] ?? false,
+      repType: json['repType'] ?? 'fixed',
     );
   }
 

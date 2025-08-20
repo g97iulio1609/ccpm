@@ -23,6 +23,10 @@ class Exercise {
   final List<List<WeekProgression>>? weekProgressions;
   final num? latestMaxWeight;
 
+  // Bodyweight and exercise type fields
+  final bool isBodyweight;        // TRUE per esercizi a corpo libero
+  final String? repType;          // 'fixed', 'range', 'min_reps', 'amrap'
+
   // Common fields
   final List<Series> series;
   final DateTime? createdAt;
@@ -41,6 +45,8 @@ class Exercise {
     this.note,
     this.weekProgressions,
     this.latestMaxWeight,
+    this.isBodyweight = false,
+    this.repType = 'fixed',
     this.series = const [],
     this.createdAt,
     this.updatedAt,
@@ -72,6 +78,8 @@ class Exercise {
       note: map['note'],
       weekProgressions: _parseWeekProgressions(map['weekProgressions']),
       latestMaxWeight: map['latestMaxWeight'],
+      isBodyweight: map['isBodyweight'] ?? false,
+      repType: map['repType'] ?? 'fixed',
       series: _parseSeries(map['series']),
       createdAt: _parseTimestamp(map['createdAt']),
       updatedAt: _parseTimestamp(map['updatedAt']),
@@ -92,6 +100,8 @@ class Exercise {
     String? note,
     List<List<WeekProgression>>? weekProgressions,
     num? latestMaxWeight,
+    bool? isBodyweight,
+    String? repType,
     List<Series>? series,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -109,6 +119,8 @@ class Exercise {
       note: note ?? this.note,
       weekProgressions: weekProgressions ?? this.weekProgressions,
       latestMaxWeight: latestMaxWeight ?? this.latestMaxWeight,
+      isBodyweight: isBodyweight ?? this.isBodyweight,
+      repType: repType ?? this.repType,
       series: series ?? this.series.map((s) => s.copyWith()).toList(),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -133,6 +145,8 @@ class Exercise {
             .map((week) => week.map((prog) => prog.toMap()).toList())
             .toList(),
       if (latestMaxWeight != null) 'latestMaxWeight': latestMaxWeight,
+      'isBodyweight': isBodyweight,
+      if (repType != null) 'repType': repType,
       'series': series.map((s) => s.toMap()).toList(),
       if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
@@ -152,9 +166,7 @@ class Exercise {
     if (data == null) return null;
     return List<List<WeekProgression>>.from(
       data.map(
-        (week) => List<WeekProgression>.from(
-          week.map((prog) => WeekProgression.fromMap(prog)),
-        ),
+        (week) => List<WeekProgression>.from(week.map((prog) => WeekProgression.fromMap(prog))),
       ),
     );
   }
@@ -166,9 +178,7 @@ class Exercise {
     if (data is List) {
       return data
           .where((e) => e != null)
-          .map(
-            (seriesData) => Series.fromMap(seriesData as Map<String, dynamic>),
-          )
+          .map((seriesData) => Series.fromMap(seriesData as Map<String, dynamic>))
           .toList();
     }
 
@@ -176,10 +186,7 @@ class Exercise {
     if (data is Map) {
       return data.values
           .where((e) => e != null)
-          .map(
-            (seriesData) =>
-                Series.fromMap(Map<String, dynamic>.from(seriesData as Map)),
-          )
+          .map((seriesData) => Series.fromMap(Map<String, dynamic>.from(seriesData as Map)))
           .toList();
     }
 
@@ -244,8 +251,7 @@ extension ExerciseCompatibility on Exercise {
   String? get originalExerciseIdCompat => originalExerciseId ?? exerciseId;
 
   /// Check if exercise has progressions (TrainingBuilder feature)
-  bool get hasProgressions =>
-      weekProgressions != null && weekProgressions!.isNotEmpty;
+  bool get hasProgressions => weekProgressions != null && weekProgressions!.isNotEmpty;
 
   /// Check if exercise belongs to a workout (Viewer feature)
   bool get belongsToWorkout => workoutId != null;
