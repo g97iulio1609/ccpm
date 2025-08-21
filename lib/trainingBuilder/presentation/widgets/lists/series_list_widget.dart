@@ -54,31 +54,38 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header card con badge del numero di serie nel gruppo
-            Stack(
-              children: [
-                SeriesCard(
-                  series: seriesGroup.first,
-                  maxWeight: widget.latestMaxWeight,
-                  exerciseName: widget.exercise.name,
-                  exerciseType: widget.exercise.type,
-                  isExpanded: isExpanded,
-                  showExpandedContent: false,
-                  onExpansionChanged: () {
-                    setState(() {
-                      _expansionStates[key] = !isExpanded;
-                    });
-                  },
-                  onEdit: () => _editSeriesGroup(seriesGroup),
-                  onDelete: () => _deleteSeriesGroup(seriesGroup),
-                  onDuplicate: () => _duplicateSeriesGroup(seriesGroup),
-                  onSeriesUpdated: (updatedSeries) => _updateSeries(updatedSeries),
-                ),
-                Positioned(
-                  right: 16,
-                  top: -12, // più in alto per un posizionamento migliore
-                  child: _GroupCountBadge(count: seriesGroup.length),
-                ),
-              ],
+            Container(
+              margin: EdgeInsets.only(
+                top: AppTheme.spacing.md, // spazio per il badge
+                bottom: AppTheme.spacing.xs,
+              ),
+              child: Stack(
+                clipBehavior: Clip.none, // permette al badge di essere visibile fuori dal container
+                children: [
+                  SeriesCard(
+                    series: seriesGroup.first,
+                    maxWeight: widget.latestMaxWeight,
+                    exerciseName: widget.exercise.name,
+                    exerciseType: widget.exercise.type,
+                    isExpanded: isExpanded,
+                    showExpandedContent: false,
+                    onExpansionChanged: () {
+                      setState(() {
+                        _expansionStates[key] = !isExpanded;
+                      });
+                    },
+                    onEdit: () => _editSeriesGroup(seriesGroup),
+                    onDelete: () => _deleteSeriesGroup(seriesGroup),
+                    onDuplicate: () => _duplicateSeriesGroup(seriesGroup),
+                    onSeriesUpdated: (updatedSeries) => _updateSeries(updatedSeries),
+                  ),
+                  Positioned(
+                    right: 16,
+                    top: -12, // più in alto per un posizionamento migliore
+                    child: _GroupCountBadge(count: seriesGroup.length),
+                  ),
+                ],
+              ),
             ),
             if (isExpanded)
               Padding(
