@@ -41,13 +41,23 @@ class GlassContainer extends StatelessWidget {
 
     final borderColor = cs.outline.withAlpha(highContrast ? 64 : 38);
 
-    final decoratedChild = Container(
+    // Gradient tint for a more pronounced glass effect
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        baseTint.withAlpha(highContrast ? 235 : 215),
+        baseTint.withAlpha(highContrast ? 215 : 185),
+      ],
+    );
+
+    Widget decoratedChild = Container(
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: baseTint,
+        gradient: gradient,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: border ?? Border.all(color: borderColor, width: 1),
+        border: border ?? Border.all(color: borderColor, width: 1.0),
         boxShadow: boxShadow,
       ),
       child: child,
@@ -57,11 +67,33 @@ class GlassContainer extends StatelessWidget {
       return ClipRRect(borderRadius: BorderRadius.circular(borderRadius), child: decoratedChild);
     }
 
+    // Add a subtle directional shine overlay for glass look
+    final shineOverlay = IgnorePointer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withAlpha(highContrast ? 36 : 24),
+              Colors.white.withAlpha(0),
+            ],
+          ),
+        ),
+      ),
+    );
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-        child: RepaintBoundary(child: decoratedChild),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            RepaintBoundary(child: decoratedChild),
+            shineOverlay,
+          ],
+        ),
       ),
     );
   }

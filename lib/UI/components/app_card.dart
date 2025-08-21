@@ -42,6 +42,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isGlass = glass == true;
 
     Widget core = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,20 +50,49 @@ class AppCard extends StatelessWidget {
         if (header != null || title != null || leadingIcon != null)
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.md),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withAlpha(77),
-              border: Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26))),
-            ),
+            decoration: isGlass
+                ? BoxDecoration(
+                    // Subtle frosted gradient header for glass cards
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colorScheme.surface.withAlpha(72),
+                        colorScheme.surfaceContainerHighest.withAlpha(54),
+                      ],
+                    ),
+                    border: Border(
+                      bottom: BorderSide(color: colorScheme.outline.withAlpha(24), width: 1),
+                    ),
+                  )
+                : BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withAlpha(77),
+                    border: Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26))),
+                  ),
             child: header ?? _buildDefaultHeader(context),
           ),
         Padding(padding: padding ?? EdgeInsets.all(AppTheme.spacing.md), child: child),
         if (actions != null && actions!.isNotEmpty)
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.md),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withAlpha(77),
-              border: Border(top: BorderSide(color: colorScheme.outline.withAlpha(26))),
-            ),
+            decoration: isGlass
+                ? BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colorScheme.surfaceContainerHighest.withAlpha(54),
+                        colorScheme.surface.withAlpha(64),
+                      ],
+                    ),
+                    border: Border(
+                      top: BorderSide(color: colorScheme.outline.withAlpha(24), width: 1),
+                    ),
+                  )
+                : BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withAlpha(77),
+                    border: Border(top: BorderSide(color: colorScheme.outline.withAlpha(26))),
+                  ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -77,13 +107,20 @@ class AppCard extends StatelessWidget {
       ],
     );
 
-    Widget content = glass
+    // Default subtle shadow for glass cards
+    final glassShadows = [
+      BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 18, offset: const Offset(0, 6)),
+      BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 4, offset: const Offset(0, 1)),
+    ];
+
+    Widget content = isGlass
         ? GlassLite(
             margin: margin,
             padding: EdgeInsets.zero,
-            tint: glassTint,
-            blur: glassBlur,
-            radius: glassRadius,
+            tint: glassTint ?? background,
+            blur: glassBlur ?? 14,
+            radius: glassRadius ?? AppTheme.radii.lg,
+            boxShadow: glassShadows,
             child: core,
           )
         : Card(

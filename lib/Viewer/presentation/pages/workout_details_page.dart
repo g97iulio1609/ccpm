@@ -210,6 +210,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
     return AppCard(
       glass: true,
+      glassBlur: 16,
+      glassTint: Theme.of(context).colorScheme.surface.withAlpha(64),
       header: ExerciseHeader(
         exercise: exercise,
         isAdmin: _isAdmin(ref),
@@ -250,7 +252,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           }
         },
       ),
-      background: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(38),
+      background: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(48),
       child: Column(
         children: [
           if (isListMode)
