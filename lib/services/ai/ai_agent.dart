@@ -8,11 +8,9 @@ class AIAgent {
   final LLMService _llm;
   final ExtensionsManager _extensionsManager;
 
-  AIAgent({
-    required LLMService llm,
-    required ExtensionsManager extensionsManager,
-  }) : _llm = llm,
-       _extensionsManager = extensionsManager;
+  AIAgent({required LLMService llm, required ExtensionsManager extensionsManager})
+    : _llm = llm,
+      _extensionsManager = extensionsManager;
 
   Future<String?> executeTask(String text, UserModel user) async {
     try {
@@ -68,11 +66,7 @@ class AIAgent {
         }
 
         // Verifica se sono necessarie azioni aggiuntive basate sul risultato
-        final additionalActions = await _checkForAdditionalActions(
-          result,
-          currentContext,
-          user,
-        );
+        final additionalActions = await _checkForAdditionalActions(result, currentContext, user);
 
         if (additionalActions.isNotEmpty) {
           remainingActions.insertAll(0, additionalActions);
@@ -87,10 +81,7 @@ class AIAgent {
     }
   }
 
-  Future<ActionResult> _executeAction(
-    Map<String, dynamic> action,
-    UserModel user,
-  ) async {
+  Future<ActionResult> _executeAction(Map<String, dynamic> action, UserModel user) async {
     try {
       final result = await _extensionsManager.executeAction(action, user);
 
@@ -117,19 +108,14 @@ class AIAgent {
     }
   }
 
-  Future<ActionResult> _analyzeActionResult(
-    String result,
-    Map<String, dynamic> action,
-  ) async {
+  Future<ActionResult> _analyzeActionResult(String result, Map<String, dynamic> action) async {
     // Analizza il risultato per determinare il successo e il contesto
     final isSuccess =
         !result.toLowerCase().contains('errore') &&
         !result.toLowerCase().contains('non trovato') &&
         !result.toLowerCase().contains('non valido');
 
-    final data = isSuccess
-        ? await _extractDataFromResult(result, action)
-        : null;
+    final data = isSuccess ? await _extractDataFromResult(result, action) : null;
     String? errorType;
     Map<String, dynamic>? errorContext;
 
@@ -219,10 +205,7 @@ class AIAgent {
     return [];
   }
 
-  Future<String> _generateFinalResponse(
-    List<String> results,
-    Map<String, dynamic> context,
-  ) async {
+  Future<String> _generateFinalResponse(List<String> results, Map<String, dynamic> context) async {
     // Genera una risposta coerente basata su tutti i risultati
     // e sul contesto finale
     if (results.isEmpty) {

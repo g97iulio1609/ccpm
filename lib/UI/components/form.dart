@@ -51,16 +51,11 @@ class AppForm extends StatelessWidget {
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(AppTheme.radii.xl),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
               ),
               child: Row(
                 children: [
-                  if (leading != null) ...[
-                    leading!,
-                    SizedBox(width: AppTheme.spacing.md),
-                  ],
+                  if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.md)],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,9 +109,7 @@ class AppForm extends StatelessWidget {
                 padding: EdgeInsets.all(AppTheme.spacing.lg),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(AppTheme.radii.xl),
-                  ),
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppTheme.radii.xl)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -168,9 +161,7 @@ class AppForm extends StatelessWidget {
           SizedBox(height: AppTheme.spacing.xs),
           Text(
             subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ],
         SizedBox(height: AppTheme.spacing.md),
@@ -196,10 +187,7 @@ class AppForm extends StatelessWidget {
     );
   }
 
-  static Widget buildFormRow({
-    required List<Widget> children,
-    required double spacing,
-  }) {
+  static Widget buildFormRow({required List<Widget> children, required double spacing}) {
     return Row(
       children: [
         for (int i = 0; i < children.length; i++) ...[

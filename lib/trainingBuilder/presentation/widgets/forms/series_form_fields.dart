@@ -41,27 +41,15 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
   }
 
   void _initializeControllers() {
-    _repsController = TextEditingController(
-      text: widget.series.reps.toString(),
-    );
-    _maxRepsController = TextEditingController(
-      text: widget.series.maxReps?.toString() ?? '',
-    );
-    _setsController = TextEditingController(
-      text: widget.series.sets.toString(),
-    );
+    _repsController = TextEditingController(text: widget.series.reps.toString());
+    _maxRepsController = TextEditingController(text: widget.series.maxReps?.toString() ?? '');
+    _setsController = TextEditingController(text: widget.series.sets.toString());
     _intensityController = TextEditingController(text: widget.series.intensity ?? '');
-    _maxIntensityController = TextEditingController(
-      text: widget.series.maxIntensity ?? '',
-    );
+    _maxIntensityController = TextEditingController(text: widget.series.maxIntensity ?? '');
     _rpeController = TextEditingController(text: widget.series.rpe ?? '');
     _maxRpeController = TextEditingController(text: widget.series.maxRpe ?? '');
-    _weightController = TextEditingController(
-      text: widget.series.weight.toString(),
-    );
-    _maxWeightController = TextEditingController(
-      text: widget.series.maxWeight?.toString() ?? '',
-    );
+    _weightController = TextEditingController(text: widget.series.weight.toString());
+    _maxWeightController = TextEditingController(text: widget.series.maxWeight?.toString() ?? '');
   }
 
   @override
@@ -231,11 +219,10 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
 
       final maxWeight = double.tryParse(_maxWeightController.text);
       if (maxWeight != null && maxWeight > 0) {
-        final maxIntensity =
-            WeightCalculationService.calculateIntensityFromWeight(
-              maxWeight,
-              widget.maxWeight.toDouble(),
-            );
+        final maxIntensity = WeightCalculationService.calculateIntensityFromWeight(
+          maxWeight,
+          widget.maxWeight.toDouble(),
+        );
         _maxIntensityController.text = maxIntensity.toStringAsFixed(1);
       }
     }
@@ -248,13 +235,9 @@ class _SeriesFormFieldsState extends State<SeriesFormFields> {
         maxReps: int.tryParse(_maxRepsController.text),
         sets: int.tryParse(_setsController.text) ?? widget.series.sets,
         intensity: _intensityController.text.isNotEmpty ? _intensityController.text : null,
-        maxIntensity: _maxIntensityController.text.isNotEmpty
-            ? _maxIntensityController.text
-            : null,
+        maxIntensity: _maxIntensityController.text.isNotEmpty ? _maxIntensityController.text : null,
         rpe: _rpeController.text.isNotEmpty ? _rpeController.text : null,
-        maxRpe: _maxRpeController.text.isNotEmpty
-            ? _maxRpeController.text
-            : null,
+        maxRpe: _maxRpeController.text.isNotEmpty ? _maxRpeController.text : null,
         weight: double.tryParse(_weightController.text) ?? widget.series.weight,
         maxWeight: double.tryParse(_maxWeightController.text),
       );

@@ -16,10 +16,7 @@ class PendingApprovalBadge extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.tertiaryContainer.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
@@ -94,10 +91,7 @@ class ExerciseCardContent extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(
-                  Icons.more_vert,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
                 onPressed: () => _showExerciseOptions(context),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -123,9 +117,7 @@ class ExerciseCardContent extends StatelessWidget {
           // Gruppi muscolari
           Text(
             exercise.muscleGroups.join(", "),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -157,11 +149,7 @@ class ExerciseCardContent extends StatelessWidget {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
         ),
         items: [
           BottomMenuItem(

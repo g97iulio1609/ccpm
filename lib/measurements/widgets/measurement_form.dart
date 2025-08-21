@@ -33,24 +33,14 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
     super.initState();
     _formKey = GlobalKey<FormState>();
     _controllers = {
-      'weight': TextEditingController(
-        text: widget.measurement?.weight.toString() ?? '',
-      ),
-      'height': TextEditingController(
-        text: widget.measurement?.height.toString() ?? '',
-      ),
+      'weight': TextEditingController(text: widget.measurement?.weight.toString() ?? ''),
+      'height': TextEditingController(text: widget.measurement?.height.toString() ?? ''),
       'bodyFat': TextEditingController(
         text: widget.measurement?.bodyFatPercentage.toString() ?? '',
       ),
-      'waist': TextEditingController(
-        text: widget.measurement?.waistCircumference.toString() ?? '',
-      ),
-      'hip': TextEditingController(
-        text: widget.measurement?.hipCircumference.toString() ?? '',
-      ),
-      'chest': TextEditingController(
-        text: widget.measurement?.chestCircumference.toString() ?? '',
-      ),
+      'waist': TextEditingController(text: widget.measurement?.waistCircumference.toString() ?? ''),
+      'hip': TextEditingController(text: widget.measurement?.hipCircumference.toString() ?? ''),
+      'chest': TextEditingController(text: widget.measurement?.chestCircumference.toString() ?? ''),
       'biceps': TextEditingController(
         text: widget.measurement?.bicepsCircumference.toString() ?? '',
       ),
@@ -72,9 +62,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radii.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
       ),
       child: SingleChildScrollView(
         controller: widget.scrollController,
@@ -95,9 +83,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radii.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
       ),
       child: Row(
         children: [
@@ -111,18 +97,14 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
               borderRadius: BorderRadius.circular(AppTheme.radii.full),
             ),
             child: Icon(
-              widget.measurement == null
-                  ? Icons.add_circle_outline
-                  : Icons.edit_outlined,
+              widget.measurement == null ? Icons.add_circle_outline : Icons.edit_outlined,
               color: colorScheme.primary,
               size: 20,
             ),
           ),
           SizedBox(width: AppTheme.spacing.md),
           Text(
-            widget.measurement == null
-                ? 'Nuova Misurazione'
-                : 'Modifica Misurazione',
+            widget.measurement == null ? 'Nuova Misurazione' : 'Modifica Misurazione',
             style: theme.textTheme.titleLarge?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
@@ -188,17 +170,11 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.calendar_today,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
+                Icon(Icons.calendar_today, color: colorScheme.primary, size: 20),
                 SizedBox(width: AppTheme.spacing.md),
                 Text(
                   DateFormat('dd/MM/yyyy').format(_selectedDate),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                 ),
               ],
             ),
@@ -237,9 +213,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
           child: TextFormField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+            style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
@@ -275,9 +249,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
   Widget _buildActions(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withAlpha(76),
-      ),
+      decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest.withAlpha(76)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -313,9 +285,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
 
   void _submitMeasurement() {
     if (_formKey.currentState!.validate()) {
-      final controller = ref.read(
-        measurementControllerProvider(widget.userId).notifier,
-      );
+      final controller = ref.read(measurementControllerProvider(widget.userId).notifier);
 
       final weight = double.tryParse(_controllers['weight']!.text) ?? 0.0;
       final height = double.tryParse(_controllers['height']!.text) ?? 0.0;
@@ -328,13 +298,11 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
         weight: weight,
         height: height,
         bmi: bmi,
-        bodyFatPercentage:
-            double.tryParse(_controllers['bodyFat']!.text) ?? 0.0,
+        bodyFatPercentage: double.tryParse(_controllers['bodyFat']!.text) ?? 0.0,
         waistCircumference: double.tryParse(_controllers['waist']!.text) ?? 0.0,
         hipCircumference: double.tryParse(_controllers['hip']!.text) ?? 0.0,
         chestCircumference: double.tryParse(_controllers['chest']!.text) ?? 0.0,
-        bicepsCircumference:
-            double.tryParse(_controllers['biceps']!.text) ?? 0.0,
+        bicepsCircumference: double.tryParse(_controllers['biceps']!.text) ?? 0.0,
       );
 
       if (widget.measurement == null) {

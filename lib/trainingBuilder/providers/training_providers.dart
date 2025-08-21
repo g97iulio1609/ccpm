@@ -30,9 +30,7 @@ final trainingProgramControllerProvider =
       final service = ref.watch(firestoreServiceProvider);
       final usersService = ref.watch(usersServiceProvider);
       final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
-      final programStateNotifier = ref.watch(
-        trainingProgramStateProvider.notifier,
-      );
+      final programStateNotifier = ref.watch(trainingProgramStateProvider.notifier);
       final programState = ref.watch(trainingProgramStateProvider);
       return TrainingProgramController(
         service,
@@ -45,30 +43,25 @@ final trainingProgramControllerProvider =
     });
 
 // Helper providers for specific service methods
-final fetchTrainingWeeksProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>((
-      ref,
-      programId,
-    ) async {
-      final services = ref.watch(trainingProgramServicesProvider);
-      return services.fetchTrainingWeeks(programId);
-    });
-
-final getWorkoutsProvider = StreamProvider.family<QuerySnapshot, String>((
+final fetchTrainingWeeksProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((
   ref,
-  weekId,
-) {
+  programId,
+) async {
+  final services = ref.watch(trainingProgramServicesProvider);
+  return services.fetchTrainingWeeks(programId);
+});
+
+final getWorkoutsProvider = StreamProvider.family<QuerySnapshot, String>((ref, weekId) {
   final services = ref.watch(trainingProgramServicesProvider);
   return services.getWorkouts(weekId);
 });
 
-final fetchExercisesProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>((
-      ref,
-      workoutId,
-    ) async {
-      final services = ref.watch(trainingProgramServicesProvider);
-      return services.fetchExercises(workoutId);
-    });
+final fetchExercisesProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((
+  ref,
+  workoutId,
+) async {
+  final services = ref.watch(trainingProgramServicesProvider);
+  return services.fetchExercises(workoutId);
+});
 
 // You can add more helper providers for other service methods as needed

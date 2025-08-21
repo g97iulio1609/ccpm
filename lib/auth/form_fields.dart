@@ -37,16 +37,13 @@ class EmailField extends StatelessWidget {
       label: 'Email',
       child: TextFormField(
         key: const ValueKey('email'),
-        validator: (value) =>
-            (value == null || value.isEmpty || !value.contains('@'))
+        validator: (value) => (value == null || value.isEmpty || !value.contains('@'))
             ? 'Please enter a valid email address'
             : null,
         keyboardType: TextInputType.emailAddress,
         textInputAction: TextInputAction.next,
         autofillHints: const [AutofillHints.email],
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
         decoration: InputDecoration(
           filled: true,
           fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
@@ -56,9 +53,7 @@ class EmailField extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: theme.colorScheme.outline.withAlpha(51),
-            ),
+            borderSide: BorderSide(color: theme.colorScheme.outline.withAlpha(51)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -72,10 +67,7 @@ class EmailField extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           hintText: 'Enter your email',
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
@@ -108,36 +100,26 @@ class PasswordField extends StatelessWidget {
           return TextFormField(
             key: const ValueKey('password'),
             obscureText: !isVisible,
-            validator: (value) =>
-                (value == null || value.isEmpty || value.length < 7)
+            validator: (value) => (value == null || value.isEmpty || value.length < 7)
                 ? 'Password must be at least 7 characters long'
                 : null,
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.password],
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface,
-            ),
+            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
             decoration: InputDecoration(
               filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(
-                77,
-              ),
+              fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.outline.withAlpha(51),
-                ),
+                borderSide: BorderSide(color: theme.colorScheme.outline.withAlpha(51)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -145,15 +127,9 @@ class PasswordField extends StatelessWidget {
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: theme.colorScheme.error,
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               hintText: 'Enter your password',
               hintStyle: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
@@ -189,15 +165,12 @@ class UsernameField extends StatelessWidget {
       label: 'Username',
       child: TextFormField(
         key: const ValueKey('username'),
-        validator: (value) =>
-            (value == null || value.isEmpty || value.length < 4)
+        validator: (value) => (value == null || value.isEmpty || value.length < 4)
             ? 'Please enter at least 4 characters'
             : null,
         textInputAction: TextInputAction.next,
         autofillHints: const [AutofillHints.username],
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
         decoration: InputDecoration(
           filled: true,
           fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
@@ -207,9 +180,7 @@ class UsernameField extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: theme.colorScheme.outline.withAlpha(51),
-            ),
+            borderSide: BorderSide(color: theme.colorScheme.outline.withAlpha(51)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -223,10 +194,7 @@ class UsernameField extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           hintText: 'Choose a username',
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
@@ -260,9 +228,7 @@ class GenderField extends StatelessWidget {
           DropdownMenuItem(value: 'Other', child: Text('Other')),
         ],
         onChanged: (value) => userGender.value = value ?? '',
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
         decoration: InputDecoration(
           filled: true,
           fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(77),
@@ -272,9 +238,7 @@ class GenderField extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: theme.colorScheme.outline.withAlpha(51),
-            ),
+            borderSide: BorderSide(color: theme.colorScheme.outline.withAlpha(51)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -288,19 +252,13 @@ class GenderField extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           hintText: 'Select your gender',
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant.withAlpha(128),
           ),
         ),
-        icon: Icon(
-          Icons.arrow_drop_down,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurfaceVariant),
         dropdownColor: theme.colorScheme.surface,
       ),
     );

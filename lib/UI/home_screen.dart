@@ -36,10 +36,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       await ref.read(usersServiceProvider).fetchUserRole();
     } catch (e) {
       if (mounted) {
-        AppSnackbar.error(
-          context,
-          message: 'Errore durante il caricamento del profilo: $e',
-        );
+        AppSnackbar.error(context, message: 'Errore durante il caricamento del profilo: $e');
       }
     } finally {
       if (mounted) {
@@ -81,10 +78,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       return Scaffold(
         backgroundColor: colorScheme.surface,
         body: Center(
-          child: AppSpinner(
-            message: 'Caricamento...',
-            color: colorScheme.primary,
-          ),
+          child: AppSpinner(message: 'Caricamento...', color: colorScheme.primary),
         ),
       );
     }
@@ -93,18 +87,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: colorScheme.surface,
       drawerEdgeDragWidth: 0,
       appBar: user != null
-          ? CustomAppBar(
-              userRole: userRole,
-              controller: controller,
-              isLargeScreen: isLargeScreen,
-            )
+          ? CustomAppBar(userRole: userRole, controller: controller, isLargeScreen: isLargeScreen)
           : null,
       drawer: user != null && !isLargeScreen
-          ? CustomDrawer(
-              isLargeScreen: isLargeScreen,
-              userRole: userRole,
-              onLogout: _logout,
-            )
+          ? CustomDrawer(isLargeScreen: isLargeScreen, userRole: userRole, onLogout: _logout)
           : null,
       body: PopScope(
         canPop: true,
@@ -113,10 +99,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                colorScheme.surface,
-                colorScheme.surfaceContainerHighest.withAlpha(128),
-              ],
+              colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
               stops: const [0.0, 1.0],
             ),
           ),
@@ -127,11 +110,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                   width: 300,
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
-                    border: Border(
-                      right: BorderSide(
-                        color: colorScheme.outline.withAlpha(26),
-                      ),
-                    ),
+                    border: Border(right: BorderSide(color: colorScheme.outline.withAlpha(26))),
                     boxShadow: [
                       BoxShadow(
                         color: colorScheme.shadow.withAlpha(51),
@@ -151,16 +130,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.only(
-                      topLeft: isLargeScreen
-                          ? Radius.circular(AppTheme.radii.xl)
-                          : Radius.zero,
+                      topLeft: isLargeScreen ? Radius.circular(AppTheme.radii.xl) : Radius.zero,
                     ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.only(
-                      topLeft: isLargeScreen
-                          ? Radius.circular(AppTheme.radii.xl)
-                          : Radius.zero,
+                      topLeft: isLargeScreen ? Radius.circular(AppTheme.radii.xl) : Radius.zero,
                     ),
                     child: widget.child,
                   ),

@@ -23,10 +23,36 @@ class CardioSummary extends StatelessWidget {
     final plannedKcal = _sum<int?>(exercise.series.map((s) => s.kcal));
 
     List<_ChipData> chips = [];
-    if (totalDur > 0) chips.add(_ChipData(Icons.timer, _fmtDuration(totalDur)));
-    if (totalDist > 0) chips.add(_ChipData(Icons.route, _fmtDistance(totalDist)));
-    if (paceSecPerKm != null) chips.add(_ChipData(Icons.directions_run, _fmtPace(paceSecPerKm)));
-    if (speedKmh != null) chips.add(_ChipData(Icons.speed, '${speedKmh.toStringAsFixed(1)} km/h'));
+    
+    // Check if this is HIIT cardio
+    final isHiit = exercise.series.any((s) => s.cardioType == 'hiit');
+    
+    if (isHiit) {
+      // HIIT specific chips
+      final firstHiitSeries = exercise.series.firstWhere((s) => s.cardioType == 'hiit', orElse: () => exercise.series.first);
+      chips.add(_ChipData(Icons.flash_on, 'HIIT'));
+      
+      if (firstHiitSeries.workIntervalSeconds != null && firstHiitSeries.workIntervalSeconds! > 0) {
+        chips.add(_ChipData(Icons.play_arrow, 'Lavoro: ${_fmtDuration(firstHiitSeries.workIntervalSeconds!)}'));
+      }
+      if (firstHiitSeries.restIntervalSeconds != null && firstHiitSeries.restIntervalSeconds! > 0) {
+        chips.add(_ChipData(Icons.pause, 'Riposo: ${_fmtDuration(firstHiitSeries.restIntervalSeconds!)}'));
+      }
+      if (firstHiitSeries.rounds != null && firstHiitSeries.rounds! > 0) {
+        chips.add(_ChipData(Icons.repeat, '${firstHiitSeries.rounds} round'));
+      }
+      
+      // Total duration for HIIT
+      if (totalDur > 0) chips.add(_ChipData(Icons.timer, 'Totale: ${_fmtDuration(totalDur)}'));
+    } else {
+      // Standard cardio chips
+      if (totalDur > 0) chips.add(_ChipData(Icons.timer, _fmtDuration(totalDur)));
+      if (totalDist > 0) chips.add(_ChipData(Icons.route, _fmtDistance(totalDist)));
+      if (paceSecPerKm != null) chips.add(_ChipData(Icons.directions_run, _fmtPace(paceSecPerKm)));
+      if (speedKmh != null) chips.add(_ChipData(Icons.speed, '${speedKmh.toStringAsFixed(1)} km/h'));
+    }
+    
+    // Common chips for both HIIT and standard cardio
     if (avgHr != null && avgHr > 0) chips.add(_ChipData(Icons.monitor_heart, '$avgHr bpm'));
     if (plannedHrPct != null) chips.add(_ChipData(Icons.favorite, '${plannedHrPct.toStringAsFixed(0)}% HRmax'));
     if (plannedIncline != null) chips.add(_ChipData(Icons.trending_up, '${plannedIncline.toStringAsFixed(1)}%'));

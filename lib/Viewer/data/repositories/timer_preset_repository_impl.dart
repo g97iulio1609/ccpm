@@ -21,12 +21,7 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
       try {
         final decoded = jsonDecode(cachedData) as List;
         cachedPresets = decoded
-            .map(
-              (item) => TimerPreset.fromJsonFromCache(
-                item as Map<String, dynamic>,
-                userId,
-              ),
-            )
+            .map((item) => TimerPreset.fromJsonFromCache(item as Map<String, dynamic>, userId))
             .toList();
       } catch (e) {
         // Ignore cache decode errors in release
@@ -47,13 +42,9 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
         await _saveToCache(userId, firestorePresets);
         return _removeDuplicatePresetsAndSort(firestorePresets);
       }
-      return _removeDuplicatePresetsAndSort(
-        cachedPresets,
-      ); // Se Firestore è vuoto, usa la cache
+      return _removeDuplicatePresetsAndSort(cachedPresets); // Se Firestore è vuoto, usa la cache
     } catch (e) {
-      return _removeDuplicatePresetsAndSort(
-        cachedPresets,
-      ); // Fallback sulla cache
+      return _removeDuplicatePresetsAndSort(cachedPresets); // Fallback sulla cache
     }
   }
 
@@ -78,13 +69,9 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
         : preset.copyWith(userId: userId);
     // createdAt sarà gestito da Firestore (serverTimestamp nel toMap), quindi non è necessario recuperarlo qui per la cache.
 
-    final currentPresets = await getTimerPresets(
-      userId,
-    ); // Ricarica per consistenza
+    final currentPresets = await getTimerPresets(userId); // Ricarica per consistenza
     // Aggiungi o aggiorna il preset nella lista
-    final existingIndex = currentPresets.indexWhere(
-      (p) => p.id == createdPreset.id,
-    );
+    final existingIndex = currentPresets.indexWhere((p) => p.id == createdPreset.id);
     if (existingIndex != -1) {
       currentPresets[existingIndex] = createdPreset;
     } else {
@@ -99,20 +86,13 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
     if (preset.id.isEmpty) {
       return;
     }
-    await _firestore
-        .collection('timer_presets')
-        .doc(preset.id)
-        .update(preset.toMap());
+    await _firestore.collection('timer_presets').doc(preset.id).update(preset.toMap());
 
     // Aggiorna la cache
-    final currentPresets = await getTimerPresets(
-      userId,
-    ); // Ricarica per consistenza
+    final currentPresets = await getTimerPresets(userId); // Ricarica per consistenza
     final index = currentPresets.indexWhere((p) => p.id == preset.id);
     if (index != -1) {
-      currentPresets[index] = preset.copyWith(
-        userId: userId,
-      ); // Assicura che userId sia corretto
+      currentPresets[index] = preset.copyWith(userId: userId); // Assicura che userId sia corretto
     }
     await _saveToCache(userId, _removeDuplicatePresetsAndSort(currentPresets));
   }
@@ -129,10 +109,7 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
   }
 
   @override
-  Future<void> saveDefaultTimerPresets(
-    String userId,
-    List<TimerPreset> defaultPresets,
-  ) async {
+  Future<void> saveDefaultTimerPresets(String userId, List<TimerPreset> defaultPresets) async {
     final batch = _firestore.batch();
     for (var preset in defaultPresets) {
       // Genera un ID se non presente, o usa quello fornito se i default preset hanno ID significativi
@@ -150,10 +127,7 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
 
   Future<void> _saveToCache(String userId, List<TimerPreset> presets) async {
     final dataToCache = presets.map((p) => p.toJsonForCache()).toList();
-    await _sharedPreferences.setString(
-      _getCacheKey(userId),
-      jsonEncode(dataToCache),
-    );
+    await _sharedPreferences.setString(_getCacheKey(userId), jsonEncode(dataToCache));
   }
 
   // Rinominato per chiarezza, e assicura l'ordinamento dopo la rimozione duplicati
@@ -165,7 +139,6 @@ class TimerPresetRepositoryImpl implements TimerPresetRepository {
       // Se gli ID sono importanti per l'unicità oltre ai secondi, la logica cambia.
       uniquePresetsBySeconds[preset.seconds] = preset;
     }
-    return uniquePresetsBySeconds.values.toList()
-      ..sort((a, b) => a.seconds.compareTo(b.seconds));
+    return uniquePresetsBySeconds.values.toList()..sort((a, b) => a.seconds.compareTo(b.seconds));
   }
 }

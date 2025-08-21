@@ -11,8 +11,7 @@ class InAppPurchaseScreenMobile extends StatefulWidget {
   const InAppPurchaseScreenMobile({super.key});
 
   @override
-  State<InAppPurchaseScreenMobile> createState() =>
-      _InAppPurchaseScreenMobileState();
+  State<InAppPurchaseScreenMobile> createState() => _InAppPurchaseScreenMobileState();
 }
 
 class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
@@ -29,15 +28,9 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
@@ -70,12 +63,8 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       );
 
       // Recupera i prodotti
-      const Set<String> kIds = {
-        'alphanessoneplussubscription',
-        'coachingalphaness',
-      };
-      final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails(kIds);
+      const Set<String> kIds = {'alphanessoneplussubscription', 'coachingalphaness'};
+      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(kIds);
 
       // Silently ignore missing product IDs in release
 
@@ -158,10 +147,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore: ${e.toString()}'),
-            backgroundColor: AppTheme.error,
-          ),
+          SnackBar(content: Text('Errore: ${e.toString()}'), backgroundColor: AppTheme.error),
         );
       }
     }
@@ -188,9 +174,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
             const SizedBox(height: 16),
             Text(
               'Caricamento prodotti...',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -226,10 +210,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.error.withAlpha(26),
                 foregroundColor: AppTheme.error,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -248,11 +229,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                 color: colorScheme.primary.withAlpha(26),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
-                Icons.shopping_bag_outlined,
-                size: 48,
-                color: colorScheme.primary,
-              ),
+              child: Icon(Icons.shopping_bag_outlined, size: 48, color: colorScheme.primary),
             ),
             const SizedBox(height: 16),
             Text(
@@ -275,10 +252,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                colorScheme.surface,
-                colorScheme.surfaceContainerHighest.withAlpha(128),
-              ],
+              colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
               stops: const [0.0, 1.0],
             ),
           ),
@@ -304,10 +278,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                         children: [
                           Center(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
                                 color: colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(99),
@@ -323,11 +294,10 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                                   const SizedBox(width: 8),
                                   Text(
                                     'Premium',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          color: colorScheme.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -397,8 +367,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               _buildFeatureItem(
                 icon: Icons.fitness_center,
                 title: 'Programmi Illimitati',
-                description:
-                    'Crea e personalizza tutti i programmi che desideri',
+                description: 'Crea e personalizza tutti i programmi che desideri',
                 isFirst: true,
               ),
               _buildFeatureItem(
@@ -409,8 +378,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
               _buildFeatureItem(
                 icon: Icons.analytics_outlined,
                 title: 'Analisi Dettagliate',
-                description:
-                    'Monitora i tuoi progressi con statistiche avanzate',
+                description: 'Monitora i tuoi progressi con statistiche avanzate',
                 isLast: true,
               ),
             ],
@@ -434,9 +402,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: !isLast
-            ? Border(
-                bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
-              )
+            ? Border(bottom: BorderSide(color: colorScheme.outlineVariant, width: 1))
             : null,
         borderRadius: BorderRadius.vertical(
           top: isFirst ? const Radius.circular(24) : Radius.zero,
@@ -468,9 +434,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -501,14 +465,10 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
             const SizedBox(height: 8),
             Text(
               'Seleziona il piano più adatto alle tue esigenze',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
-            ..._products.map(
-              (product) => _buildProductCard(product, glassEnabled),
-            ),
+            ..._products.map((product) => _buildProductCard(product, glassEnabled)),
           ],
         ),
       ),
@@ -539,10 +499,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                   children: [
                     if (isYearly)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: colorScheme.primary,
                           borderRadius: BorderRadius.circular(99),
@@ -550,11 +507,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.star,
-                              size: 16,
-                              color: colorScheme.onPrimary,
-                            ),
+                            Icon(Icons.star, size: 16, color: colorScheme.onPrimary),
                             const SizedBox(width: 4),
                             Text(
                               'Più Popolare',
@@ -582,9 +535,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                   product.price,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isYearly
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
+                    color: isYearly ? colorScheme.primary : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -601,9 +552,7 @@ class _InAppPurchaseScreenMobileState extends State<InAppPurchaseScreenMobile>
                 backgroundColor: isYearly ? colorScheme.primary : null,
                 foregroundColor: isYearly ? colorScheme.onPrimary : null,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                textStyle: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),

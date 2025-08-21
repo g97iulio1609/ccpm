@@ -39,10 +39,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
+            colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
             stops: const [0.0, 1.0],
           ),
         ),
@@ -76,9 +73,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
       onChanged: _usersService.searchUsers,
       decoration: InputDecoration(
         hintText: 'Search users',
-        hintStyle: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
+        hintStyle: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
         prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
         border: InputBorder.none,
         contentPadding: EdgeInsets.symmetric(
@@ -99,11 +94,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: colorScheme.error.withAlpha(128),
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: colorScheme.error.withAlpha(128)),
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
                     'Error loading users',
@@ -115,9 +106,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   SizedBox(height: AppTheme.spacing.sm),
                   Text(
                     snapshot.error.toString(),
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -127,9 +116,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
         }
 
         final users = snapshot.data ?? [];
@@ -169,12 +156,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
         final rows = <List<UserModel>>[];
         for (var i = 0; i < users.length; i += crossAxisCount) {
           rows.add(
-            users.sublist(
-              i,
-              i + crossAxisCount > users.length
-                  ? users.length
-                  : i + crossAxisCount,
-            ),
+            users.sublist(i, i + crossAxisCount > users.length ? users.length : i + crossAxisCount),
           );
         }
 
@@ -195,15 +177,9 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                         Expanded(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              right: i < crossAxisCount - 1
-                                  ? AppTheme.spacing.xl
-                                  : 0,
+                              right: i < crossAxisCount - 1 ? AppTheme.spacing.xl : 0,
                             ),
-                            child: _buildUserCard(
-                              rowUsers[i],
-                              theme,
-                              colorScheme,
-                            ),
+                            child: _buildUserCard(rowUsers[i], theme, colorScheme),
                           ),
                         )
                       else
@@ -227,14 +203,8 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
     return 1;
   }
 
-  Widget _buildUserCard(
-    UserModel user,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final String initials = user.name.isNotEmpty
-        ? user.name.substring(0, 1).toUpperCase()
-        : '?';
+  Widget _buildUserCard(UserModel user, ThemeData theme, ColorScheme colorScheme) {
+    final String initials = user.name.isNotEmpty ? user.name.substring(0, 1).toUpperCase() : '?';
 
     return AppCard(
       glass: ref.watch(uiGlassEnabledProvider),
@@ -257,10 +227,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                       color: colorScheme.primaryContainer.withAlpha(76),
                       shape: BoxShape.circle,
                       image: user.photoURL.isNotEmpty
-                          ? DecorationImage(
-                              image: NetworkImage(user.photoURL),
-                              fit: BoxFit.cover,
-                            )
+                          ? DecorationImage(image: NetworkImage(user.photoURL), fit: BoxFit.cover)
                           : null,
                     ),
                     child: user.photoURL.isEmpty
@@ -277,10 +244,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
                     onPressed: () => _showUserOptions(context, user),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -303,9 +267,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
             SizedBox(height: AppTheme.spacing.sm),
             Text(
               user.email,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -351,11 +313,7 @@ class _UsersDashboardState extends ConsumerState<UsersDashboard> {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.person_outline,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.person_outline, color: colorScheme.primary, size: 24),
         ),
         items: [
           BottomMenuItem(

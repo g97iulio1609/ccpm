@@ -15,11 +15,7 @@ class BulkSeriesForm extends HookConsumerWidget {
   final List<Exercise> exercises;
   final Function(List<Exercise>) onApply;
 
-  const BulkSeriesForm({
-    super.key,
-    required this.exercises,
-    required this.onApply,
-  });
+  const BulkSeriesForm({super.key, required this.exercises, required this.onApply});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -247,9 +243,7 @@ class BulkSeriesForm extends HookConsumerWidget {
                 Expanded(
                   child: Text(
                     exercise.name,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
                   ),
                 ),
                 Text(
@@ -267,11 +261,7 @@ class BulkSeriesForm extends HookConsumerWidget {
     );
   }
 
-  void _updateWeightsFromIntensity(
-    String min,
-    String max,
-    Map<String, num> maxWeights,
-  ) {
+  void _updateWeightsFromIntensity(String min, String max, Map<String, num> maxWeights) {
     // Logica per aggiornare i pesi basati sull'intensità
     // Implementata nel widget parent per aggiornare la UI
   }

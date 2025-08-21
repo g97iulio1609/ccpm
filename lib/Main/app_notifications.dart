@@ -6,10 +6,10 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> initializeNotifications() async {
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('app_icon');
-  const DarwinInitializationSettings initializationSettingsIOS =
-      DarwinInitializationSettings();
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
+    'app_icon',
+  );
+  const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings();
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
@@ -33,30 +33,26 @@ Future<void> showTimerNotification({
   required String body,
   required int notificationId,
 }) async {
-  const AndroidNotificationDetails androidPlatformChannelSpecifics =
-      AndroidNotificationDetails(
-        'exercise_timer_channel',
-        'Timer Esercizi',
-        channelDescription: 'Notifiche per il timer degli esercizi',
-        importance: Importance.max,
-        priority: Priority.high,
-        enableVibration: true,
-        playSound: true,
-        sound: null,
-      );
+  const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+    'exercise_timer_channel',
+    'Timer Esercizi',
+    channelDescription: 'Notifiche per il timer degli esercizi',
+    importance: Importance.max,
+    priority: Priority.high,
+    enableVibration: true,
+    playSound: true,
+    sound: null,
+  );
 
-  const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-      DarwinNotificationDetails(presentSound: true, sound: null);
+  const DarwinNotificationDetails iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+    presentSound: true,
+    sound: null,
+  );
 
   const NotificationDetails platformChannelSpecifics = NotificationDetails(
     android: androidPlatformChannelSpecifics,
     iOS: iOSPlatformChannelSpecifics,
   );
 
-  await flutterLocalNotificationsPlugin.show(
-    notificationId,
-    title,
-    body,
-    platformChannelSpecifics,
-  );
+  await flutterLocalNotificationsPlugin.show(notificationId, title, body, platformChannelSpecifics);
 }

@@ -13,9 +13,8 @@ class ExerciseControllerRefactored {
   bool _isLoading = false;
   String? _errorMessage;
 
-  ExerciseControllerRefactored({
-    required ExerciseBusinessService businessService,
-  }) : _businessService = businessService;
+  ExerciseControllerRefactored({required ExerciseBusinessService businessService})
+    : _businessService = businessService;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -31,19 +30,10 @@ class ExerciseControllerRefactored {
     _clearError();
 
     try {
-      final exercise = await _showExerciseDialog(
-        context,
-        null,
-        program.athleteId,
-      );
+      final exercise = await _showExerciseDialog(context, null, program.athleteId);
       if (exercise != null) {
         _setLoading(true);
-        await _businessService.addExercise(
-          program,
-          weekIndex,
-          workoutIndex,
-          exercise,
-        );
+        await _businessService.addExercise(program, weekIndex, workoutIndex, exercise);
         // state delegated to outer controller
       }
     } catch (e) {
@@ -54,21 +44,11 @@ class ExerciseControllerRefactored {
   }
 
   /// Rimuove un esercizio dal workout
-  void removeExercise(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-  ) {
+  void removeExercise(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
     _clearError();
 
     try {
-      _businessService.removeExercise(
-        program,
-        weekIndex,
-        workoutIndex,
-        exerciseIndex,
-      );
+      _businessService.removeExercise(program, weekIndex, workoutIndex, exerciseIndex);
       // state delegated to outer controller
     } catch (e) {
       _setError('Errore nella rimozione dell\'esercizio: $e');
@@ -85,12 +65,7 @@ class ExerciseControllerRefactored {
     _clearError();
 
     try {
-      _businessService.duplicateExercise(
-        program,
-        weekIndex,
-        workoutIndex,
-        exerciseIndex,
-      );
+      _businessService.duplicateExercise(program, weekIndex, workoutIndex, exerciseIndex);
       // state delegated to outer controller
     } catch (e) {
       _setError('Errore nella duplicazione dell\'esercizio: $e');
@@ -108,10 +83,8 @@ class ExerciseControllerRefactored {
     _clearError();
 
     try {
-      final currentExercise = program
-          .weeks[weekIndex]
-          .workouts[workoutIndex]
-          .exercises[exerciseIndex];
+      final currentExercise =
+          program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
       final updatedExercise = await _showExerciseDialog(
         context,
@@ -147,11 +120,7 @@ class ExerciseControllerRefactored {
 
     try {
       _setLoading(true);
-      await _businessService.updateExerciseWeights(
-        program,
-        exerciseId,
-        exerciseType,
-      );
+      await _businessService.updateExerciseWeights(program, exerciseId, exerciseType);
       // state delegated to outer controller
     } catch (e) {
       _setError('Errore nell\'aggiornamento dei pesi: $e');
@@ -170,11 +139,7 @@ class ExerciseControllerRefactored {
 
     try {
       _setLoading(true);
-      await _businessService.updateSingleProgramExercise(
-        program,
-        exerciseId,
-        exerciseType,
-      );
+      await _businessService.updateSingleProgramExercise(program, exerciseId, exerciseType);
       // state delegated to outer controller
     } catch (e) {
       _setError('Errore nell\'aggiornamento dell\'esercizio: $e');
@@ -194,13 +159,7 @@ class ExerciseControllerRefactored {
     _clearError();
 
     try {
-      _businessService.reorderExercises(
-        program,
-        weekIndex,
-        workoutIndex,
-        oldIndex,
-        newIndex,
-      );
+      _businessService.reorderExercises(program, weekIndex, workoutIndex, oldIndex, newIndex);
       // state delegated to outer controller
     } catch (e) {
       _setError('Errore nel riordinamento degli esercizi: $e');
@@ -241,12 +200,7 @@ class ExerciseControllerRefactored {
     _clearError();
 
     try {
-      _businessService.addSeriesToProgression(
-        program,
-        weekIndex,
-        workoutIndex,
-        exerciseIndex,
-      );
+      _businessService.addSeriesToProgression(program, weekIndex, workoutIndex, exerciseIndex);
       // state delegated to outer controller
     } catch (e) {
       _setError('Errore nell\'aggiunta della serie: $e');
@@ -254,11 +208,7 @@ class ExerciseControllerRefactored {
   }
 
   /// Valida gli esercizi di un workout
-  bool validateWorkoutExercises(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-  ) {
+  bool validateWorkoutExercises(TrainingProgram program, int weekIndex, int workoutIndex) {
     if (!local_validation_utils.ValidationUtils.isValidProgramIndex(
       program,
       weekIndex,
@@ -268,8 +218,7 @@ class ExerciseControllerRefactored {
     }
 
     try {
-      final exercises =
-          program.weeks[weekIndex].workouts[workoutIndex].exercises;
+      final exercises = program.weeks[weekIndex].workouts[workoutIndex].exercises;
       return _businessService.validateWorkoutExercises(exercises);
     } catch (e) {
       _setError('Errore nella validazione degli esercizi: $e');
@@ -292,8 +241,7 @@ class ExerciseControllerRefactored {
     }
 
     try {
-      final exercises =
-          program.weeks[weekIndex].workouts[workoutIndex].exercises;
+      final exercises = program.weeks[weekIndex].workouts[workoutIndex].exercises;
       return _businessService.getExerciseStatistics(exercises);
     } catch (e) {
       _setError('Errore nel calcolo delle statistiche: $e');
@@ -324,10 +272,7 @@ class ExerciseControllerRefactored {
   }
 
   /// Mostra dialog di conferma rimozione
-  Future<bool> showRemoveExerciseConfirmation(
-    BuildContext context,
-    String exerciseName,
-  ) async {
+  Future<bool> showRemoveExerciseConfirmation(BuildContext context, String exerciseName) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -366,10 +311,7 @@ class ExerciseControllerRefactored {
   }
 
   /// Mostra dialog per selezionare esercizio da copiare
-  Future<Exercise?> showCopyExerciseDialog(
-    BuildContext context,
-    TrainingProgram program,
-  ) async {
+  Future<Exercise?> showCopyExerciseDialog(BuildContext context, TrainingProgram program) async {
     final allExercises = <Exercise>[];
 
     // Raccogli tutti gli esercizi del programma
@@ -413,10 +355,7 @@ class ExerciseControllerRefactored {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annulla'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
           ],
         );
       },

@@ -13,18 +13,13 @@ class TrainingVolumeDashboard extends ConsumerStatefulWidget {
   final String programId;
   final String userId;
 
-  const TrainingVolumeDashboard({
-    super.key,
-    required this.programId,
-    required this.userId,
-  });
+  const TrainingVolumeDashboard({super.key, required this.programId, required this.userId});
 
   @override
   TrainingVolumeDashboardState createState() => TrainingVolumeDashboardState();
 }
 
-class TrainingVolumeDashboardState
-    extends ConsumerState<TrainingVolumeDashboard> {
+class TrainingVolumeDashboardState extends ConsumerState<TrainingVolumeDashboard> {
   String? selectedExercise;
   Map<String, List<double>> exerciseVolumes = {};
   Map<String, List<List<ExerciseStats>>> detailedStats = {};
@@ -64,10 +59,7 @@ class TrainingVolumeDashboardState
             child: DropdownButton<String>(
               value: selectedExercise,
               items: exerciseVolumes.keys.map((String exercise) {
-                return DropdownMenuItem<String>(
-                  value: exercise,
-                  child: Text(exercise),
-                );
+                return DropdownMenuItem<String>(value: exercise, child: Text(exercise));
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
@@ -96,9 +88,7 @@ class TrainingVolumeDashboardState
               ),
             ),
           ] else
-            const Expanded(
-              child: Center(child: Text('Nessun esercizio selezionato')),
-            ),
+            const Expanded(child: Center(child: Text('Nessun esercizio selezionato'))),
         ],
       ),
     );
@@ -112,10 +102,7 @@ class TrainingVolumeDashboardState
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    cs.surface,
-                    cs.surfaceContainerHighest.withAlpha(128),
-                  ],
+                  colors: [cs.surface, cs.surfaceContainerHighest.withAlpha(128)],
                 ),
               ),
               child: content,
@@ -165,12 +152,8 @@ class TrainingVolumeDashboardState
                       reservedSize: 30,
                     ),
                   ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 borderData: FlBorderData(show: true),
                 minX: 0,
@@ -250,10 +233,7 @@ class TrainingVolumeDashboardState
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: detailedStats[weekIndex]
-                          .map(
-                            (stats) =>
-                                Text('${stats.rmAverage.toStringAsFixed(2)}%'),
-                          )
+                          .map((stats) => Text('${stats.rmAverage.toStringAsFixed(2)}%'))
                           .toList(),
                     ),
                   ),
@@ -276,8 +256,7 @@ class TrainingVolumeDashboardState
       for (var workout in week.workouts) {
         for (var exercise in workout.exercises) {
           double volume = _calculateExerciseVolume(exercise);
-          weeklyVolumes[exercise.name] =
-              (weeklyVolumes[exercise.name] ?? 0) + volume;
+          weeklyVolumes[exercise.name] = (weeklyVolumes[exercise.name] ?? 0) + volume;
         }
       }
 
@@ -292,27 +271,21 @@ class TrainingVolumeDashboardState
     return exerciseVolumes;
   }
 
-  Future<Map<String, List<List<ExerciseStats>>>>
-  _calculateDetailedExerciseStats(TrainingProgram program) async {
+  Future<Map<String, List<List<ExerciseStats>>>> _calculateDetailedExerciseStats(
+    TrainingProgram program,
+  ) async {
     Map<String, List<List<ExerciseStats>>> detailedStats = {};
     final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
 
     for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
       var week = program.weeks[weekIndex];
 
-      for (
-        int workoutIndex = 0;
-        workoutIndex < week.workouts.length;
-        workoutIndex++
-      ) {
+      for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
         var workout = week.workouts[workoutIndex];
 
         for (var exercise in workout.exercises) {
           if (!detailedStats.containsKey(exercise.name)) {
-            detailedStats[exercise.name] = List.generate(
-              program.weeks.length,
-              (_) => [],
-            );
+            detailedStats[exercise.name] = List.generate(program.weeks.length, (_) => []);
           }
 
           final stats = await _calculateExerciseStats(
@@ -347,17 +320,12 @@ class TrainingVolumeDashboardState
       double seriesVolume = _calculateSeriesVolume(series);
       totalVolume += seriesVolume;
       totalLifts += series.reps * series.sets;
-      totalIntensity +=
-          (series.weight / latestMaxWeight) * series.reps * series.sets;
+      totalIntensity += (series.weight / latestMaxWeight) * series.reps * series.sets;
     }
 
     double averageRM = totalLifts > 0 ? (totalIntensity / totalLifts) * 100 : 0;
 
-    return ExerciseStats(
-      volume: totalVolume,
-      nbls: totalLifts,
-      rmAverage: averageRM,
-    );
+    return ExerciseStats(volume: totalVolume, nbls: totalLifts, rmAverage: averageRM);
   }
 
   double _calculateExerciseVolume(Exercise exercise) {
@@ -378,9 +346,5 @@ class ExerciseStats {
   final int nbls;
   final double rmAverage;
 
-  ExerciseStats({
-    required this.volume,
-    required this.nbls,
-    required this.rmAverage,
-  });
+  ExerciseStats({required this.volume, required this.nbls, required this.rmAverage});
 }

@@ -18,8 +18,7 @@ class SimpleCopyService {
   /// Creates a complete copy of a workout with all new IDs
   static Workout _copyWorkout(Workout sourceWorkout) {
     // Copy exercises first
-    final copiedExercises =
-        sourceWorkout.exercises.map((e) => _copyExercise(e)).toList();
+    final copiedExercises = sourceWorkout.exercises.map((e) => _copyExercise(e)).toList();
 
     // Do not carry over superset mapping as-is to avoid stale IDs.
     // Supersets will be reconstructed from exercise.superSetId when needed.
@@ -72,7 +71,9 @@ class SimpleCopyService {
   }
 
   /// Creates a copy of week progressions with reset completion data
-  static List<List<WeekProgression>>? _copyWeekProgressions(List<List<WeekProgression>>? sourceProgressions) {
+  static List<List<WeekProgression>>? _copyWeekProgressions(
+    List<List<WeekProgression>>? sourceProgressions,
+  ) {
     if (sourceProgressions == null) return null;
 
     return sourceProgressions.map((weekProgression) {

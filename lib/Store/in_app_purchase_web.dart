@@ -30,15 +30,9 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
@@ -76,10 +70,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore nell\'attivazione: $e'),
-            backgroundColor: AppTheme.error,
-          ),
+          SnackBar(content: Text('Errore nell\'attivazione: $e'), backgroundColor: AppTheme.error),
         );
       }
     }
@@ -113,10 +104,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
 
       setState(() => _isLoading = true);
 
-      final response = await _inAppPurchase.createCheckoutSession(
-        userId,
-        product.id,
-      );
+      final response = await _inAppPurchase.createCheckoutSession(userId, product.id);
 
       if (mounted) {
         if (response['success'] == true && response['clientSecret'] != null) {
@@ -131,17 +119,12 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                 amount: product.rawPrice,
                 currency: product.currencyCode.toLowerCase(),
                 onPaymentSuccess: (String paymentId) async {
-                  await _inAppPurchase.handleSuccessfulPayment(
-                    paymentId,
-                    product.id,
-                  );
+                  await _inAppPurchase.handleSuccessfulPayment(paymentId, product.id);
                   if (mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text(
-                          'Abbonamento attivato con successo!',
-                        ),
+                        content: const Text('Abbonamento attivato con successo!'),
                         backgroundColor: AppTheme.success,
                       ),
                     );
@@ -150,10 +133,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                 onPaymentError: (String error) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Errore: $error'),
-                      backgroundColor: AppTheme.error,
-                    ),
+                    SnackBar(content: Text('Errore: $error'), backgroundColor: AppTheme.error),
                   );
                 },
               );
@@ -166,10 +146,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore: ${e.toString()}'),
-            backgroundColor: AppTheme.error,
-          ),
+          SnackBar(content: Text('Errore: ${e.toString()}'), backgroundColor: AppTheme.error),
         );
       }
     } finally {
@@ -199,9 +176,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
             const SizedBox(height: 16),
             Text(
               'Caricamento prodotti...',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -237,10 +212,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.error.withAlpha(26),
                 foregroundColor: AppTheme.error,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -259,11 +231,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                 color: colorScheme.primary.withAlpha(26),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
-                Icons.shopping_bag_outlined,
-                size: 48,
-                color: colorScheme.primary,
-              ),
+              child: Icon(Icons.shopping_bag_outlined, size: 48, color: colorScheme.primary),
             ),
             const SizedBox(height: 16),
             Text(
@@ -286,10 +254,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                colorScheme.surface,
-                colorScheme.surfaceContainerHighest.withAlpha(128),
-              ],
+              colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
               stops: const [0.0, 1.0],
             ),
           ),
@@ -315,10 +280,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                         children: [
                           Center(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
                                 color: colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(99),
@@ -334,11 +296,10 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                                   const SizedBox(width: 8),
                                   Text(
                                     'Premium',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          color: colorScheme.primary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -408,8 +369,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               _buildFeatureItem(
                 icon: Icons.fitness_center,
                 title: 'Programmi Illimitati',
-                description:
-                    'Crea e personalizza tutti i programmi che desideri',
+                description: 'Crea e personalizza tutti i programmi che desideri',
                 isFirst: true,
               ),
               _buildFeatureItem(
@@ -420,8 +380,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
               _buildFeatureItem(
                 icon: Icons.analytics_outlined,
                 title: 'Analisi Dettagliate',
-                description:
-                    'Monitora i tuoi progressi con statistiche avanzate',
+                description: 'Monitora i tuoi progressi con statistiche avanzate',
                 isLast: true,
               ),
             ],
@@ -445,9 +404,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: !isLast
-            ? Border(
-                bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
-              )
+            ? Border(bottom: BorderSide(color: colorScheme.outlineVariant, width: 1))
             : null,
         borderRadius: BorderRadius.vertical(
           top: isFirst ? const Radius.circular(24) : Radius.zero,
@@ -479,9 +436,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -512,14 +467,10 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
             const SizedBox(height: 8),
             Text(
               'Seleziona il piano più adatto alle tue esigenze',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
-            ..._products.map(
-              (product) => _buildProductCard(product, glassEnabled),
-            ),
+            ..._products.map((product) => _buildProductCard(product, glassEnabled)),
           ],
         ),
       ),
@@ -550,10 +501,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                   children: [
                     if (isYearly)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: colorScheme.primary,
                           borderRadius: BorderRadius.circular(99),
@@ -561,11 +509,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.star,
-                              size: 16,
-                              color: colorScheme.onPrimary,
-                            ),
+                            Icon(Icons.star, size: 16, color: colorScheme.onPrimary),
                             const SizedBox(width: 4),
                             Text(
                               'Più Popolare',
@@ -593,9 +537,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                   product.price,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isYearly
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
+                    color: isYearly ? colorScheme.primary : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -612,9 +554,7 @@ class _InAppPurchaseScreenWebState extends State<InAppPurchaseScreenWeb>
                 backgroundColor: isYearly ? colorScheme.primary : null,
                 foregroundColor: isYearly ? colorScheme.onPrimary : null,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                textStyle: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),

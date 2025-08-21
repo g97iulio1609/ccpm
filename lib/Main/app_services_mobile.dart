@@ -13,8 +13,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 class AppServicesMobile implements AppServices {
   AppServicesMobile._privateConstructor();
-  static final AppServicesMobile instance =
-      AppServicesMobile._privateConstructor();
+  static final AppServicesMobile instance = AppServicesMobile._privateConstructor();
 
   final FirebaseRemoteConfig _remoteConfig = FirebaseRemoteConfig.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -121,10 +120,7 @@ class AppServicesMobile implements AppServices {
       User? user = _auth.currentUser;
       if (user == null) return false;
 
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
 
       String role = userData['role'] ?? 'client';
@@ -142,10 +138,7 @@ class AppServicesMobile implements AppServices {
 
         if (expiryDate.toDate().isBefore(DateTime.now())) {
           if (subscriptionPlatform == 'stripe') {
-            await _checkStripeSubscription(
-              user.uid,
-              userData['subscriptionId'],
-            );
+            await _checkStripeSubscription(user.uid, userData['subscriptionId']);
           } else {
             await _checkGooglePlaySubscription(
               user.uid,
@@ -169,14 +162,11 @@ class AppServicesMobile implements AppServices {
     }
   }
 
-  Future<void> _checkStripeSubscription(
-    String userId,
-    String subscriptionId,
-  ) async {
+  Future<void> _checkStripeSubscription(String userId, String subscriptionId) async {
     try {
-      final result = await _functions
-          .httpsCallable('checkStripeSubscription')
-          .call({'subscriptionId': subscriptionId});
+      final result = await _functions.httpsCallable('checkStripeSubscription').call({
+        'subscriptionId': subscriptionId,
+      });
 
       if (result.data['active']) {
         await _firestore.collection('users').doc(userId).update({
@@ -197,9 +187,10 @@ class AppServicesMobile implements AppServices {
     String purchaseToken,
   ) async {
     try {
-      final result = await _functions
-          .httpsCallable('checkGooglePlaySubscription')
-          .call({'productId': productId, 'purchaseToken': purchaseToken});
+      final result = await _functions.httpsCallable('checkGooglePlaySubscription').call({
+        'productId': productId,
+        'purchaseToken': purchaseToken,
+      });
 
       if (result.data['valid']) {
         await _firestore.collection('users').doc(userId).update({

@@ -46,9 +46,7 @@ class AuthForm extends HookConsumerWidget {
             isLogin.value
                 ? 'Accedi per continuare il tuo percorso'
                 : 'Unisciti e inizia la tua trasformazione',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 32),
 
@@ -57,15 +55,10 @@ class AuthForm extends HookConsumerWidget {
             height: 48,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.surface,
-                  theme.colorScheme.surface.withAlpha(26),
-                ],
+                colors: [theme.colorScheme.surface, theme.colorScheme.surface.withAlpha(26)],
               ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.outline.withAlpha(26),
-              ),
+              border: Border.all(color: theme.colorScheme.outline.withAlpha(26)),
             ),
             child: const GoogleSignInButtonWrapper(),
           ),
@@ -74,9 +67,7 @@ class AuthForm extends HookConsumerWidget {
           // Divider
           Row(
             children: [
-              Expanded(
-                child: Divider(color: theme.colorScheme.outline.withAlpha(26)),
-              ),
+              Expanded(child: Divider(color: theme.colorScheme.outline.withAlpha(26))),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -86,9 +77,7 @@ class AuthForm extends HookConsumerWidget {
                   ),
                 ),
               ),
-              Expanded(
-                child: Divider(color: theme.colorScheme.outline.withAlpha(26)),
-              ),
+              Expanded(child: Divider(color: theme.colorScheme.outline.withAlpha(26))),
             ],
           ),
           const SizedBox(height: 24),
@@ -137,9 +126,7 @@ class AuthForm extends HookConsumerWidget {
                       },
                       activeColor: theme.colorScheme.primary,
                       checkColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -163,8 +150,7 @@ class AuthForm extends HookConsumerWidget {
                             ),
                             children: [
                               const TextSpan(
-                                text:
-                                    'Accetto il trattamento dei miei dati personali secondo la ',
+                                text: 'Accetto il trattamento dei miei dati personali secondo la ',
                               ),
                               TextSpan(
                                 text: 'Privacy Policy',
@@ -184,17 +170,11 @@ class AuthForm extends HookConsumerWidget {
                         if (!privacyConsentAccepted.value) ...[
                           const SizedBox(height: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.errorContainer
-                                  .withValues(
-                                    alpha:
-                                        theme.colorScheme.errorContainer.a *
-                                        0.3,
-                                  ),
+                              color: theme.colorScheme.errorContainer.withValues(
+                                alpha: theme.colorScheme.errorContainer.a * 0.3,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
@@ -266,11 +246,7 @@ class AuthForm extends HookConsumerWidget {
                 final email = userEmail.value.trim();
                 if (email.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Inserisci l\'email per reimpostare la password',
-                      ),
-                    ),
+                    const SnackBar(content: Text('Inserisci l\'email per reimpostare la password')),
                   );
                   return;
                 }
@@ -278,16 +254,14 @@ class AuthForm extends HookConsumerWidget {
                   await authService.sendPasswordResetEmail(email);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Email di reimpostazione inviata'),
-                      ),
+                      const SnackBar(content: Text('Email di reimpostazione inviata')),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Errore: ${e.toString()}')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Errore: ${e.toString()}')));
                   }
                 }
               },
@@ -318,11 +292,7 @@ class AuthForm extends HookConsumerWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.security,
-                  size: 16,
-                  color: theme.colorScheme.primary,
-                ),
+                Icon(Icons.security, size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

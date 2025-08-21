@@ -26,10 +26,7 @@ class ExtensionsManager {
     _agent = AIAgent(llm: _llm, extensionsManager: this);
   }
 
-  Future<String?> executeAction(
-    Map<String, dynamic> interpretation,
-    UserModel user,
-  ) async {
+  Future<String?> executeAction(Map<String, dynamic> interpretation, UserModel user) async {
     try {
       // Se riceviamo un testo naturale, lo passiamo all'agente
       if (interpretation['text'] != null) {
@@ -38,8 +35,7 @@ class ExtensionsManager {
 
       // Gestione delle azioni multiple
       if (interpretation['multipleActions'] != null) {
-        final actions =
-            interpretation['multipleActions'] as List<Map<String, dynamic>>;
+        final actions = interpretation['multipleActions'] as List<Map<String, dynamic>>;
         final results = <String>[];
         final userId = user.id;
 
@@ -57,9 +53,7 @@ class ExtensionsManager {
                 break;
               } catch (e) {
                 _logger.e('Error executing action', error: e);
-                results.add(
-                  'Errore nell\'esecuzione dell\'azione: ${e.toString()}',
-                );
+                results.add('Errore nell\'esecuzione dell\'azione: ${e.toString()}');
               }
             }
           }

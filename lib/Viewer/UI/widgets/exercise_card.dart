@@ -4,8 +4,7 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
-import 'package:alphanessone/Viewer/UI/workout_provider.dart'
-    as workout_provider;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
 import 'package:alphanessone/Viewer/UI/widgets/workout_dialogs.dart';
 
 import 'package:alphanessone/Viewer/UI/widgets/series_widgets.dart';
@@ -14,8 +13,7 @@ class ExerciseCard extends ConsumerWidget {
   final Map<String, dynamic> exercise;
   final String userId;
   final String workoutId;
-  final Function(Map<String, dynamic>, List<Map<String, dynamic>>, [int])
-  onNavigateToDetails;
+  final Function(Map<String, dynamic>, List<Map<String, dynamic>>, [int]) onNavigateToDetails;
 
   const ExerciseCard({
     super.key,
@@ -33,8 +31,7 @@ class ExerciseCard extends ConsumerWidget {
         .findFirstNotDoneSeriesIndex(series);
     final isContinueMode = firstNotDoneSeriesIndex > 0;
     final allSeriesCompleted = series.every(
-      (serie) =>
-          ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie),
+      (serie) => ref.read(workout_provider.workoutServiceProvider).isSeriesDone(serie),
     );
     final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -54,11 +51,7 @@ class ExerciseCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!allSeriesCompleted) ...[
-                    _buildStartButton(
-                      context,
-                      firstNotDoneSeriesIndex,
-                      isContinueMode,
-                    ),
+                    _buildStartButton(context, firstNotDoneSeriesIndex, isContinueMode),
                     SizedBox(height: AppTheme.spacing.md),
                   ],
                   const SeriesHeaderRow(),
@@ -82,11 +75,7 @@ class ExerciseCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (!allSeriesCompleted) ...[
-                        _buildStartButton(
-                          context,
-                          firstNotDoneSeriesIndex,
-                          isContinueMode,
-                        ),
+                        _buildStartButton(context, firstNotDoneSeriesIndex, isContinueMode),
                         SizedBox(height: AppTheme.spacing.md),
                       ],
                       Container(
@@ -95,12 +84,8 @@ class ExerciseCard extends ConsumerWidget {
                           horizontal: AppTheme.spacing.sm,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withAlpha(
-                            77,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.sm,
-                          ),
+                          color: colorScheme.surfaceContainerHighest.withAlpha(77),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                         ),
                         child: const SeriesHeaderRow(),
                       ),
@@ -152,8 +137,7 @@ class ExerciseCard extends ConsumerWidget {
           ),
         Expanded(
           child: GestureDetector(
-            onLongPress: () =>
-                _showNoteDialog(context, ref, notes[exercise['id']]),
+            onLongPress: () => _showNoteDialog(context, ref, notes[exercise['id']]),
             child: Text(
               "${exercise['name']} ${exercise['variant'] ?? ''}",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -209,13 +193,7 @@ class ExerciseCard extends ConsumerWidget {
   void _handleMenuSelection(BuildContext context, WidgetRef ref, String value) {
     switch (value) {
       case 'change':
-        WorkoutDialogs.showChangeExerciseDialog(
-          context,
-          ref,
-          exercise,
-          userId,
-          workoutId,
-        );
+        WorkoutDialogs.showChangeExerciseDialog(context, ref, exercise, userId, workoutId);
         break;
       case 'edit_series':
         _showEditSeriesDialog(
@@ -226,36 +204,22 @@ class ExerciseCard extends ConsumerWidget {
         );
         break;
       case 'update_max':
-        WorkoutDialogs.showUpdateMaxWeightDialog(
-          context,
-          ref,
-          exercise,
-          userId,
-        );
+        WorkoutDialogs.showUpdateMaxWeightDialog(context, ref, exercise, userId);
         break;
     }
   }
 
-  Widget _buildStartButton(
-    BuildContext context,
-    int firstNotDoneSeriesIndex,
-    bool isContinueMode,
-  ) {
+  Widget _buildStartButton(BuildContext context, int firstNotDoneSeriesIndex, bool isContinueMode) {
     return AppButton(
       label: isContinueMode ? 'CONTINUA' : 'INIZIA',
-      onPressed: () =>
-          onNavigateToDetails(exercise, [exercise], firstNotDoneSeriesIndex),
+      onPressed: () => onNavigateToDetails(exercise, [exercise], firstNotDoneSeriesIndex),
       variant: AppButtonVariant.primary,
       size: AppButtonSize.md,
       block: true,
     );
   }
 
-  void _showNoteDialog(
-    BuildContext context,
-    WidgetRef ref,
-    String? existingNote,
-  ) {
+  void _showNoteDialog(BuildContext context, WidgetRef ref, String? existingNote) {
     WorkoutDialogs.showNoteDialog(
       context,
       ref,
@@ -272,13 +236,6 @@ class ExerciseCard extends ConsumerWidget {
     Map<String, dynamic> exercise,
     List<Map<String, dynamic>> series,
   ) {
-    WorkoutDialogs.showSeriesEditDialog(
-      context,
-      ref,
-      exercise,
-      series,
-      userId,
-      workoutId,
-    );
+    WorkoutDialogs.showSeriesEditDialog(context, ref, exercise, series, userId, workoutId);
   }
 }

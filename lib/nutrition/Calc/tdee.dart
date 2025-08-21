@@ -74,18 +74,14 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       }
 
       // Get most recent measurement
-      final measurements = await measurementsService
-          .getMeasurements(userId: widget.userId)
-          .first;
+      final measurements = await measurementsService.getMeasurements(userId: widget.userId).first;
       if (measurements.isNotEmpty) {
         final recentMeasurement = measurements.first;
         _weight = recentMeasurement.weight;
       }
 
       // Get most recent nutrition data
-      final nutritionData = await tdeeService.getMostRecentNutritionData(
-        widget.userId,
-      );
+      final nutritionData = await tdeeService.getMostRecentNutritionData(widget.userId);
       if (nutritionData != null) {
         _activityLevel = nutritionData['activityLevel'] as double? ?? 1.2;
         _tdee = (nutritionData['tdee'] as num?)?.toInt() ?? 0;
@@ -93,20 +89,14 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       }
 
       setState(() {
-        _ageController.text = _birthdate != null
-            ? _calculateAge(_birthdate!).toString()
-            : '';
+        _ageController.text = _birthdate != null ? _calculateAge(_birthdate!).toString() : '';
         _heightController.text = _height.toString();
         _weightController.text = _weight.toString();
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Errore nel caricamento dei dati. Riprova più tardi.',
-            ),
-          ),
+          const SnackBar(content: Text('Errore nel caricamento dei dati. Riprova più tardi.')),
         );
       }
     }
@@ -117,11 +107,9 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
       _formKey.currentState!.save();
 
       if (_birthdate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Seleziona una data di nascita valida.'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Seleziona una data di nascita valida.')));
         return;
       }
 
@@ -136,11 +124,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         bmr = 447.593 + (9.247 * _weight) + (3.098 * _height) - (4.330 * age);
       } else {
         // Altro o non specificato
-        bmr =
-            (88.362 + 447.593) / 2 +
-            (11.322 * _weight) +
-            (3.9485 * _height) -
-            (5.0035 * age);
+        bmr = (88.362 + 447.593) / 2 + (11.322 * _weight) + (3.9485 * _height) - (5.0035 * age);
       }
 
       _tdee = (bmr * _activityLevel).round();
@@ -173,20 +157,14 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'TDEE e macronutrienti calcolati e salvati con successo!',
-              ),
+              content: Text('TDEE e macronutrienti calcolati e salvati con successo!'),
             ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Errore nel salvataggio dei dati. Riprova più tardi.',
-              ),
-            ),
+            const SnackBar(content: Text('Errore nel salvataggio dei dati. Riprova più tardi.')),
           );
         }
       }
@@ -210,10 +188,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
+            colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
             stops: const [0.0, 1.0],
           ),
         ),
@@ -231,9 +206,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                      border: Border.all(
-                        color: colorScheme.outline.withAlpha(26),
-                      ),
+                      border: Border.all(color: colorScheme.outline.withAlpha(26)),
                       boxShadow: AppTheme.elevations.small,
                     ),
                     child: Column(
@@ -280,9 +253,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                     decoration: BoxDecoration(
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                      border: Border.all(
-                        color: colorScheme.outline.withAlpha(26),
-                      ),
+                      border: Border.all(color: colorScheme.outline.withAlpha(26)),
                       boxShadow: AppTheme.elevations.small,
                     ),
                     child: Column(
@@ -297,10 +268,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primary,
-                          colorScheme.primary.withAlpha(204),
-                        ],
+                        colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
                       ),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       boxShadow: [
@@ -331,10 +299,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                     ),
                   ),
 
-                  if (_tdee > 0) ...[
-                    SizedBox(height: AppTheme.spacing.xl),
-                    _buildTDEEResult(),
-                  ],
+                  if (_tdee > 0) ...[SizedBox(height: AppTheme.spacing.xl), _buildTDEEResult()],
                 ],
               ),
             ),
@@ -380,9 +345,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           theme: theme,
           colorScheme: colorScheme,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-          ],
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
           suffixText: "cm",
         ),
         SizedBox(height: AppTheme.spacing.lg),
@@ -394,9 +357,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           theme: theme,
           colorScheme: colorScheme,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-          ],
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
           suffixText: "kg",
         ),
         SizedBox(height: AppTheme.spacing.lg),
@@ -421,18 +382,12 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                   value: entry.key,
                   child: Text(
                     entry.value,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                   ),
                 );
               }).toList(),
               decoration: InputDecoration(
-                prefixIcon: Icon(
-                  Icons.person_outline,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
+                prefixIcon: Icon(Icons.person_outline, color: colorScheme.primary, size: 20),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(AppTheme.spacing.md),
               ),
@@ -463,19 +418,13 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                   value: entry.value,
                   child: Text(
                     _getActivityLevelDescription(entry.key),
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                     overflow: TextOverflow.ellipsis,
                   ),
                 );
               }).toList(),
               decoration: InputDecoration(
-                prefixIcon: Icon(
-                  Icons.directions_run,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
+                prefixIcon: Icon(Icons.directions_run, color: colorScheme.primary, size: 20),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(AppTheme.spacing.md),
               ),
@@ -512,11 +461,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
                   color: colorScheme.primaryContainer.withAlpha(76),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.local_fire_department,
-                  color: colorScheme.primary,
-                  size: 32,
-                ),
+                child: Icon(Icons.local_fire_department, color: colorScheme.primary, size: 32),
               ),
               SizedBox(width: AppTheme.spacing.md),
               Text(
@@ -572,9 +517,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
           // Descrizione
           Text(
             'Questo è il tuo fabbisogno calorico giornaliero stimato per mantenere il tuo peso attuale.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
 
@@ -619,16 +562,9 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
     return Container(
       decoration: BoxDecoration(
         gradient: isPrimary
-            ? LinearGradient(
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withAlpha(204),
-                ],
-              )
+            ? LinearGradient(colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)])
             : null,
-        color: isPrimary
-            ? null
-            : colorScheme.surfaceContainerHighest.withAlpha(76),
+        color: isPrimary ? null : colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary
             ? [
@@ -655,18 +591,14 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
               children: [
                 Icon(
                   icon,
-                  color: isPrimary
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
+                  color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 SizedBox(width: AppTheme.spacing.sm),
                 Text(
                   label,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
+                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -723,8 +655,7 @@ class TDEEScreenState extends ConsumerState<TDEEScreen> {
   int _calculateAge(DateTime birthdate) {
     final now = DateTime.now();
     int age = now.year - birthdate.year;
-    if (now.month < birthdate.month ||
-        (now.month == birthdate.month && now.day < birthdate.day)) {
+    if (now.month < birthdate.month || (now.month == birthdate.month && now.day < birthdate.day)) {
       age--;
     }
     return age;

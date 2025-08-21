@@ -18,21 +18,16 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
     ),
   );
 
-  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
-    region: 'europe-west1',
-  );
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static const String _baseUrl =
-      'https://europe-west1-alphaness-322423.cloudfunctions.net';
+  static const String _baseUrl = 'https://europe-west1-alphaness-322423.cloudfunctions.net';
 
   // Lista interna dei prodotti
   final List<Product> _products = [];
 
   // Getter per i dettagli dei prodotti
   Map<String, List<Product>> get productDetailsByProductId {
-    _logger.d(
-      'Recupero dettagli prodotti. Prodotti disponibili: ${_products.length}',
-    );
+    _logger.d('Recupero dettagli prodotti. Prodotti disponibili: ${_products.length}');
     final Map<String, List<Product>> result = {};
     for (var product in _products) {
       if (!result.containsKey(product.id)) {
@@ -47,12 +42,8 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
   Future<List<Product>> getProducts() async {
     _logger.i('🌐 Recupero prodotti da Firestore');
     try {
-      final QuerySnapshot productsSnapshot = await _firestore
-          .collection('products')
-          .get();
-      _logger.d(
-        'Trovati ${productsSnapshot.docs.length} prodotti in Firestore',
-      );
+      final QuerySnapshot productsSnapshot = await _firestore.collection('products').get();
+      _logger.d('Trovati ${productsSnapshot.docs.length} prodotti in Firestore');
 
       if (productsSnapshot.docs.isEmpty) {
         _logger.w('⚠️ Nessun prodotto trovato in Firestore');
@@ -89,10 +80,7 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
   }
 
   @override
-  Future<Map<String, dynamic>> createCheckoutSession(
-    String userId,
-    String productId,
-  ) async {
+  Future<Map<String, dynamic>> createCheckoutSession(String userId, String productId) async {
     try {
       // Trova il prodotto corrispondente per ottenere lo stripePriceId
       final product = _products.firstWhere(
@@ -105,13 +93,11 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
       _logger.d('- ProductId: $productId');
       _logger.d('- StripePriceId: ${product.stripePriceId}');
 
-      final response = await _functions
-          .httpsCallable('createCheckoutSession')
-          .call({
-            'userId': userId,
-            'productId': productId,
-            'priceId': product.stripePriceId,
-          });
+      final response = await _functions.httpsCallable('createCheckoutSession').call({
+        'userId': userId,
+        'productId': productId,
+        'priceId': product.stripePriceId,
+      });
 
       final data = response.data as Map<String, dynamic>;
       _logger.d('🐛 Risposta server: $data');
@@ -119,24 +105,16 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
       if (data['success'] == true && data['clientSecret'] != null) {
         return {'success': true, 'clientSecret': data['clientSecret']};
       } else {
-        throw Exception(
-          'Risposta non valida dal server: ${data['error'] ?? 'Errore sconosciuto'}',
-        );
+        throw Exception('Risposta non valida dal server: ${data['error'] ?? 'Errore sconosciuto'}');
       }
     } catch (e) {
-      _logger.e(
-        '⛔ Errore nella creazione della sessione di checkout',
-        error: e,
-      );
+      _logger.e('⛔ Errore nella creazione della sessione di checkout', error: e);
       rethrow;
     }
   }
 
   @override
-  Future<void> handleSuccessfulPayment(
-    String purchaseId,
-    String productId,
-  ) async {
+  Future<void> handleSuccessfulPayment(String purchaseId, String productId) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -146,10 +124,7 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
       final token = await currentUser.getIdToken();
       final response = await http.post(
         Uri.parse('$_baseUrl/handleSuccessfulPayment'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
         body: json.encode({
           'userId': currentUser.uid,
           'purchaseId': purchaseId,
@@ -159,9 +134,7 @@ class InAppPurchaseServiceWeb implements BaseInAppPurchaseService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Errore nella gestione del pagamento: ${response.statusCode}',
-        );
+        throw Exception('Errore nella gestione del pagamento: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Errore nella gestione del pagamento: $e');

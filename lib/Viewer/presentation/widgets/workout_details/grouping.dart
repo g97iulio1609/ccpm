@@ -1,9 +1,7 @@
 import 'package:alphanessone/shared/shared.dart';
 
 /// Groups exercises by superSetId. Singletons are returned as their own groups.
-Map<String?, List<Exercise>> groupExercisesBySuperSet(
-  List<Exercise> exercises,
-) {
+Map<String?, List<Exercise>> groupExercisesBySuperSet(List<Exercise> exercises) {
   final Map<String?, List<Exercise>> temp = {};
   for (final exercise in exercises) {
     final superSetId = exercise.superSetId;

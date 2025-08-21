@@ -83,8 +83,7 @@ class AIKeysModel {
       personalGeminiKey: personalGeminiKey ?? this.personalGeminiKey,
       personalClaudeKey: personalClaudeKey ?? this.personalClaudeKey,
       personalAzureKey: personalAzureKey ?? this.personalAzureKey,
-      personalAzureEndpoint:
-          personalAzureEndpoint ?? this.personalAzureEndpoint,
+      personalAzureEndpoint: personalAzureEndpoint ?? this.personalAzureEndpoint,
       userId: userId ?? this.userId,
     );
   }

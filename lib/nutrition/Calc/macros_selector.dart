@@ -122,10 +122,7 @@ class MacrosCalculator {
   static const double proteinCaloriesPerGram = 4;
   static const double fatCaloriesPerGram = 9;
 
-  static MacroData calculateMacrosFromPercentages(
-    double tdee,
-    MacroData percentages,
-  ) {
+  static MacroData calculateMacrosFromPercentages(double tdee, MacroData percentages) {
     double carbsCalories = tdee * percentages.carbs / 100;
     double proteinCalories = tdee * percentages.protein / 100;
     double fatCalories = tdee * percentages.fat / 100;
@@ -137,10 +134,7 @@ class MacrosCalculator {
     );
   }
 
-  static MacroData calculateMacrosFromGramsPerKg(
-    double weight,
-    MacroData gramsPerKg,
-  ) {
+  static MacroData calculateMacrosFromGramsPerKg(double weight, MacroData gramsPerKg) {
     return MacroData(
       carbs: gramsPerKg.carbs * weight,
       protein: gramsPerKg.protein * weight,
@@ -172,8 +166,11 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
   bool _autoAdjustMacros = true;
   bool _isLoading = true;
 
-  final Map<String, Map<MacroUpdateType, TextEditingController>> _controllers =
-      {'carbs': {}, 'protein': {}, 'fat': {}};
+  final Map<String, Map<MacroUpdateType, TextEditingController>> _controllers = {
+    'carbs': {},
+    'protein': {},
+    'fat': {},
+  };
 
   @override
   void initState() {
@@ -200,12 +197,8 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       final measurementsService = ref.read(measurementsServiceProvider);
       final nutritionData = await _getMostRecentNutritionData(widget.userId);
 
-      final measurements = await measurementsService
-          .getMeasurements(userId: widget.userId)
-          .first;
-      final mostRecentWeight = measurements.isNotEmpty
-          ? measurements.first.weight
-          : 0.0;
+      final measurements = await measurementsService.getMeasurements(userId: widget.userId).first;
+      final mostRecentWeight = measurements.isNotEmpty ? measurements.first.weight : 0.0;
 
       if (nutritionData != null) {
         ref
@@ -220,8 +213,6 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
           protein: nutritionData['protein']?.toDouble() ?? 0.0,
           fat: nutritionData['fat']?.toDouble() ?? 0.0,
         );
-
-        
 
         if (!mounted) return;
 
@@ -241,9 +232,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     }
   }
 
-  Future<Map<String, dynamic>?> _getMostRecentNutritionData(
-    String userId,
-  ) async {
+  Future<Map<String, dynamic>?> _getMostRecentNutritionData(String userId) async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
@@ -264,33 +253,22 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
   MacroData _calculatePercentagesFromGrams(MacroData macrosGrams) {
     try {
-      double totalCalories = MacrosCalculator.calculateTotalCalories(
-        macrosGrams,
-      );
+      double totalCalories = MacrosCalculator.calculateTotalCalories(macrosGrams);
       if (totalCalories <= 0) return MacroData(carbs: 0, protein: 0, fat: 0);
 
       return MacroData(
         carbs:
-            ((macrosGrams.carbs *
-                        MacrosCalculator.carbsCaloriesPerGram /
-                        totalCalories *
-                        100)
+            ((macrosGrams.carbs * MacrosCalculator.carbsCaloriesPerGram / totalCalories * 100)
                     .clamp(0.0, 100.0))
                 .roundToDouble(),
         protein:
-            ((macrosGrams.protein *
-                        MacrosCalculator.proteinCaloriesPerGram /
-                        totalCalories *
-                        100)
+            ((macrosGrams.protein * MacrosCalculator.proteinCaloriesPerGram / totalCalories * 100)
                     .clamp(0.0, 100.0))
                 .roundToDouble(),
-        fat:
-            ((macrosGrams.fat *
-                        MacrosCalculator.fatCaloriesPerGram /
-                        totalCalories *
-                        100)
-                    .clamp(0.0, 100.0))
-                .roundToDouble(),
+        fat: ((macrosGrams.fat * MacrosCalculator.fatCaloriesPerGram / totalCalories * 100).clamp(
+          0.0,
+          100.0,
+        )).roundToDouble(),
       );
     } catch (e) {
       return MacroData(carbs: 0, protein: 0, fat: 0);
@@ -305,11 +283,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
     }
 
     for (var macro in ['carbs', 'protein', 'fat']) {
-      updateController(
-        macro,
-        MacroUpdateType.grams,
-        _getMacroValue(_tempMacros, macro),
-      );
+      updateController(macro, MacroUpdateType.grams, _getMacroValue(_tempMacros, macro));
       updateController(
         macro,
         MacroUpdateType.percentage,
@@ -398,11 +372,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         SizedBox(height: AppTheme.spacing.sm),
         Text(
           '${totalCalories.toStringAsFixed(0)} kcal',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.primary,
-          ),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.primary),
         ),
       ],
     );
@@ -439,9 +409,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       children: ['carbs', 'protein', 'fat'].map((macro) {
         final value = _getDisplayValue(macro, userData);
         final calories = _getCalories(macro, macros);
-        final percentage = userData.tdee > 0
-            ? (calories / userData.tdee * 100).clamp(0, 100)
-            : 0.0;
+        final percentage = userData.tdee > 0 ? (calories / userData.tdee * 100).clamp(0, 100) : 0.0;
         final maxValue = _getSliderMax(
           macro,
           userData,
@@ -456,11 +424,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
               color: _getMacroColor(macro).withAlpha(77),
               borderRadius: BorderRadius.circular(AppTheme.radii.md),
             ),
-            child: Icon(
-              _getMacroIcon(macro),
-              color: _getMacroColor(macro),
-              size: 20,
-            ),
+            child: Icon(_getMacroIcon(macro), color: _getMacroColor(macro), size: 20),
           ),
           children: [
             Row(
@@ -472,8 +436,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
                     value: value.clamp(0, maxValue),
                     min: 0,
                     max: maxValue,
-                    onChanged: (newValue) =>
-                        _updateMacro(macro, newValue, userData),
+                    onChanged: (newValue) => _updateMacro(macro, newValue, userData),
                     activeColor: _getMacroColor(macro),
                   ),
                 ),
@@ -483,12 +446,9 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
                   child: AppInput(
                     controller: _controllers[macro]![_currentUpdateType]!,
                     label: '',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     suffixText: _getSuffixText(),
-                    onChanged: (value) =>
-                        _handleTextFieldChange(macro, value, userData),
+                    onChanged: (value) => _handleTextFieldChange(macro, value, userData),
                   ),
                 ),
               ],
@@ -525,8 +485,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         });
       },
       label: 'Auto Adjust Macros',
-      helperText:
-          'Automatically adjust macros to match your daily calorie target',
+      helperText: 'Automatically adjust macros to match your daily calorie target',
       icon: Icons.auto_fix_high,
     );
   }
@@ -610,9 +569,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       case MacroUpdateType.grams:
         return _getMacroValue(_tempMacros, macro);
       case MacroUpdateType.gramsPerKg:
-        return userData.weight > 0
-            ? _getMacroValue(_tempMacros, macro) / userData.weight
-            : 0.0;
+        return userData.weight > 0 ? _getMacroValue(_tempMacros, macro) / userData.weight : 0.0;
       case MacroUpdateType.percentage:
         return _getMacroValue(_tempMacrosPercentages, macro);
     }
@@ -624,20 +581,12 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
         switch (_currentUpdateType) {
           case MacroUpdateType.grams:
             _tempMacros = _setMacroValue(_tempMacros, macro, value.abs());
-            _tempMacrosPercentages = _calculatePercentagesFromGrams(
-              _tempMacros,
-            );
+            _tempMacrosPercentages = _calculatePercentagesFromGrams(_tempMacros);
             break;
           case MacroUpdateType.gramsPerKg:
             if (userData.weight > 0) {
-              _tempMacros = _setMacroValue(
-                _tempMacros,
-                macro,
-                (value * userData.weight).abs(),
-              );
-              _tempMacrosPercentages = _calculatePercentagesFromGrams(
-                _tempMacros,
-              );
+              _tempMacros = _setMacroValue(_tempMacros, macro, (value * userData.weight).abs());
+              _tempMacrosPercentages = _calculatePercentagesFromGrams(_tempMacros);
             }
             break;
           case MacroUpdateType.percentage:
@@ -668,9 +617,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
 
     if (_currentUpdateType == MacroUpdateType.percentage) {
       if (_autoAdjustMacros) {
-        _tempMacrosPercentages = _adjustMacroPercentages(
-          _tempMacrosPercentages,
-        );
+        _tempMacrosPercentages = _adjustMacroPercentages(_tempMacrosPercentages);
       }
       finalMacros = MacrosCalculator.calculateMacrosFromPercentages(
         userData.tdee,
@@ -716,10 +663,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
             .collection('users')
             .doc(userId)
             .collection('mynutrition')
-            .where(
-              'date',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart),
-            )
+            .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
             .orderBy('date', descending: true)
             .limit(1)
             .get();
@@ -797,38 +741,36 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       return macros;
     }
 
-    double totalCarbsCalories =
-        macros.carbs * MacrosCalculator.carbsCaloriesPerGram;
-    double totalProteinCalories =
-        macros.protein * MacrosCalculator.proteinCaloriesPerGram;
+    double totalCarbsCalories = macros.carbs * MacrosCalculator.carbsCaloriesPerGram;
+    double totalProteinCalories = macros.protein * MacrosCalculator.proteinCaloriesPerGram;
     double totalFatCalories = macros.fat * MacrosCalculator.fatCaloriesPerGram;
 
     double carbsRatio = totalCarbsCalories / totalCalories;
     double proteinRatio = totalProteinCalories / totalCalories;
     double fatRatio = totalFatCalories / totalCalories;
 
-    double newCarbsCalories =
-        totalCarbsCalories + remainingCalories * carbsRatio;
-    double newProteinCalories =
-        totalProteinCalories + remainingCalories * proteinRatio;
+    double newCarbsCalories = totalCarbsCalories + remainingCalories * carbsRatio;
+    double newProteinCalories = totalProteinCalories + remainingCalories * proteinRatio;
     double newFatCalories = totalFatCalories + remainingCalories * fatRatio;
 
-    double newCarbs = (newCarbsCalories / MacrosCalculator.carbsCaloriesPerGram)
-        .clamp(0, double.infinity);
-    double newProtein =
-        (newProteinCalories / MacrosCalculator.proteinCaloriesPerGram).clamp(
-          0,
-          double.infinity,
-        );
-    double newFat = (newFatCalories / MacrosCalculator.fatCaloriesPerGram)
-        .clamp(0, double.infinity);
+    double newCarbs = (newCarbsCalories / MacrosCalculator.carbsCaloriesPerGram).clamp(
+      0,
+      double.infinity,
+    );
+    double newProtein = (newProteinCalories / MacrosCalculator.proteinCaloriesPerGram).clamp(
+      0,
+      double.infinity,
+    );
+    double newFat = (newFatCalories / MacrosCalculator.fatCaloriesPerGram).clamp(
+      0,
+      double.infinity,
+    );
 
     return MacroData(carbs: newCarbs, protein: newProtein, fat: newFat);
   }
 
   double _getSliderMax(String macro, UserData userData, double totalCalories) {
-    double remainingCalories =
-        userData.tdee - totalCalories + _getCalories(macro, _tempMacros);
+    double remainingCalories = userData.tdee - totalCalories + _getCalories(macro, _tempMacros);
     double maxForMacro = _calculateGramsFromCalories(macro, remainingCalories);
 
     switch (_currentUpdateType) {
@@ -868,8 +810,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
   void _handleTextFieldChange(String macro, String value, UserData userData) {
     try {
       // Mantieni la posizione del cursore
-      final cursorPosition =
-          _controllers[macro]![_currentUpdateType]!.selection.base.offset;
+      final cursorPosition = _controllers[macro]![_currentUpdateType]!.selection.base.offset;
 
       // Pulisci l'input mantenendo solo numeri e punto decimale
       String cleanedValue = value.replaceAll(RegExp(r'[^0-9.]'), '');
@@ -894,9 +835,7 @@ class MacrosSelectorState extends ConsumerState<MacrosSelector> {
       // Aggiorna il controller mantenendo la posizione del cursore
       _controllers[macro]![_currentUpdateType]!.value = TextEditingValue(
         text: cleanedValue,
-        selection: TextSelection.collapsed(
-          offset: min(cursorPosition, cleanedValue.length),
-        ),
+        selection: TextSelection.collapsed(offset: min(cursorPosition, cleanedValue.length)),
       );
     } catch (e, st) {
       // Log input handling errors for diagnostics

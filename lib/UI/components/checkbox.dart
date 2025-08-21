@@ -55,9 +55,7 @@ class AppCheckbox extends StatelessWidget {
                   ? Icon(
                       Icons.check,
                       size: 18,
-                      color: isEnabled
-                          ? colorScheme.onPrimary
-                          : colorScheme.surface,
+                      color: isEnabled ? colorScheme.onPrimary : colorScheme.surface,
                     )
                   : null,
             ),

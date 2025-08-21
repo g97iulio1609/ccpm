@@ -26,8 +26,7 @@ class ProgressionsListPage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ProgressionsListPage> createState() =>
-      _ProgressionsListPageState();
+  ConsumerState<ProgressionsListPage> createState() => _ProgressionsListPageState();
 }
 
 class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
@@ -38,26 +37,19 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _initializeControllers(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initializeControllers());
   }
 
   void _initializeControllers() {
     if (widget.exercise == null) return;
 
-    final programController = ref.read(
-      trainingProgramControllerProvider.notifier,
+    final programController = ref.read(trainingProgramControllerProvider.notifier);
+    final weekProgressions = ProgressionBusinessServiceOptimized.buildWeekProgressions(
+      programController.program.weeks,
+      widget.exercise!,
     );
-    final weekProgressions =
-        ProgressionBusinessServiceOptimized.buildWeekProgressions(
-          programController.program.weeks,
-          widget.exercise!,
-        );
 
-    ref
-        .read(progressionControllersProvider.notifier)
-        .initialize(weekProgressions);
+    ref.read(progressionControllersProvider.notifier).initialize(weekProgressions);
   }
 
   @override
@@ -73,17 +65,14 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
-    final weekProgressions =
-        ProgressionBusinessServiceOptimized.buildWeekProgressions(
-          programState.weeks,
-          widget.exercise!,
-        );
+    final weekProgressions = ProgressionBusinessServiceOptimized.buildWeekProgressions(
+      programState.weeks,
+      widget.exercise!,
+    );
 
     if (controllers.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref
-            .read(progressionControllersProvider.notifier)
-            .initialize(weekProgressions);
+        ref.read(progressionControllersProvider.notifier).initialize(weekProgressions);
       });
       return const _LoadingView();
     }
@@ -108,17 +97,12 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   void _addSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
-    final programController = ref.read(
-      trainingProgramControllerProvider.notifier,
+    final programController = ref.read(trainingProgramControllerProvider.notifier);
+    final weekProgressions = ProgressionBusinessServiceOptimized.buildWeekProgressions(
+      programController.program.weeks,
+      widget.exercise!,
     );
-    final weekProgressions =
-        ProgressionBusinessServiceOptimized.buildWeekProgressions(
-          programController.program.weeks,
-          widget.exercise!,
-        );
-    final controllersNotifier = ref.read(
-      progressionControllersProvider.notifier,
-    );
+    final controllersNotifier = ref.read(progressionControllersProvider.notifier);
 
     try {
       ProgressionBusinessServiceOptimized.addSeriesGroup(
@@ -129,10 +113,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
         exercise: widget.exercise!,
       );
 
-      programController.updateWeekProgressions(
-        weekProgressions,
-        widget.exercise!.exerciseId!,
-      );
+      programController.updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
 
       controllersNotifier.addControllers(weekIndex, sessionIndex, groupIndex);
     } catch (e) {
@@ -141,14 +122,11 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   void _removeSeriesGroup(int weekIndex, int sessionIndex, int groupIndex) {
-    final programController = ref.read(
-      trainingProgramControllerProvider.notifier,
+    final programController = ref.read(trainingProgramControllerProvider.notifier);
+    final weekProgressions = ProgressionBusinessServiceOptimized.buildWeekProgressions(
+      programController.program.weeks,
+      widget.exercise!,
     );
-    final weekProgressions =
-        ProgressionBusinessServiceOptimized.buildWeekProgressions(
-          programController.program.weeks,
-          widget.exercise!,
-        );
 
     try {
       ProgressionBusinessServiceOptimized.removeSeriesGroup(
@@ -169,16 +147,13 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   void _updateSeries(SeriesUpdateParams params) {
-    final programController = ref.read(
-      trainingProgramControllerProvider.notifier,
-    );
+    final programController = ref.read(trainingProgramControllerProvider.notifier);
 
     try {
-      final weekProgressions =
-          ProgressionBusinessServiceOptimized.buildWeekProgressions(
-            programController.program.weeks,
-            widget.exercise!,
-          );
+      final weekProgressions = ProgressionBusinessServiceOptimized.buildWeekProgressions(
+        programController.program.weeks,
+        widget.exercise!,
+      );
 
       // Validate parameters before update
       if (!_validateUpdateParams(params, weekProgressions)) {
@@ -207,9 +182,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     SeriesUpdateParams params,
     List<List<WeekProgression>> weekProgressions,
   ) {
-    if (params.weekIndex < 0 ||
-        params.sessionIndex < 0 ||
-        params.groupIndex < 0) {
+    if (params.weekIndex < 0 || params.sessionIndex < 0 || params.groupIndex < 0) {
       return false;
     }
 
@@ -228,35 +201,28 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   void _updateControllersForSeries(SeriesUpdateParams params) {
     try {
       final controllers = ref.read(progressionControllersProvider.notifier);
-      final programController = ref.read(
-        trainingProgramControllerProvider.notifier,
-      );
+      final programController = ref.read(trainingProgramControllerProvider.notifier);
 
-      final updatedWeekProgressions =
-          ProgressionBusinessServiceOptimized.buildWeekProgressions(
-            programController.program.weeks,
-            widget.exercise!,
-          );
+      final updatedWeekProgressions = ProgressionBusinessServiceOptimized.buildWeekProgressions(
+        programController.program.weeks,
+        widget.exercise!,
+      );
 
       // Validate indices before accessing (local validation)
       if (params.weekIndex < 0 ||
           params.weekIndex >= updatedWeekProgressions.length ||
           params.sessionIndex < 0 ||
-          params.sessionIndex >=
-              updatedWeekProgressions[params.weekIndex].length) {
+          params.sessionIndex >= updatedWeekProgressions[params.weekIndex].length) {
         return;
       }
 
-      final session =
-          updatedWeekProgressions[params.weekIndex][params.sessionIndex];
+      final session = updatedWeekProgressions[params.weekIndex][params.sessionIndex];
       if (session.series.isEmpty) return;
 
       // Get the first series as representative if available
       if (session.series.isNotEmpty) {
         final firstSeries = session.series.first;
-        final representativeSeries = firstSeries.copyWith(
-          sets: session.series.length,
-        );
+        final representativeSeries = firstSeries.copyWith(sets: session.series.length);
 
         controllers.updateControllers(
           params.weekIndex,
@@ -271,9 +237,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   }
 
   Future<void> _handleSave() async {
-    final programController = ref.read(
-      trainingProgramControllerProvider.notifier,
-    );
+    final programController = ref.read(trainingProgramControllerProvider.notifier);
     final controllers = ref.read(progressionControllersProvider);
 
     try {
@@ -308,9 +272,7 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
     }
   }
 
-  void _updateProgressionsWithNewSeries(
-    List<List<WeekProgression>> weekProgressions,
-  ) {
+  void _updateProgressionsWithNewSeries(List<List<WeekProgression>> weekProgressions) {
     ref
         .read(trainingProgramControllerProvider.notifier)
         .updateWeekProgressions(weekProgressions, widget.exercise!.exerciseId!);
@@ -319,20 +281,14 @@ class _ProgressionsListPageState extends ConsumerState<ProgressionsListPage>
   void _showErrorMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Theme.of(context).colorScheme.error),
     );
   }
 
   void _showSuccessMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Theme.of(context).colorScheme.primary),
     );
   }
 }
@@ -372,10 +328,7 @@ class _ProgressionsView extends StatelessWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.lg),
-            child: _SaveButton(
-              onSave: onSave,
-              colorScheme: viewModel.colorScheme,
-            ),
+            child: _SaveButton(onSave: onSave, colorScheme: viewModel.colorScheme),
           ),
         ),
         SliverToBoxAdapter(child: SizedBox(height: AppTheme.spacing.lg)),
@@ -399,10 +352,7 @@ class _SaveButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: const Text(
-        'Salva',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-      ),
+      child: const Text('Salva', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
     );
   }
 }

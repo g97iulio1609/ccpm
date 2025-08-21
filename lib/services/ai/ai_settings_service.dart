@@ -35,11 +35,7 @@ class AISettings {
   final AIModel selectedModel;
   final AIProvider selectedProvider;
 
-  AISettings({
-    this.keys,
-    required this.selectedModel,
-    required this.selectedProvider,
-  });
+  AISettings({this.keys, required this.selectedModel, required this.selectedProvider});
 
   bool hasKeyForProvider(AIProvider provider) {
     if (keys == null) return false;
@@ -57,13 +53,11 @@ class AISettings {
     }
   }
 
-  List<AIProvider> get availableProviders => AIProvider.values
-      .where((provider) => hasKeyForProvider(provider))
-      .toList();
+  List<AIProvider> get availableProviders =>
+      AIProvider.values.where((provider) => hasKeyForProvider(provider)).toList();
 
-  List<AIModel> get availableModels => AIModel.values
-      .where((model) => hasKeyForProvider(model.provider))
-      .toList();
+  List<AIModel> get availableModels =>
+      AIModel.values.where((model) => hasKeyForProvider(model.provider)).toList();
 
   String? getKeyForProvider(AIProvider provider) {
     if (keys == null) return null;
@@ -82,11 +76,7 @@ class AISettings {
 
   String? get azureEndpoint => keys?.getEffectiveKey('azure_endpoint');
 
-  AISettings copyWith({
-    AIKeysModel? keys,
-    AIModel? selectedModel,
-    AIProvider? selectedProvider,
-  }) {
+  AISettings copyWith({AIKeysModel? keys, AIModel? selectedModel, AIProvider? selectedProvider}) {
     return AISettings(
       keys: keys ?? this.keys,
       selectedModel: selectedModel ?? this.selectedModel,
@@ -103,14 +93,8 @@ class AISettingsService {
 
   Future<void> saveSettings(AISettings settings) async {
     if (_prefs == null) return;
-    await _prefs.setString(
-      '${_keyPrefix}selected_model',
-      settings.selectedModel.name,
-    );
-    await _prefs.setString(
-      '${_keyPrefix}selected_provider',
-      settings.selectedProvider.name,
-    );
+    await _prefs.setString('${_keyPrefix}selected_model', settings.selectedModel.name);
+    await _prefs.setString('${_keyPrefix}selected_provider', settings.selectedProvider.name);
   }
 
   AISettings loadSettings({AIKeysModel? keys}) {
@@ -125,13 +109,11 @@ class AISettingsService {
     final settings = AISettings(
       keys: keys,
       selectedModel: AIModel.values.firstWhere(
-        (model) =>
-            model.name == _prefs.getString('${_keyPrefix}selected_model'),
+        (model) => model.name == _prefs.getString('${_keyPrefix}selected_model'),
         orElse: () => AIModel.gpt4o,
       ),
       selectedProvider: AIProvider.values.firstWhere(
-        (provider) =>
-            provider.name == _prefs.getString('${_keyPrefix}selected_provider'),
+        (provider) => provider.name == _prefs.getString('${_keyPrefix}selected_provider'),
         orElse: () => AIProvider.openAI,
       ),
     );
@@ -140,22 +122,16 @@ class AISettingsService {
     final availableProviders = settings.availableProviders;
     AIProvider provider = settings.selectedProvider;
     if (!availableProviders.contains(provider)) {
-      provider = availableProviders.isNotEmpty
-          ? availableProviders.first
-          : AIProvider.openAI;
+      provider = availableProviders.isNotEmpty ? availableProviders.first : AIProvider.openAI;
     }
 
-    final availableModels = AIModel.values
-        .where((model) => model.provider == provider)
-        .toList();
+    final availableModels = AIModel.values.where((model) => model.provider == provider).toList();
     AIModel model;
     final savedModelName = _prefs.getString('${_keyPrefix}selected_model');
     if (availableModels.any((m) => m.name == savedModelName)) {
       model = availableModels.firstWhere((m) => m.name == savedModelName);
     } else {
-      model = availableModels.isNotEmpty
-          ? availableModels.first
-          : AIModel.gpt4o;
+      model = availableModels.isNotEmpty ? availableModels.first : AIModel.gpt4o;
     }
 
     return settings.copyWith(selectedProvider: provider, selectedModel: model);
@@ -166,8 +142,7 @@ final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
   final sharedPreferencesAsync = ref.watch(sharedPreferencesProvider);
   return sharedPreferencesAsync.when(
     data: (sharedPreferences) => AISettingsService(sharedPreferences),
-    loading: () =>
-        AISettingsService(null), // Provide a default or handle loading state
+    loading: () => AISettingsService(null), // Provide a default or handle loading state
     error: (error, stackTrace) {
       Logger().e('Error loading shared preferences: $error');
       return AISettingsService(null); // Handle error state
@@ -175,47 +150,35 @@ final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
   );
 });
 
-final aiSettingsProvider =
-    StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
-      final service = ref.watch(aiSettingsServiceProvider);
-      final keys = ref.watch(aiKeysStreamProvider).value;
-      return AISettingsNotifier(service, keys);
-    });
+final aiSettingsProvider = StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
+  final service = ref.watch(aiSettingsServiceProvider);
+  final keys = ref.watch(aiKeysStreamProvider).value;
+  return AISettingsNotifier(service, keys);
+});
 
 class AISettingsNotifier extends StateNotifier<AISettings> {
   final AISettingsService _service;
 
-  AISettingsNotifier(this._service, AIKeysModel? keys)
-    : super(_service.loadSettings(keys: keys));
+  AISettingsNotifier(this._service, AIKeysModel? keys) : super(_service.loadSettings(keys: keys));
 
   Future<void> updateSelectedModel(AIModel model) async {
-    state = state.copyWith(
-      selectedModel: model,
-      selectedProvider: model.provider,
-    );
+    state = state.copyWith(selectedModel: model, selectedProvider: model.provider);
     await _service.saveSettings(state);
   }
 
   Future<void> updateSelectedProvider(AIProvider provider) async {
     // Trova il primo modello disponibile per il nuovo provider
-    final availableModels = AIModel.values
-        .where((model) => model.provider == provider)
-        .toList();
+    final availableModels = AIModel.values.where((model) => model.provider == provider).toList();
 
     if (availableModels.isNotEmpty) {
-      state = state.copyWith(
-        selectedProvider: provider,
-        selectedModel: availableModels.first,
-      );
+      state = state.copyWith(selectedProvider: provider, selectedModel: availableModels.first);
       await _service.saveSettings(state);
     }
   }
 
   void updateKeys(AIKeysModel? keys) {
     final availableProviders = AIProvider.values
-        .where(
-          (provider) => keys?.getEffectiveKey(_getKeyType(provider)) != null,
-        )
+        .where((provider) => keys?.getEffectiveKey(_getKeyType(provider)) != null)
         .toList();
 
     if (availableProviders.isNotEmpty) {
@@ -229,9 +192,7 @@ class AISettingsNotifier extends StateNotifier<AISettings> {
         state = state.copyWith(
           keys: keys,
           selectedProvider: newProvider,
-          selectedModel: availableModels.isNotEmpty
-              ? availableModels.first
-              : state.selectedModel,
+          selectedModel: availableModels.isNotEmpty ? availableModels.first : state.selectedModel,
         );
       } else {
         state = state.copyWith(keys: keys);

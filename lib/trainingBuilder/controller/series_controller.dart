@@ -23,10 +23,7 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
     // Use the exerciseId as originalExerciseId
     final originalExerciseId = exercise.exerciseId;
@@ -52,9 +49,7 @@ class SeriesController {
     if (seriesList != null && seriesList.isNotEmpty) {
       // Set originalExerciseId for each series
       final updatedSeriesList = seriesList
-          .map(
-            (series) => series.copyWith(originalExerciseId: originalExerciseId),
-          )
+          .map((series) => series.copyWith(originalExerciseId: originalExerciseId))
           .toList();
 
       exercise.series.addAll(updatedSeriesList);
@@ -109,10 +104,7 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
     if (!context.mounted) return;
 
@@ -140,14 +132,9 @@ class SeriesController {
         final List<Series> newSeriesList = List<Series>.from(exercise.series)
           ..removeRange(startIndex, startIndex + currentSeriesGroup.length)
           ..insertAll(startIndex, updatedSeries);
-        final List<Series> recalculated =
-            SeriesBusinessService.recalculateOrders(newSeriesList);
+        final List<Series> recalculated = SeriesBusinessService.recalculateOrders(newSeriesList);
         final updatedExercise = exercise.copyWith(series: recalculated);
-        program
-                .weeks[weekIndex]
-                .workouts[workoutIndex]
-                .exercises[exerciseIndex] =
-            updatedExercise;
+        program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
 
         await SeriesUtils.updateSeriesWeights(
           program,
@@ -170,10 +157,7 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     for (final series in exercise.series) {
       removeSeriesData(program, series);
     }
@@ -193,10 +177,7 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final totalIndex = groupIndex * 1 + seriesIndex;
 
     if (totalIndex < 0 || totalIndex >= exercise.series.length) {
@@ -206,13 +187,7 @@ class SeriesController {
     final series = exercise.series[totalIndex];
     removeSeriesData(program, series);
     exercise.series.removeAt(totalIndex);
-    _updateSeriesOrders(
-      program,
-      weekIndex,
-      workoutIndex,
-      exerciseIndex,
-      totalIndex,
-    );
+    _updateSeriesOrders(program, weekIndex, workoutIndex, exerciseIndex, totalIndex);
     // State update delegated to outer controller
   }
 
@@ -234,13 +209,9 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final updatedExercise = exercise.copyWith(series: updatedSeries);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
-        updatedExercise;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
   }
 
   void _updateSeriesOrders(
@@ -254,17 +225,13 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final recalculated = SeriesBusinessService.recalculateOrders(
       exercise.series,
       startIndex: startIndex,
     );
     final updatedExercise = exercise.copyWith(series: recalculated);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
-        updatedExercise;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
   }
 
   void reorderSeries(
@@ -279,10 +246,7 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
 
     if (oldIndex < 0 ||
         oldIndex >= exercise.series.length ||
@@ -301,23 +265,16 @@ class SeriesController {
       newIndex,
     );
     final updatedExercise = exercise.copyWith(series: reordered);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
-        updatedExercise;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
   }
 
-  bool _isValidIndex(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-  ) {
+  bool _isValidIndex(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
     return weekIndex >= 0 &&
         weekIndex < program.weeks.length &&
         workoutIndex >= 0 &&
         workoutIndex < program.weeks[weekIndex].workouts.length &&
         exerciseIndex >= 0 &&
-        exerciseIndex <
-            program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
+        exerciseIndex < program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
   }
 
   Future<void> updateSeriesWeights(
@@ -353,10 +310,7 @@ class SeriesController {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     if (seriesIndex < 0 || seriesIndex >= exercise.series.length) {
       return;
     }
@@ -370,14 +324,9 @@ class SeriesController {
     );
 
     final updatedExercise = exercise.copyWith(
-      series: SeriesBusinessService.replaceAt(
-        exercise.series,
-        seriesIndex,
-        updatedSeries,
-      ),
+      series: SeriesBusinessService.replaceAt(exercise.series, seriesIndex, updatedSeries),
     );
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
-        updatedExercise;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
 
     await updateSeriesWeights(program, weekIndex, workoutIndex, exerciseIndex);
   }

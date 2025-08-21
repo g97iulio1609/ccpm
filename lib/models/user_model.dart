@@ -61,8 +61,7 @@ class UserModel {
       photoURL: data['photoURL'] ?? '',
       gender: data['gender'] ?? 0, // Assicurati che sia numerico
       uniqueNumber: data['uniqueNumber'],
-      subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)
-          ?.toDate(),
+      subscriptionExpiryDate: (data['subscriptionExpiryDate'] as Timestamp?)?.toDate(),
       productId: data['productId'],
       purchaseToken: data['purchaseToken'],
       currentProgram: data['currentProgram'], // Aggiunto al fromFirestore
@@ -73,8 +72,7 @@ class UserModel {
       height: (data['height'] as num?)?.toDouble(),
       // GDPR Privacy Consent fields
       privacyConsentGiven: data['privacyConsentGiven'] as bool?,
-      privacyConsentTimestamp: (data['privacyConsentTimestamp'] as Timestamp?)
-          ?.toDate(),
+      privacyConsentTimestamp: (data['privacyConsentTimestamp'] as Timestamp?)?.toDate(),
       privacyPolicyVersion: data['privacyPolicyVersion'] as String?,
       lastConsentMethod: data['lastConsentMethod'] as String?,
     );

@@ -56,23 +56,16 @@ class AppDialog extends StatelessWidget {
               ? subtitle as Widget
               : Text(
                   subtitle.toString(),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                 ));
 
-    final header =
-        (resolvedTitleWidget != null || leading != null || trailing != null)
+    final header = (resolvedTitleWidget != null || leading != null || trailing != null)
         ? Container(
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(AppTheme.radii.xl),
-              ),
-              border: Border(
-                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
+              border: Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26))),
             ),
             child: Row(
               children: [
@@ -108,20 +101,15 @@ class AppDialog extends StatelessWidget {
             padding: EdgeInsets.all(AppTheme.spacing.lg),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(AppTheme.radii.xl),
-              ),
-              border: Border(
-                top: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppTheme.radii.xl)),
+              border: Border(top: BorderSide(color: colorScheme.outline.withAlpha(26))),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 for (int i = 0; i < actions!.length; i++) ...[
                   actions![i],
-                  if (i < actions!.length - 1)
-                    SizedBox(width: AppTheme.spacing.md),
+                  if (i < actions!.length - 1) SizedBox(width: AppTheme.spacing.md),
                 ],
               ],
             ),
@@ -158,9 +146,7 @@ class AppDialog extends StatelessWidget {
     final availableHeight = media.size.height - effectiveInsetPadding.vertical;
     final maxDialogHeight = math.max(
       0.0,
-      (maxHeight != null)
-          ? math.min(maxHeight!, availableHeight)
-          : availableHeight,
+      (maxHeight != null) ? math.min(maxHeight!, availableHeight) : availableHeight,
     );
 
     return Dialog(

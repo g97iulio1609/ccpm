@@ -26,10 +26,7 @@ class PrivacyConsentService {
       );
 
       // Salva il consenso nella collezione privacy_consents
-      await _firestore
-          .collection('privacy_consents')
-          .doc(userId)
-          .set(consent.toMap());
+      await _firestore.collection('privacy_consents').doc(userId).set(consent.toMap());
 
       // Aggiorna anche i campi nel documento utente
       await _updateUserConsentFields(userId, consent);
@@ -95,10 +92,7 @@ class PrivacyConsentService {
   /// Ottiene il consenso privacy per un utente
   static Future<PrivacyConsentModel?> getConsentForUser(String userId) async {
     try {
-      final doc = await _firestore
-          .collection('privacy_consents')
-          .doc(userId)
-          .get();
+      final doc = await _firestore.collection('privacy_consents').doc(userId).get();
 
       if (doc.exists && doc.data() != null) {
         return PrivacyConsentModel.fromMap(doc.data()!);
@@ -140,19 +134,14 @@ class PrivacyConsentService {
           .orderBy('consentTimestamp', descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => PrivacyConsentModel.fromMap(doc.data()))
-          .toList();
+      return querySnapshot.docs.map((doc) => PrivacyConsentModel.fromMap(doc.data())).toList();
     } catch (e) {
       throw Exception('Errore nel recuperare tutti i consensi: $e');
     }
   }
 
   /// Aggiorna i campi di consenso nel documento utente
-  static Future<void> _updateUserConsentFields(
-    String userId,
-    PrivacyConsentModel consent,
-  ) async {
+  static Future<void> _updateUserConsentFields(String userId, PrivacyConsentModel consent) async {
     await _firestore.collection('users').doc(userId).update({
       'privacyConsentGiven': consent.consentGiven,
       'privacyConsentTimestamp': Timestamp.fromDate(consent.consentTimestamp),
@@ -186,9 +175,7 @@ class PrivacyConsentService {
   }
 
   /// Esporta i dati di consenso per un utente (per GDPR data portability)
-  static Future<Map<String, dynamic>> exportUserConsentData(
-    String userId,
-  ) async {
+  static Future<Map<String, dynamic>> exportUserConsentData(String userId) async {
     try {
       final consent = await getConsentForUser(userId);
       if (consent == null) {

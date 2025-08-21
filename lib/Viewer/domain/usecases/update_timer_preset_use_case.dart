@@ -26,9 +26,7 @@ class UpdateTimerPresetUseCaseImpl implements UpdateTimerPresetUseCase {
       throw ArgumentError('Il nome del preset non può essere vuoto.');
     }
     if (params.preset.seconds <= 0) {
-      throw ArgumentError(
-        'I secondi del preset devono essere maggiori di zero.',
-      );
+      throw ArgumentError('I secondi del preset devono essere maggiori di zero.');
     }
     await _repository.updateTimerPreset(params.userId, params.preset);
   }

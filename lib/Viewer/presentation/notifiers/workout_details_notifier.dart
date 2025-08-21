@@ -11,16 +11,10 @@ class WorkoutDetailsState {
   final Workout? workout;
   final bool isLoading;
   final String? error;
-  final String?
-  activeExerciseId; // ID dell'esercizio attualmente "aperto" o in focus
+  final String? activeExerciseId; // ID dell'esercizio attualmente "aperto" o in focus
   // Potremmo aggiungere qui altri stati specifici della UI, es. per i dialoghi
 
-  WorkoutDetailsState({
-    this.workout,
-    this.isLoading = false,
-    this.error,
-    this.activeExerciseId,
-  });
+  WorkoutDetailsState({this.workout, this.isLoading = false, this.error, this.activeExerciseId});
 
   WorkoutDetailsState copyWith({
     Workout? workout,
@@ -73,12 +67,7 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
     state = state.copyWith(activeExerciseId: exerciseId);
   }
 
-  Future<void> completeSeries(
-    String seriesId,
-    bool isDone,
-    int repsDone,
-    double weightDone,
-  ) async {
+  Future<void> completeSeries(String seriesId, bool isDone, int repsDone, double weightDone) async {
     // Validazione parametri
     if (seriesId.isEmpty) {
       state = state.copyWith(error: "ID serie mancante");
@@ -94,7 +83,7 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
           weightDone: weightDone,
         ),
       );
-      
+
       // Tenta l'aggiornamento locale, se fallisce ricarichiamo tutto
       try {
         _updateSeriesInLocalState(seriesId, isDone, repsDone, weightDone);
@@ -102,9 +91,49 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
         await _loadWorkout();
       }
     } catch (e) {
-      state = state.copyWith(
-        error: "Errore nel completare la serie: ${e.toString()}",
-      );
+      state = state.copyWith(error: "Errore nel completare la serie: ${e.toString()}");
+    }
+  }
+
+  Future<void> completeCardioSeries(
+    Series series, {
+    int? executedDurationSeconds,
+    int? executedDistanceMeters,
+    int? executedAvgHr,
+  }) async {
+    if (series.id == null || series.id!.isEmpty) {
+      state = state.copyWith(error: "ID serie mancante");
+      return;
+    }
+
+    final updated = series.copyWith(
+      done: true,
+      isCompleted: true,
+      executedDurationSeconds: executedDurationSeconds ?? series.executedDurationSeconds,
+      executedDistanceMeters: executedDistanceMeters ?? series.executedDistanceMeters,
+      executedAvgHr: executedAvgHr ?? series.executedAvgHr,
+    );
+
+    try {
+      await _workoutRepository.updateSeries(updated);
+      _replaceSeriesInLocalState(updated);
+    } catch (e) {
+      state = state.copyWith(error: "Errore nel completare la serie cardio: ${e.toString()}");
+    }
+  }
+
+  void _replaceSeriesInLocalState(Series updated) {
+    final workout = state.workout;
+    if (workout == null) return;
+    try {
+      final newExercises = workout.exercises.map((ex) {
+        final newSeries = ex.series.map((s) => s.id == updated.id ? updated : s).toList();
+        return ex.copyWith(series: newSeries);
+      }).toList();
+      state = state.copyWith(workout: workout.copyWith(exercises: newExercises));
+    } catch (_) {
+      // fallback: reload
+      _loadWorkout();
     }
   }
 
@@ -112,18 +141,12 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
     if (state.workout == null || state.workout!.id == null) return;
     try {
       await _saveExerciseNoteUseCase.call(
-        SaveExerciseNoteParams(
-          workoutId: state.workout!.id!,
-          exerciseId: exerciseId,
-          note: note,
-        ),
+        SaveExerciseNoteParams(workoutId: state.workout!.id!, exerciseId: exerciseId, note: note),
       );
       // Aggiorna solo la nota nell'esercizio specifico
       _updateExerciseNoteInLocalState(exerciseId, note);
     } catch (e) {
-      state = state.copyWith(
-        error: "Errore nel salvare la nota: ${e.toString()}",
-      );
+      state = state.copyWith(error: "Errore nel salvare la nota: ${e.toString()}");
     }
   }
 
@@ -131,27 +154,17 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
     if (state.workout == null || state.workout!.id == null) return;
     try {
       await _deleteExerciseNoteUseCase.call(
-        DeleteExerciseNoteParams(
-          workoutId: state.workout!.id!,
-          exerciseId: exerciseId,
-        ),
+        DeleteExerciseNoteParams(workoutId: state.workout!.id!, exerciseId: exerciseId),
       );
       // Rimuove la nota dall'esercizio specifico
       _updateExerciseNoteInLocalState(exerciseId, null);
     } catch (e) {
-      state = state.copyWith(
-        error: "Errore nell'eliminare la nota: ${e.toString()}",
-      );
+      state = state.copyWith(error: "Errore nell'eliminare la nota: ${e.toString()}");
     }
   }
 
   /// Aggiorna solo la serie specifica nello stato locale senza ricaricare tutto
-  void _updateSeriesInLocalState(
-    String seriesId,
-    bool isDone,
-    int repsDone,
-    double weightDone,
-  ) {
+  void _updateSeriesInLocalState(String seriesId, bool isDone, int repsDone, double weightDone) {
     if (state.workout == null) return;
 
     final updatedWorkout = _updateSeriesInWorkout(
@@ -180,7 +193,7 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
     }
 
     bool updated = false;
-    
+
     try {
       final updatedExercises = workout.exercises.map((exercise) {
         final updatedSeries = exercise.series.map((series) {
@@ -207,7 +220,7 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
       _loadWorkout();
       return null;
     }
-    
+
     return null;
   }
 
@@ -236,10 +249,7 @@ class WorkoutDetailsNotifier extends StateNotifier<WorkoutDetailsState> {
 
 // Provider per WorkoutDetailsNotifier
 final workoutDetailsNotifierProvider = StateNotifierProvider.family
-    .autoDispose<WorkoutDetailsNotifier, WorkoutDetailsState, String>((
-      ref,
-      workoutId,
-    ) {
+    .autoDispose<WorkoutDetailsNotifier, WorkoutDetailsState, String>((ref, workoutId) {
       final workoutRepository = ref.watch(
         workoutRepositoryProvider,
       ); // Importato da viewer_providers.dart

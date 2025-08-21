@@ -18,15 +18,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
@@ -50,10 +44,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.success.withAlpha(204),
-              AppTheme.success.withAlpha(153),
-            ],
+            colors: [AppTheme.success.withAlpha(204), AppTheme.success.withAlpha(153)],
           ),
         ),
         child: SafeArea(
@@ -79,11 +70,10 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                       const SizedBox(height: 32),
                       Text(
                         'Pagamento Completato!',
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Padding(
@@ -91,8 +81,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                         child: Text(
                           'Grazie per il tuo acquisto. Il tuo abbonamento è stato attivato con successo.',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(color: Colors.white.withAlpha(230)),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(color: Colors.white.withAlpha(230)),
                         ),
                       ),
                       const SizedBox(height: 48),
@@ -101,21 +92,13 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppTheme.success,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 48,
-                            vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                           elevation: 0,
                         ),
                         child: const Text(
                           'Torna alla Home',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],

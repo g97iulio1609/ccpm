@@ -36,11 +36,7 @@ class ModelUtils {
   }
 
   /// Safe map access with type checking
-  static T? safeGet<T>(
-    Map<String, dynamic>? map,
-    String key, [
-    T? defaultValue,
-  ]) {
+  static T? safeGet<T>(Map<String, dynamic>? map, String key, [T? defaultValue]) {
     if (map == null || !map.containsKey(key)) return defaultValue;
     final value = map[key];
     if (value is T) return value;
@@ -48,11 +44,7 @@ class ModelUtils {
   }
 
   /// Safe list access with type checking
-  static List<T> safeGetList<T>(
-    Map<String, dynamic>? map,
-    String key, [
-    List<T>? defaultValue,
-  ]) {
+  static List<T> safeGetList<T>(Map<String, dynamic>? map, String key, [List<T>? defaultValue]) {
     if (map == null || !map.containsKey(key)) return defaultValue ?? <T>[];
     final value = map[key];
     if (value is List) {
@@ -62,10 +54,7 @@ class ModelUtils {
   }
 
   /// Safe map list access
-  static List<Map<String, dynamic>> safeGetMapList(
-    Map<String, dynamic>? map,
-    String key,
-  ) {
+  static List<Map<String, dynamic>> safeGetMapList(Map<String, dynamic>? map, String key) {
     if (map == null || !map.containsKey(key)) return [];
     final value = map[key];
     if (value is List) {
@@ -138,14 +127,10 @@ class ModelUtils {
   }
 
   /// Merge two maps, with the second map taking precedence
-  static Map<String, dynamic> mergeMaps(
-    Map<String, dynamic> map1,
-    Map<String, dynamic> map2,
-  ) {
+  static Map<String, dynamic> mergeMaps(Map<String, dynamic> map1, Map<String, dynamic> map2) {
     final result = deepCopyMap(map1);
     for (final entry in map2.entries) {
-      if (entry.value is Map<String, dynamic> &&
-          result[entry.key] is Map<String, dynamic>) {
+      if (entry.value is Map<String, dynamic> && result[entry.key] is Map<String, dynamic>) {
         result[entry.key] = mergeMaps(result[entry.key], entry.value);
       } else {
         result[entry.key] = entry.value;
@@ -165,9 +150,7 @@ class ModelUtils {
             result[entry.key] = cleaned;
           }
         } else if (entry.value is List) {
-          final cleanedList = (entry.value as List)
-              .where((item) => item != null)
-              .toList();
+          final cleanedList = (entry.value as List).where((item) => item != null).toList();
           if (cleanedList.isNotEmpty) {
             result[entry.key] = cleanedList;
           }
@@ -232,26 +215,18 @@ class ModelUtils {
 /// Exercise-specific utilities
 class ExerciseUtils {
   /// Create a duplicate of an exercise with new ID
-  static Exercise duplicateExercise(
-    Exercise exercise, {
-    String? newId,
-    String? newName,
-  }) {
+  static Exercise duplicateExercise(Exercise exercise, {String? newId, String? newName}) {
     return exercise.copyWith(
       id: newId ?? ModelUtils.generateId(),
       name: newName ?? '${exercise.name} (Copy)',
-      series: exercise.series
-          .map((s) => SharedSeriesUtils.duplicateSeries(s))
-          .toList(),
+      series: exercise.series.map((s) => SharedSeriesUtils.duplicateSeries(s)).toList(),
     );
   }
 
   /// Reset exercise completion status
   static Exercise resetExercise(Exercise exercise) {
     return exercise.copyWith(
-      series: exercise.series
-          .map((s) => SharedSeriesUtils.resetSeries(s))
-          .toList(),
+      series: exercise.series.map((s) => SharedSeriesUtils.resetSeries(s)).toList(),
     );
   }
 
@@ -259,8 +234,7 @@ class ExerciseUtils {
   static double calculateVolume(Exercise exercise) {
     return exercise.series.fold(
       0.0,
-      (total, series) =>
-          total + SharedSeriesUtils.calculateSeriesVolume(series),
+      (total, series) => total + SharedSeriesUtils.calculateSeriesVolume(series),
     );
   }
 
@@ -285,9 +259,7 @@ class ExerciseUtils {
   }
 
   /// Group exercises by superset
-  static Map<String?, List<Exercise>> groupBySuperset(
-    List<Exercise> exercises,
-  ) {
+  static Map<String?, List<Exercise>> groupBySuperset(List<Exercise> exercises) {
     final grouped = <String?, List<Exercise>>{};
     for (final exercise in exercises) {
       final key = exercise.superSetId;
@@ -297,11 +269,7 @@ class ExerciseUtils {
   }
 
   /// Reorder exercises
-  static List<Exercise> reorderExercises(
-    List<Exercise> exercises,
-    int oldIndex,
-    int newIndex,
-  ) {
+  static List<Exercise> reorderExercises(List<Exercise> exercises, int oldIndex, int newIndex) {
     final reordered = List<Exercise>.from(exercises);
     final exercise = reordered.removeAt(oldIndex);
     reordered.insert(newIndex, exercise.copyWith(order: newIndex));
@@ -330,12 +298,7 @@ class SharedSeriesUtils {
 
   /// Reset series completion status
   static Series resetSeries(Series series) {
-    return series.copyWith(
-      isCompleted: false,
-      done: false,
-      repsDone: 0,
-      weightDone: 0.0,
-    );
+    return series.copyWith(isCompleted: false, done: false, repsDone: 0, weightDone: 0.0);
   }
 
   /// Calculate volume for a series
@@ -362,22 +325,12 @@ class SharedSeriesUtils {
       'weightRatio': targetWeight > 0 ? executedWeight / targetWeight : 0.0,
       'volumeRatio':
           calculateSeriesVolume(
-                Series(
-                  exerciseId: '',
-                  order: 0,
-                  reps: targetReps,
-                  weight: targetWeight,
-                ),
+                Series(exerciseId: '', order: 0, reps: targetReps, weight: targetWeight),
               ) >
               0
           ? calculateSeriesVolume(series) /
                 calculateSeriesVolume(
-                  Series(
-                    exerciseId: '',
-                    order: 0,
-                    reps: targetReps,
-                    weight: targetWeight,
-                  ),
+                  Series(exerciseId: '', order: 0, reps: targetReps, weight: targetWeight),
                 )
           : 0.0,
     };
@@ -387,26 +340,18 @@ class SharedSeriesUtils {
 /// Workout-specific utilities
 class WorkoutUtils {
   /// Create a duplicate of a workout with new ID
-  static Workout duplicateWorkout(
-    Workout workout, {
-    String? newId,
-    String? newName,
-  }) {
+  static Workout duplicateWorkout(Workout workout, {String? newId, String? newName}) {
     return workout.copyWith(
       id: newId ?? ModelUtils.generateId(),
       name: newName ?? '${workout.name} (Copy)',
-      exercises: workout.exercises
-          .map((e) => ExerciseUtils.duplicateExercise(e))
-          .toList(),
+      exercises: workout.exercises.map((e) => ExerciseUtils.duplicateExercise(e)).toList(),
     );
   }
 
   /// Reset workout completion status
   static Workout resetWorkout(Workout workout) {
     return workout.copyWith(
-      exercises: workout.exercises
-          .map((e) => ExerciseUtils.resetExercise(e))
-          .toList(),
+      exercises: workout.exercises.map((e) => ExerciseUtils.resetExercise(e)).toList(),
     );
   }
 
@@ -421,9 +366,7 @@ class WorkoutUtils {
   /// Calculate completion percentage
   static double calculateWorkoutCompletionPercentage(Workout workout) {
     if (workout.exercises.isEmpty) return 0.0;
-    final completedExercises = workout.exercises
-        .where((e) => e.isCompleted)
-        .length;
+    final completedExercises = workout.exercises.where((e) => e.isCompleted).length;
     return (completedExercises / workout.exercises.length) * 100;
   }
 
@@ -435,15 +378,12 @@ class WorkoutUtils {
     );
     final completedSeries = workout.exercises.fold(
       0,
-      (total, exercise) =>
-          total + exercise.series.where((s) => s.isCompleted).length,
+      (total, exercise) => total + exercise.series.where((s) => s.isCompleted).length,
     );
 
     return {
       'totalExercises': workout.exercises.length,
-      'completedExercises': workout.exercises
-          .where((e) => e.isCompleted)
-          .length,
+      'completedExercises': workout.exercises.where((e) => e.isCompleted).length,
       'totalSeries': totalSeries,
       'completedSeries': completedSeries,
       'totalVolume': calculateWorkoutVolume(workout),
@@ -454,11 +394,7 @@ class WorkoutUtils {
   }
 
   /// Reorder exercises in workout
-  static Workout reorderWorkoutExercises(
-    Workout workout,
-    int oldIndex,
-    int newIndex,
-  ) {
+  static Workout reorderWorkoutExercises(Workout workout, int oldIndex, int newIndex) {
     final reorderedExercises = ExerciseUtils.reorderExercises(
       workout.exercises,
       oldIndex,
@@ -475,17 +411,13 @@ class WeekUtils {
     return week.copyWith(
       id: newId ?? ModelUtils.generateId(),
       number: newNumber ?? week.number,
-      workouts: week.workouts
-          .map((w) => WorkoutUtils.duplicateWorkout(w))
-          .toList(),
+      workouts: week.workouts.map((w) => WorkoutUtils.duplicateWorkout(w)).toList(),
     );
   }
 
   /// Reset week completion status
   static Week resetWeek(Week week) {
-    return week.copyWith(
-      workouts: week.workouts.map((w) => WorkoutUtils.resetWorkout(w)).toList(),
-    );
+    return week.copyWith(workouts: week.workouts.map((w) => WorkoutUtils.resetWorkout(w)).toList());
   }
 
   /// Calculate total volume for week
@@ -511,8 +443,7 @@ class WeekUtils {
     );
     final completedExercises = week.workouts.fold(
       0,
-      (total, workout) =>
-          total + workout.exercises.where((e) => e.isCompleted).length,
+      (total, workout) => total + workout.exercises.where((e) => e.isCompleted).length,
     );
 
     return {
@@ -580,9 +511,7 @@ class FirestoreUtils {
       final docId = operation['docId'] as String;
       final data = operation['data'] as Map<String, dynamic>?;
 
-      final docRef = FirebaseFirestore.instance
-          .collection(collection)
-          .doc(docId);
+      final docRef = FirebaseFirestore.instance.collection(collection).doc(docId);
 
       switch (type) {
         case 'set':
@@ -609,9 +538,7 @@ class FirestoreUtils {
     Map<String, dynamic>? where,
     dynamic startAfter,
   }) {
-    Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection(
-      collection,
-    );
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection(collection);
 
     // Apply where clauses
     if (where != null) {

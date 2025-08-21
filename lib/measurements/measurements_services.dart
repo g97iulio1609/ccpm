@@ -82,18 +82,12 @@ class MeasurementsService {
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    MeasurementModel.fromJson({...doc.data(), 'id': doc.id}),
-              )
+              .map((doc) => MeasurementModel.fromJson({...doc.data(), 'id': doc.id}))
               .toList(),
         );
   }
 
-  Future<void> deleteMeasurement({
-    required String userId,
-    required String measurementId,
-  }) async {
+  Future<void> deleteMeasurement({required String userId, required String measurementId}) async {
     await _firestore
         .collection('users')
         .doc(userId)

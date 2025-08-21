@@ -13,14 +13,8 @@ abstract class TrainingRepository {
 /// Training Builder specific Exercise Repository interface
 /// Provides simplified interface for training builder operations
 abstract class ExerciseRepository {
-  Future<String> addExerciseToWorkout(
-    String workoutId,
-    Map<String, dynamic> exerciseData,
-  );
-  Future<void> updateExercise(
-    String exerciseId,
-    Map<String, dynamic> exerciseData,
-  );
+  Future<String> addExerciseToWorkout(String workoutId, Map<String, dynamic> exerciseData);
+  Future<void> updateExercise(String exerciseId, Map<String, dynamic> exerciseData);
   Future<void> removeExercise(String exerciseId);
   Future<List<Exercise>> getExercisesByWorkoutId(String workoutId);
 }
@@ -41,10 +35,7 @@ abstract class SeriesRepository {
 /// Training Builder specific Week Repository interface
 /// Provides simplified interface for training builder operations
 abstract class WeekRepository {
-  Future<String> addWeekToProgram(
-    String programId,
-    Map<String, dynamic> weekData,
-  );
+  Future<String> addWeekToProgram(String programId, Map<String, dynamic> weekData);
   Future<void> updateWeek(String weekId, Map<String, dynamic> weekData);
   Future<void> removeWeek(String weekId);
   Future<List<Week>> getWeeksByProgramId(String programId);
@@ -53,14 +44,8 @@ abstract class WeekRepository {
 /// Training Builder specific Workout Repository interface
 /// Provides simplified interface for training builder operations
 abstract class WorkoutRepository {
-  Future<String> addWorkoutToWeek(
-    String weekId,
-    Map<String, dynamic> workoutData,
-  );
-  Future<void> updateWorkout(
-    String workoutId,
-    Map<String, dynamic> workoutData,
-  );
+  Future<String> addWorkoutToWeek(String weekId, Map<String, dynamic> workoutData);
+  Future<void> updateWorkout(String workoutId, Map<String, dynamic> workoutData);
   Future<void> removeWorkout(String workoutId);
   Future<List<Workout>> getWorkoutsByWeekId(String weekId);
 }

@@ -23,11 +23,7 @@ class CustomDrawer extends ConsumerWidget {
   final String userRole;
   final VoidCallback onLogout;
 
-  void _navigateTo(
-    BuildContext context,
-    String route, [
-    Map<String, dynamic>? extra,
-  ]) {
+  void _navigateTo(BuildContext context, String route, [Map<String, dynamic>? extra]) {
     if (route != GoRouterState.of(context).uri.toString()) {
       if (route.contains('/user_programs/')) {
         final userId = route.split('/user_programs/')[1];
@@ -65,21 +61,11 @@ class CustomDrawer extends ConsumerWidget {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       ...menuItems.map(
-                        (menuItem) => _buildMenuItem(
-                          context,
-                          menuItem,
-                          userRole,
-                          theme,
-                          colorScheme,
-                        ),
+                        (menuItem) =>
+                            _buildMenuItem(context, menuItem, userRole, theme, colorScheme),
                       ),
                       const SizedBox(height: 8),
-                      _buildSecondaryGroups(
-                        context,
-                        theme,
-                        colorScheme,
-                        userRole,
-                      ),
+                      _buildSecondaryGroups(context, theme, colorScheme, userRole),
                     ]),
                   ),
                 ),
@@ -110,12 +96,7 @@ class CustomDrawer extends ConsumerWidget {
                         SizedBox(height: AppTheme.spacing.md),
                         GlassLite(
                           padding: EdgeInsets.zero,
-                          child: _buildCurrentProgram(
-                            context,
-                            theme,
-                            colorScheme,
-                            glassEnabled,
-                          ),
+                          child: _buildCurrentProgram(context, theme, colorScheme, glassEnabled),
                         ),
                       ],
                     ),
@@ -161,10 +142,7 @@ class CustomDrawer extends ConsumerWidget {
               tint: colorScheme.brightness == Brightness.dark
                   ? colorScheme.surface.withAlpha(172)
                   : colorScheme.surface.withAlpha(212),
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(38),
-                width: 1,
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(38), width: 1),
               boxShadow: [
                 BoxShadow(
                   color: colorScheme.shadow.withAlpha(20),
@@ -179,10 +157,7 @@ class CustomDrawer extends ConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.surface,
-                    colorScheme.surfaceContainerHighest.withAlpha(128),
-                  ],
+                  colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
                   stops: const [0.0, 1.0],
                 ),
               ),
@@ -206,13 +181,9 @@ class CustomDrawer extends ConsumerWidget {
     return Container(
       margin: EdgeInsets.only(bottom: AppTheme.spacing.sm),
       decoration: BoxDecoration(
-        color: isSelected
-            ? colorScheme.surfaceContainerHighest.withAlpha(128)
-            : Colors.transparent,
+        color: isSelected ? colorScheme.surfaceContainerHighest.withAlpha(128) : Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: isSelected
-            ? Border.all(color: colorScheme.outline.withAlpha(38))
-            : null,
+        border: isSelected ? Border.all(color: colorScheme.outline.withAlpha(38)) : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -236,9 +207,7 @@ class CustomDrawer extends ConsumerWidget {
                   ),
                   child: Icon(
                     _getIconForMenuItem(menuItem),
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
+                    color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                 ),
@@ -248,9 +217,7 @@ class CustomDrawer extends ConsumerWidget {
                     menuItem,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: colorScheme.onSurface,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -279,8 +246,7 @@ class CustomDrawer extends ConsumerWidget {
     final groups = <String, List<String>>{
       'Nutrizione': ['Diet Plans', 'Meals Preferiti', 'Food Management'],
       'Impostazioni': ['Impostazioni AI'],
-      if (userRole == 'admin' || userRole == 'coach')
-        'Admin': ['Gestione Utenti'],
+      if (userRole == 'admin' || userRole == 'coach') 'Admin': ['Gestione Utenti'],
     };
 
     return Column(
@@ -362,13 +328,7 @@ class CustomDrawer extends ConsumerWidget {
                     itemCount: weeks.length,
                     itemBuilder: (context, index) {
                       final weekDoc = weeks[index];
-                      return _buildWeekItem(
-                        context,
-                        weekDoc,
-                        programId,
-                        theme,
-                        colorScheme,
-                      );
+                      return _buildWeekItem(context, weekDoc, programId, theme, colorScheme);
                     },
                   );
                 },
@@ -397,11 +357,7 @@ class CustomDrawer extends ConsumerWidget {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.calendar_today,
-            color: colorScheme.primary,
-            size: 20,
-          ),
+          child: Icon(Icons.calendar_today, color: colorScheme.primary, size: 20),
         ),
         title: Text(
           'Settimana ${weekDoc['number']}',
@@ -410,9 +366,7 @@ class CustomDrawer extends ConsumerWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        children: [
-          _buildWorkoutList(context, weekDoc.id, programId, theme, colorScheme),
-        ],
+        children: [_buildWorkoutList(context, weekDoc.id, programId, theme, colorScheme)],
       ),
     );
   }
@@ -463,11 +417,8 @@ class CustomDrawer extends ConsumerWidget {
                         Container(
                           padding: EdgeInsets.all(AppTheme.spacing.xs),
                           decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest
-                                .withAlpha(76),
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radii.md,
-                            ),
+                            color: colorScheme.surfaceContainerHighest.withAlpha(76),
+                            borderRadius: BorderRadius.circular(AppTheme.radii.md),
                           ),
                           child: Text(
                             '${workoutDoc['order']}',
@@ -509,8 +460,7 @@ class CustomDrawer extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () =>
-            _navigateTo(context, '/user_profile', {'userId': user?.uid}),
+        onTap: () => _navigateTo(context, '/user_profile', {'userId': user?.uid}),
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.lg),
           child: Row(
@@ -545,11 +495,7 @@ class CustomDrawer extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: colorScheme.onSurfaceVariant,
-                size: 24,
-              ),
+              Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 24),
             ],
           ),
         ),
@@ -557,11 +503,7 @@ class CustomDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildLogoutButton(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildLogoutButton(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -593,11 +535,7 @@ class CustomDrawer extends ConsumerWidget {
     );
   }
 
-  String? _getRouteForMenuItem(
-    String menuItem,
-    String userRole,
-    String? userId,
-  ) {
+  String? _getRouteForMenuItem(String menuItem, String userRole, String? userId) {
     final routes = {
       'Coaching': '/programs_screen',
       'Association': '/associations',
@@ -622,11 +560,7 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   IconData _getIconForMenuItem(String menuItem) {
-    final route = _getRouteForMenuItem(
-      menuItem,
-      userRole,
-      FirebaseAuth.instance.currentUser?.uid,
-    );
+    final route = _getRouteForMenuItem(menuItem, userRole, FirebaseAuth.instance.currentUser?.uid);
     if (route != null) {
       final meta = RouteMetadata.resolveByCurrentPath(route);
       if (meta != null) return meta.icon;

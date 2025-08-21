@@ -23,8 +23,7 @@ class BulkExerciseDeleteDialog extends HookConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final screenHeight = MediaQuery.of(context).size.height;
-    final double listHeight =
-        (screenHeight * 0.45).clamp(240.0, 520.0).toDouble();
+    final double listHeight = (screenHeight * 0.45).clamp(240.0, 520.0).toDouble();
 
     final allSelected = selected.value.length == workoutExercises.length;
 
@@ -96,22 +95,12 @@ class BulkExerciseDeleteDialog extends HookConsumerWidget {
                         selected.value = [...selected.value, exercise];
                       }
                     } else {
-                      selected.value = selected.value
-                          .where((e) => e.id != exercise.id)
-                          .toList();
+                      selected.value = selected.value.where((e) => e.id != exercise.id).toList();
                     }
                   },
-                  title: Text(
-                    exercise.name,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+                  title: Text(exercise.name, overflow: TextOverflow.ellipsis, maxLines: 1),
                   subtitle: (exercise.variant?.isNotEmpty ?? false)
-                      ? Text(
-                          exercise.variant!,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        )
+                      ? Text(exercise.variant!, overflow: TextOverflow.ellipsis, maxLines: 1)
                       : null,
                   secondary: Container(
                     padding: EdgeInsets.all(AppTheme.spacing.xs),

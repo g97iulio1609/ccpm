@@ -23,12 +23,9 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     ),
   );
 
-  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
-    region: 'europe-west1',
-  );
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static const String _baseUrl =
-      'https://europe-west1-alphaness-322423.cloudfunctions.net';
+  static const String _baseUrl = 'https://europe-west1-alphaness-322423.cloudfunctions.net';
 
   static const Map<String, String> _kProductIds = {
     'prod_PbVZOzg6Nol294': 'alphanessone.monthly',
@@ -52,9 +49,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
 
   Future<List<Product>> _getWebProducts() async {
     try {
-      final QuerySnapshot productsSnapshot = await _firestore
-          .collection('products')
-          .get();
+      final QuerySnapshot productsSnapshot = await _firestore.collection('products').get();
 
       if (productsSnapshot.docs.isEmpty) {
         throw Exception('Nessun prodotto disponibile');
@@ -76,11 +71,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
 
       return products;
     } catch (e, stackTrace) {
-      _logger.e(
-        'Errore nel recupero dei prodotti da Firestore',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logger.e('Errore nel recupero dei prodotti da Firestore', error: e, stackTrace: stackTrace);
       throw Exception('Errore nel recupero dei prodotti: $e');
     }
   }
@@ -100,8 +91,9 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
         throw Exception('Store non disponibile');
       }
 
-      final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails(_kProductIds.values.toSet());
+      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(
+        _kProductIds.values.toSet(),
+      );
 
       if (response.error != null) {
         throw Exception('Errore nel recupero dei prodotti: ${response.error}');
@@ -112,9 +104,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       }
 
       if (response.notFoundIDs.isNotEmpty) {
-        throw Exception(
-          'Prodotti non trovati: ${response.notFoundIDs.join(", ")}',
-        );
+        throw Exception('Prodotti non trovati: ${response.notFoundIDs.join(", ")}');
       }
 
       _products.clear();
@@ -134,11 +124,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       _products.addAll(products);
       return products;
     } catch (e, stackTrace) {
-      _logger.e(
-        'Errore nel recupero dei prodotti',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      _logger.e('Errore nel recupero dei prodotti', error: e, stackTrace: stackTrace);
       throw Exception('Errore nel recupero dei prodotti: $e');
     }
   }
@@ -154,9 +140,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       // Prima prova con Cloud Functions
       try {
         final callable = _functions.httpsCallable('getSubscriptionDetails');
-        final result = await callable.call({
-          'userId': userId ?? currentUser.uid,
-        });
+        final result = await callable.call({'userId': userId ?? currentUser.uid});
 
         final data = result.data;
         if (data == null || !data['hasSubscription']) {
@@ -189,10 +173,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
         final token = await currentUser.getIdToken();
         final response = await http.post(
           Uri.parse('$_baseUrl/getSubscriptionDetails'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
+          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
           body: json.encode({'userId': userId ?? currentUser.uid}),
         );
 
@@ -238,10 +219,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
   }
 
   @override
-  Future<void> handleSuccessfulPayment(
-    String purchaseId,
-    String productId,
-  ) async {
+  Future<void> handleSuccessfulPayment(String purchaseId, String productId) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -251,10 +229,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       final token = await currentUser.getIdToken();
       final response = await http.post(
         Uri.parse('$_baseUrl/handleSuccessfulPayment'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
         body: json.encode({
           'userId': currentUser.uid,
           'purchaseId': purchaseId,
@@ -264,9 +239,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Errore nella gestione del pagamento: ${response.statusCode}',
-        );
+        throw Exception('Errore nella gestione del pagamento: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Errore nella gestione del pagamento: $e');
@@ -283,17 +256,12 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       final token = await currentUser.getIdToken();
       final response = await http.post(
         Uri.parse('$_baseUrl/cancelSubscription'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
         body: json.encode({'userId': currentUser.uid, 'platform': 'store'}),
       );
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Errore nella cancellazione dell\'abbonamento: ${response.statusCode}',
-        );
+        throw Exception('Errore nella cancellazione dell\'abbonamento: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Errore nella cancellazione dell\'abbonamento: $e');
@@ -311,9 +279,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
 
       if (result.data == null || result.data['success'] != true) {
         final error = result.data?['error']?.toString() ?? 'Errore sconosciuto';
-        throw Exception(
-          'Errore nella creazione dell\'abbonamento regalo: $error',
-        );
+        throw Exception('Errore nella creazione dell\'abbonamento regalo: $error');
       }
     } catch (e) {
       throw Exception('Errore nella creazione dell\'abbonamento regalo: $e');
@@ -340,8 +306,9 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       }
 
       final storeProductId = _getStoreProductId(firestoreProductId);
-      final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails({storeProductId});
+      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails({
+        storeProductId,
+      });
 
       if (response.notFoundIDs.isNotEmpty) {
         throw Exception(
@@ -355,9 +322,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
         );
       }
 
-      final purchaseParam = PurchaseParam(
-        productDetails: response.productDetails.first,
-      );
+      final purchaseParam = PurchaseParam(productDetails: response.productDetails.first);
 
       await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
@@ -374,10 +339,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
     }
   }
 
-  Future<Map<String, dynamic>> syncStripeSubscription(
-    String userId, {
-    bool syncAll = false,
-  }) async {
+  Future<Map<String, dynamic>> syncStripeSubscription(String userId, {bool syncAll = false}) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -385,36 +347,21 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
         return {'success': false, 'message': 'Utente non autenticato'};
       }
 
-      _logger.i(
-        'Chiamata a syncSubscription con userId: $userId, syncAll: $syncAll',
-      );
+      _logger.i('Chiamata a syncSubscription con userId: $userId, syncAll: $syncAll');
       final callable = _functions.httpsCallable('syncSubscription');
-      final result = await callable.call({
-        'userId': userId,
-        'syncAll': syncAll,
-      });
+      final result = await callable.call({'userId': userId, 'syncAll': syncAll});
 
       _logger.i('Risposta ricevuta: ${result.data}');
 
       if (result.data == null) {
         _logger.w('Risposta nulla dalla Cloud Function');
-        return {
-          'success': false,
-          'message': 'Errore nella sincronizzazione: risposta nulla',
-        };
+        return {'success': false, 'message': 'Errore nella sincronizzazione: risposta nulla'};
       }
 
       return result.data;
     } catch (e, stackTrace) {
-      _logger.e(
-        'Errore nella sincronizzazione',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      return {
-        'success': false,
-        'message': 'Errore nella sincronizzazione: ${e.toString()}',
-      };
+      _logger.e('Errore nella sincronizzazione', error: e, stackTrace: stackTrace);
+      return {'success': false, 'message': 'Errore nella sincronizzazione: ${e.toString()}'};
     }
   }
 
@@ -428,16 +375,11 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
       final token = await currentUser.getIdToken();
       final response = await http.post(
         Uri.parse('$_baseUrl/syncProducts'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
       );
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Errore nella sincronizzazione dei prodotti: ${response.statusCode}',
-        );
+        throw Exception('Errore nella sincronizzazione dei prodotti: ${response.statusCode}');
       }
 
       await getProducts();
@@ -488,12 +430,7 @@ class InAppPurchaseService implements BaseInAppPurchaseService {
   }
 
   @override
-  Future<Map<String, dynamic>> createCheckoutSession(
-    String userId,
-    String productId,
-  ) async {
-    throw UnimplementedError(
-      'createCheckoutSession non è disponibile su mobile',
-    );
+  Future<Map<String, dynamic>> createCheckoutSession(String userId, String productId) async {
+    throw UnimplementedError('createCheckoutSession non è disponibile su mobile');
   }
 }

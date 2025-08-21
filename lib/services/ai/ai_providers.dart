@@ -12,26 +12,21 @@ final aiSettingsServiceProvider = Provider<AISettingsService>((ref) {
   final sharedPreferencesAsync = ref.watch(sharedPreferencesProvider);
   return sharedPreferencesAsync.when(
     data: (sharedPreferences) => AISettingsService(sharedPreferences),
-    loading: () =>
-        AISettingsService(null), // Provide a default or handle loading state
+    loading: () => AISettingsService(null), // Provide a default or handle loading state
     error: (error, stackTrace) {
       return AISettingsService(null); // Handle error state
     },
   );
 });
 
-final aiSettingsProvider =
-    StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
-      final service = ref.watch(aiSettingsServiceProvider);
-      final keys = ref.watch(aiKeysStreamProvider).value;
-      return AISettingsNotifier(service, keys);
-    });
+final aiSettingsProvider = StateNotifierProvider<AISettingsNotifier, AISettings>((ref) {
+  final service = ref.watch(aiSettingsServiceProvider);
+  final keys = ref.watch(aiKeysStreamProvider).value;
+  return AISettingsNotifier(service, keys);
+});
 
 // Provider per OpenAIService
-final openaiServiceProvider = Provider.family<AIService, String>((
-  ref,
-  modelId,
-) {
+final openaiServiceProvider = Provider.family<AIService, String>((ref, modelId) {
   final aiSettings = ref.watch(aiSettingsProvider);
   final apiKey = aiSettings.getKeyForProvider(AIProvider.openAI);
   if (apiKey == null || apiKey.isEmpty) {
@@ -41,10 +36,7 @@ final openaiServiceProvider = Provider.family<AIService, String>((
 });
 
 // Provider per GeminiService
-final geminiServiceProvider = Provider.family<AIService, String>((
-  ref,
-  modelId,
-) {
+final geminiServiceProvider = Provider.family<AIService, String>((ref, modelId) {
   final aiSettings = ref.watch(aiSettingsProvider);
   final apiKey = aiSettings.getKeyForProvider(AIProvider.gemini);
   if (apiKey == null) {
@@ -75,9 +67,7 @@ final aiServiceManagerProvider = Provider<AIServiceManager?>((ref) {
         if (openAIKey == null) {
           throw Exception('OpenAI API key is not set');
         }
-        primaryAIService = ref.watch(
-          openaiServiceProvider(selectedModel.modelId),
-        );
+        primaryAIService = ref.watch(openaiServiceProvider(selectedModel.modelId));
 
         final geminiKey = aiSettings.getKeyForProvider(AIProvider.gemini);
         fallbackAIService = geminiKey != null
@@ -89,9 +79,7 @@ final aiServiceManagerProvider = Provider<AIServiceManager?>((ref) {
         if (geminiKey == null) {
           throw Exception('Gemini API key is not set');
         }
-        primaryAIService = ref.watch(
-          geminiServiceProvider(selectedModel.modelId),
-        );
+        primaryAIService = ref.watch(geminiServiceProvider(selectedModel.modelId));
 
         final openAIKey = aiSettings.getKeyForProvider(AIProvider.openAI);
         fallbackAIService = openAIKey != null

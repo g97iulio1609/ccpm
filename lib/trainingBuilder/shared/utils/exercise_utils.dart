@@ -5,13 +5,8 @@ import './format_utils.dart' as training_builder_format_utils;
 /// Utility class per operazioni sugli esercizi
 class ExerciseUtils {
   /// Ottiene i SuperSet associati a un esercizio
-  static List<SuperSet> getSuperSets(
-    Exercise exercise,
-    List<SuperSet> allSuperSets,
-  ) {
-    return allSuperSets
-        .where((superSet) => superSet.exerciseIds.contains(exercise.id))
-        .toList();
+  static List<SuperSet> getSuperSets(Exercise exercise, List<SuperSet> allSuperSets) {
+    return allSuperSets.where((superSet) => superSet.exerciseIds.contains(exercise.id)).toList();
   }
 
   /// Verifica se un esercizio è parte di un SuperSet
@@ -20,10 +15,7 @@ class ExerciseUtils {
   }
 
   /// Ottiene il primo SuperSet associato a un esercizio
-  static SuperSet? getFirstSuperSet(
-    Exercise exercise,
-    List<SuperSet> superSets,
-  ) {
+  static SuperSet? getFirstSuperSet(Exercise exercise, List<SuperSet> superSets) {
     final exerciseSuperSets = getSuperSets(exercise, superSets);
     return exerciseSuperSets.isNotEmpty ? exerciseSuperSets.first : null;
   }
@@ -109,12 +101,8 @@ class ExerciseUtils {
   static String getRepsRange(Exercise exercise) {
     if (exercise.series.isEmpty) return '';
 
-    final minReps = exercise.series
-        .map((s) => s.reps)
-        .reduce((a, b) => a < b ? a : b);
-    final maxReps = exercise.series
-        .map((s) => s.maxReps ?? s.reps)
-        .reduce((a, b) => a > b ? a : b);
+    final minReps = exercise.series.map((s) => s.reps).reduce((a, b) => a < b ? a : b);
+    final maxReps = exercise.series.map((s) => s.maxReps ?? s.reps).reduce((a, b) => a > b ? a : b);
 
     return minReps == maxReps
         ? training_builder_format_utils.FormatUtils.formatNumber(minReps)
@@ -145,10 +133,7 @@ class ExerciseUtils {
   static String getWeightRange(Exercise exercise) {
     if (exercise.series.isEmpty) return '';
 
-    final weights = exercise.series
-        .where((s) => s.weight > 0)
-        .map((s) => s.weight)
-        .toList();
+    final weights = exercise.series.where((s) => s.weight > 0).map((s) => s.weight).toList();
 
     if (weights.isEmpty) return '';
 
@@ -175,9 +160,7 @@ class ExerciseUtils {
 
   /// Valida i dati di un esercizio
   static bool isValidExercise(Exercise exercise) {
-    return exercise.name.isNotEmpty &&
-        exercise.type.isNotEmpty &&
-        exercise.order > 0;
+    return exercise.name.isNotEmpty && exercise.type.isNotEmpty && exercise.order > 0;
   }
 
   /// Ottiene un riepilogo testuale dell'esercizio
@@ -212,11 +195,7 @@ class ExerciseUtils {
   }
 
   /// Riordina gli esercizi aggiornando il campo order
-  static List<Exercise> reorderExercises(
-    List<Exercise> exercises,
-    int oldIndex,
-    int newIndex,
-  ) {
+  static List<Exercise> reorderExercises(List<Exercise> exercises, int oldIndex, int newIndex) {
     final reorderedList = List<Exercise>.from(exercises);
 
     if (oldIndex < newIndex) {

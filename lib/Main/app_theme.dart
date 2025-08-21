@@ -27,27 +27,15 @@ class Elevations {
   const Elevations();
 
   List<BoxShadow> get small => [
-    BoxShadow(
-      color: Colors.black.withAlpha(13),
-      offset: const Offset(0, 1),
-      blurRadius: 2,
-    ),
+    BoxShadow(color: Colors.black.withAlpha(13), offset: const Offset(0, 1), blurRadius: 2),
   ];
 
   List<BoxShadow> get medium => [
-    BoxShadow(
-      color: Colors.black.withAlpha(20),
-      offset: const Offset(0, 4),
-      blurRadius: 8,
-    ),
+    BoxShadow(color: Colors.black.withAlpha(20), offset: const Offset(0, 4), blurRadius: 8),
   ];
 
   List<BoxShadow> get large => [
-    BoxShadow(
-      color: Colors.black.withAlpha(31),
-      offset: const Offset(0, 8),
-      blurRadius: 16,
-    ),
+    BoxShadow(color: Colors.black.withAlpha(31), offset: const Offset(0, 8), blurRadius: 16),
   ];
 }
 
@@ -304,9 +292,7 @@ class AppTheme {
 
       // AppBar Theme
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark
-            ? colorScheme.surface
-            : colorScheme.surface.withAlpha(242),
+        backgroundColor: isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
@@ -316,16 +302,11 @@ class AppTheme {
 
       // Card Theme
       cardTheme: CardThemeData(
-        color: isDark
-            ? colorScheme.surfaceContainerHighest.withAlpha(76)
-            : colorScheme.surface,
+        color: isDark ? colorScheme.surfaceContainerHighest.withAlpha(76) : colorScheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radii.lg),
-          side: BorderSide(
-            color: colorScheme.outline.withAlpha(isDark ? 51 : 26),
-            width: 1,
-          ),
+          side: BorderSide(color: colorScheme.outline.withAlpha(isDark ? 51 : 26), width: 1),
         ),
         clipBehavior: Clip.antiAlias,
       ),
@@ -333,18 +314,14 @@ class AppTheme {
       // Input Decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark
-            ? colorScheme.surfaceContainerHighest.withAlpha(76)
-            : colorScheme.surface,
+        fillColor: isDark ? colorScheme.surfaceContainerHighest.withAlpha(76) : colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withAlpha(isDark ? 51 : 26),
-          ),
+          borderSide: BorderSide(color: colorScheme.outline.withAlpha(isDark ? 51 : 26)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radii.md),
@@ -354,10 +331,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radii.md),
           borderSide: BorderSide(color: colorScheme.error),
         ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: spacing.md,
-          vertical: spacing.md,
-        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: spacing.md, vertical: spacing.md),
         hintStyle: textTheme.bodyLarge?.copyWith(
           color: colorScheme.onSurfaceVariant.withAlpha(128),
         ),
@@ -383,9 +357,7 @@ class AppTheme {
             EdgeInsets.symmetric(horizontal: spacing.lg, vertical: spacing.md),
           ),
           shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(radii.md),
-            ),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(radii.md)),
           ),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.pressed)) {
@@ -451,23 +423,15 @@ class AppTheme {
 
       // Dialog Theme
       dialogTheme: DialogThemeData(
-        backgroundColor: isDark
-            ? colorScheme.surface
-            : colorScheme.surface.withAlpha(242),
+        backgroundColor: isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radii.xl),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radii.xl)),
       ),
 
       // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: isDark
-            ? colorScheme.surface
-            : colorScheme.surface.withAlpha(242),
-        modalBackgroundColor: isDark
-            ? colorScheme.surface
-            : colorScheme.surface.withAlpha(242),
+        backgroundColor: isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
+        modalBackgroundColor: isDark ? colorScheme.surface : colorScheme.surface.withAlpha(242),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(radii.xl)),
         ),
@@ -476,17 +440,11 @@ class AppTheme {
 
       // Snackbar Theme
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: isDark
-            ? colorScheme.inverseSurface
-            : colorScheme.surfaceContainerHighest,
+        backgroundColor: isDark ? colorScheme.inverseSurface : colorScheme.surfaceContainerHighest,
         contentTextStyle: textTheme.bodyMedium?.copyWith(
-          color: isDark
-              ? colorScheme.onInverseSurface
-              : colorScheme.onSurfaceVariant,
+          color: isDark ? colorScheme.onInverseSurface : colorScheme.onSurfaceVariant,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radii.sm),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radii.sm)),
         behavior: SnackBarBehavior.floating,
       ),
 
@@ -505,18 +463,10 @@ class AppTheme {
 
       // Chip Theme
       chipTheme: ChipThemeData(
-        backgroundColor: isDark
-            ? colorScheme.surfaceContainerHighest
-            : colorScheme.surface,
-        labelStyle: textTheme.labelLarge?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radii.sm),
-        ),
-        side: BorderSide(
-          color: colorScheme.outline.withAlpha(isDark ? 51 : 26),
-        ),
+        backgroundColor: isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+        labelStyle: textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radii.sm)),
+        side: BorderSide(color: colorScheme.outline.withAlpha(isDark ? 51 : 26)),
       ),
 
       // Global hover/focus colors (desktop/web)
@@ -542,8 +492,7 @@ class _ReducedAwareTransitionsBuilder extends PageTransitionsBuilder {
     Widget child,
   ) {
     final mq = MediaQuery.maybeOf(context);
-    final reduce =
-        mq?.disableAnimations == true || mq?.accessibleNavigation == true;
+    final reduce = mq?.disableAnimations == true || mq?.accessibleNavigation == true;
     if (reduce) {
       return child;
     }
@@ -568,8 +517,7 @@ class _ReducedAwareCupertinoTransitionsBuilder extends PageTransitionsBuilder {
     Widget child,
   ) {
     final mq = MediaQuery.maybeOf(context);
-    final reduce =
-        mq?.disableAnimations == true || mq?.accessibleNavigation == true;
+    final reduce = mq?.disableAnimations == true || mq?.accessibleNavigation == true;
     if (reduce) {
       return child;
     }

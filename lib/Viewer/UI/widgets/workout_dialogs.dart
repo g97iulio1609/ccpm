@@ -6,8 +6,7 @@ import 'package:alphanessone/trainingBuilder/dialog/exercise_dialog.dart';
 import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/series_dialog.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
-import 'package:alphanessone/Viewer/UI/workout_provider.dart'
-    as workout_provider;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
 import 'package:flutter/services.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/Viewer/presentation/notifiers/workout_details_notifier.dart';
@@ -23,9 +22,7 @@ class WorkoutDialogs {
     String? existingNote,
   ]) async {
     if (!context.mounted) return;
-    final TextEditingController noteController = TextEditingController(
-      text: existingNote,
-    );
+    final TextEditingController noteController = TextEditingController(text: existingNote);
     // Manteniamo i colori da Theme dove necessario direttamente nei widget
 
     return showAppDialog(
@@ -88,10 +85,7 @@ class WorkoutDialogs {
       final reps = int.tryParse(repsController.text);
 
       if (weight != null && reps != null && reps > 0) {
-        calculatedMaxWeight.value = ExerciseService.calculateMaxRM(
-          weight,
-          reps,
-        ).roundToDouble();
+        calculatedMaxWeight.value = ExerciseService.calculateMaxRM(weight, reps).roundToDouble();
       } else {
         calculatedMaxWeight.value = null;
       }
@@ -170,9 +164,7 @@ class WorkoutDialogs {
               // Forza l'aggiornamento dello stato del Viewer dopo il write
               final workoutId = (exercise['workoutId'] as String?) ?? '';
               if (workoutId.isNotEmpty && context.mounted) {
-                await ref
-                    .read(workoutDetailsNotifierProvider(workoutId).notifier)
-                    .refreshWorkout();
+                await ref.read(workoutDetailsNotifierProvider(workoutId).notifier).refreshWorkout();
               }
               Navigator.of(context, rootNavigator: true).pop();
             }
@@ -189,9 +181,7 @@ class WorkoutDialogs {
     String userId,
     String workoutId,
   ) {
-    final exerciseRecordService = ref.read(
-      app_providers.exerciseRecordServiceProvider,
-    );
+    final exerciseRecordService = ref.read(app_providers.exerciseRecordServiceProvider);
 
     showDialog(
       context: context,
@@ -217,9 +207,7 @@ class WorkoutDialogs {
 
         // Forza l'aggiornamento dello stato del Viewer dopo il write
         if (workoutId.isNotEmpty) {
-          await ref
-              .read(workoutDetailsNotifierProvider(workoutId).notifier)
-              .refreshWorkout();
+          await ref.read(workoutDetailsNotifierProvider(workoutId).notifier).refreshWorkout();
         }
       }
     });
@@ -233,15 +221,11 @@ class WorkoutDialogs {
     String userId,
     String workoutId,
   ) async {
-    final List<Series> seriesList = series
-        .map((s) => Series.fromMap(s))
-        .toList();
+    final List<Series> seriesList = series.map((s) => Series.fromMap(s)).toList();
     String originalExerciseId =
         (exercise['exerciseId'] as String?) ??
         (exercise['originalExerciseId'] as String?) ??
-        (seriesList.isNotEmpty
-            ? (seriesList.first.originalExerciseId ?? '')
-            : '');
+        (seriesList.isNotEmpty ? (seriesList.first.originalExerciseId ?? '') : '');
     // Se ancora vuoto, prova a usare l'id esercizio del documento
     if (originalExerciseId.isEmpty) {
       final String? fromDocId = exercise['id'] as String?;
@@ -252,26 +236,19 @@ class WorkoutDialogs {
 
     final latestRecord = await ref
         .read(app_providers.exerciseRecordServiceProvider)
-        .getLatestExerciseRecord(
-          userId: userId,
-          exerciseId: originalExerciseId,
-        );
+        .getLatestExerciseRecord(userId: userId, exerciseId: originalExerciseId);
     num latestMaxWeight = latestRecord?.maxWeight ?? 0.0;
 
     // colorScheme non necessario con AppDialog, manteniamo la tipografia di tema
 
     final weightNotifier =
-        ref
-            .read(workout_provider.workoutServiceProvider)
-            .getWeightNotifier(exercise['id']) ??
+        ref.read(workout_provider.workoutServiceProvider).getWeightNotifier(exercise['id']) ??
         ValueNotifier<double>(0.0);
 
     final result = await showDialog<dynamic>(
       context: context,
       builder: (context) => SeriesDialog(
-        exerciseRecordService: ref.read(
-          app_providers.exerciseRecordServiceProvider,
-        ),
+        exerciseRecordService: ref.read(app_providers.exerciseRecordServiceProvider),
         athleteId: userId,
         exerciseId: originalExerciseId,
         exerciseType: exercise['type'] ?? 'weight',
@@ -288,9 +265,7 @@ class WorkoutDialogs {
         // Supporta sia il nuovo ritorno (List<Series>) che il vecchio (Map con chiave 'series')
         final List<Series> updatedSeries = result is List<Series>
             ? result
-            : (result is Map<String, dynamic>
-                  ? (result['series'] as List<Series>)
-                  : <Series>[]);
+            : (result is Map<String, dynamic> ? (result['series'] as List<Series>) : <Series>[]);
         if (updatedSeries.isEmpty) return;
         // Riusa il SeriesService del TrainingBuilder per applicare le modifiche con la stessa logica
         // Aggiorno/creo/eliminazione già delegati in WorkoutService.applySeriesChanges; manteniamo qui la chiamata
@@ -300,9 +275,7 @@ class WorkoutDialogs {
 
         // Forza l'aggiornamento dello stato del Viewer dopo il write
         if (workoutId.isNotEmpty) {
-          await ref
-              .read(workoutDetailsNotifierProvider(workoutId).notifier)
-              .refreshWorkout();
+          await ref.read(workoutDetailsNotifierProvider(workoutId).notifier).refreshWorkout();
         }
       } catch (e) {
         if (!context.mounted) return;
@@ -344,9 +317,7 @@ class WorkoutDialogs {
     final maxWeight = seriesData['maxWeight'];
 
     final String repsTarget = maxReps != null ? "$reps-$maxReps" : "$reps";
-    final String weightTarget = maxWeight != null
-        ? "$weight-$maxWeight"
-        : "$weight";
+    final String weightTarget = maxWeight != null ? "$weight-$maxWeight" : "$weight";
 
     showAppDialog(
       context: context,
@@ -363,26 +334,19 @@ class WorkoutDialogs {
           TextField(
             controller: repsController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-            ],
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
             decoration: const InputDecoration(
               labelText: 'Ripetizioni eseguite',
               hintText: 'Inserisci le ripetizioni',
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            'Obiettivo peso: ${weightTarget}Kg',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text('Obiettivo peso: ${weightTarget}Kg', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 8),
           TextField(
             controller: weightController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-            ],
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
             decoration: const InputDecoration(
               labelText: 'Peso eseguito',
               hintText: 'Inserisci il peso',

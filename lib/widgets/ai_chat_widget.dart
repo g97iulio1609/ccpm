@@ -13,10 +13,9 @@ import '../services/ai/ai_services.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 
 /// Stato dei messaggi di chat
-final chatMessagesProvider =
-    StateNotifierProvider<ChatMessagesNotifier, List<ChatMessage>>(
-      (ref) => ChatMessagesNotifier(),
-    );
+final chatMessagesProvider = StateNotifierProvider<ChatMessagesNotifier, List<ChatMessage>>(
+  (ref) => ChatMessagesNotifier(),
+);
 
 /// Notifier per gestire i messaggi di chat
 class ChatMessagesNotifier extends StateNotifier<List<ChatMessage>> {
@@ -114,11 +113,7 @@ class AIChatWidget extends HookConsumerWidget {
 
         // 4. Aggiungi il messaggio alla chat
         chatNotifier.addMessage(
-          ChatMessage(
-            role: 'assistant',
-            content: finalResponse,
-            interpretation: interpretation,
-          ),
+          ChatMessage(role: 'assistant', content: finalResponse, interpretation: interpretation),
         );
       } catch (e, stackTrace) {
         logger.e(
@@ -127,10 +122,7 @@ class AIChatWidget extends HookConsumerWidget {
           stackTrace: stackTrace,
         );
         chatNotifier.addMessage(
-          ChatMessage(
-            role: 'assistant',
-            content: 'Si è verificato un errore: ${e.toString()}',
-          ),
+          ChatMessage(role: 'assistant', content: 'Si è verificato un errore: ${e.toString()}'),
         );
       }
     }
@@ -158,9 +150,7 @@ class AIChatWidget extends HookConsumerWidget {
       isProcessing.value = true;
       try {
         // 1. Aggiungi il messaggio dell'utente
-        chatNotifier.addMessage(
-          ChatMessage(role: 'user', content: messageText),
-        );
+        chatNotifier.addMessage(ChatMessage(role: 'user', content: messageText));
 
         // 2. Ottieni il contesto
         final userId = userService.getCurrentUserId();
@@ -179,16 +169,9 @@ class AIChatWidget extends HookConsumerWidget {
         // 4. Processa la risposta
         await processAIResponse(response);
       } catch (e, stackTrace) {
-        logger.e(
-          'Errore durante l\'invio del messaggio',
-          error: e,
-          stackTrace: stackTrace,
-        );
+        logger.e('Errore durante l\'invio del messaggio', error: e, stackTrace: stackTrace);
         chatNotifier.addMessage(
-          ChatMessage(
-            role: 'assistant',
-            content: 'Si è verificato un errore: ${e.toString()}',
-          ),
+          ChatMessage(role: 'assistant', content: 'Si è verificato un errore: ${e.toString()}'),
         );
       } finally {
         isProcessing.value = false;
@@ -229,17 +212,11 @@ class AIChatWidget extends HookConsumerWidget {
                           vertical: AppTheme.spacing.md,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.full,
-                          ),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(AppTheme.radii.full),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.shadow.withAlpha(20),
+                              color: Theme.of(context).colorScheme.shadow.withAlpha(20),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -261,12 +238,9 @@ class AIChatWidget extends HookConsumerWidget {
                             SizedBox(width: AppTheme.spacing.md),
                             Text(
                               'Elaborazione...',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             ),
                           ],
                         ),
@@ -276,8 +250,7 @@ class AIChatWidget extends HookConsumerWidget {
               ],
             ),
           ),
-          if (settings.availableProviders.isNotEmpty)
-            _ChatInputField(onSend: sendMessage),
+          if (settings.availableProviders.isNotEmpty) _ChatInputField(onSend: sendMessage),
         ],
       ),
     );
@@ -307,25 +280,17 @@ class _ChatMessageBubble extends StatelessWidget {
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         margin: EdgeInsets.symmetric(
           vertical: AppTheme.spacing.sm,
           horizontal: AppTheme.spacing.md,
         ),
         padding: EdgeInsets.all(AppTheme.spacing.md),
         decoration: BoxDecoration(
-          color: message.isUser
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest,
+          color: message.isUser ? colorScheme.primary : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(
-              message.isUser ? AppTheme.radii.lg : AppTheme.radii.sm,
-            ),
-            topRight: Radius.circular(
-              message.isUser ? AppTheme.radii.sm : AppTheme.radii.lg,
-            ),
+            topLeft: Radius.circular(message.isUser ? AppTheme.radii.lg : AppTheme.radii.sm),
+            topRight: Radius.circular(message.isUser ? AppTheme.radii.sm : AppTheme.radii.lg),
             bottomLeft: Radius.circular(AppTheme.radii.lg),
             bottomRight: Radius.circular(AppTheme.radii.lg),
           ),
@@ -340,9 +305,7 @@ class _ChatMessageBubble extends StatelessWidget {
         child: SelectableText(
           displayText,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: message.isUser
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface,
+            color: message.isUser ? colorScheme.onPrimary : colorScheme.onSurface,
             height: 1.4,
           ),
         ),
@@ -405,16 +368,11 @@ class _AISettingsSelector extends ConsumerWidget {
                       ? availableProviders.first
                       : null,
                   items: availableProviders.map((provider) {
-                    return DropdownMenuItem(
-                      value: provider,
-                      child: Text(provider.displayName),
-                    );
+                    return DropdownMenuItem(value: provider, child: Text(provider.displayName));
                   }).toList(),
                   onChanged: (provider) {
                     if (provider != null) {
-                      ref
-                          .read(aiSettingsProvider.notifier)
-                          .updateSelectedProvider(provider);
+                      ref.read(aiSettingsProvider.notifier).updateSelectedProvider(provider);
                     }
                   },
                 ),
@@ -430,16 +388,11 @@ class _AISettingsSelector extends ConsumerWidget {
                       ? availableModels.first
                       : null,
                   items: availableModels.map((model) {
-                    return DropdownMenuItem(
-                      value: model,
-                      child: Text(model.modelId),
-                    );
+                    return DropdownMenuItem(value: model, child: Text(model.modelId));
                   }).toList(),
                   onChanged: (model) {
                     if (model != null) {
-                      ref
-                          .read(aiSettingsProvider.notifier)
-                          .updateSelectedModel(model);
+                      ref.read(aiSettingsProvider.notifier).updateSelectedModel(model);
                     }
                   },
                 ),
@@ -471,9 +424,7 @@ class _AISettingsSelector extends ConsumerWidget {
         initialValue: value,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.primary,
-          ),
+          labelStyle: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
             borderSide: BorderSide.none,
@@ -488,9 +439,7 @@ class _AISettingsSelector extends ConsumerWidget {
         items: items,
         onChanged: onChanged,
         dropdownColor: colorScheme.surfaceContainerHighest,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurface,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
       ),
     );
   }
@@ -521,20 +470,13 @@ class _APIKeyWarning extends StatelessWidget {
               color: colorScheme.error.withAlpha(26),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.warning_rounded,
-              color: colorScheme.error,
-              size: 24,
-            ),
+            child: Icon(Icons.warning_rounded, color: colorScheme.error, size: 24),
           ),
           SizedBox(width: AppTheme.spacing.lg),
           Expanded(
             child: Text(
               'Nessuna chiave API configurata. Per favore, aggiungi le tue chiavi API nelle impostazioni.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.error,
-                height: 1.4,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.error, height: 1.4),
             ),
           ),
           SizedBox(width: AppTheme.spacing.md),
@@ -601,9 +543,7 @@ class _ChatInputField extends HookConsumerWidget {
                 textInputAction: TextInputAction.send,
                 maxLines: 4,
                 minLines: 1,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
+                style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Scrivi un messaggio...',
                   hintStyle: theme.textTheme.bodyLarge?.copyWith(

@@ -122,10 +122,7 @@ class AppBadge extends StatelessWidget {
     );
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: getDecoration(),
       child: onTap != null
           ? Material(

@@ -32,9 +32,7 @@ class MacrosService {
   }
 
   void _initializeService() {
-    _subscriptions.add(
-      _firestore.collection('foods').snapshots().listen(_handleFoodsUpdate),
-    );
+    _subscriptions.add(_firestore.collection('foods').snapshots().listen(_handleFoodsUpdate));
   }
 
   void _handleFoodsUpdate(QuerySnapshot snapshot) {
@@ -133,11 +131,7 @@ class MacrosService {
     if (foodData == null) return;
 
     final batch = _firestore.batch();
-    final userFoodRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('foods')
-        .doc();
+    final userFoodRef = _firestore.collection('users').doc(userId).collection('foods').doc();
 
     final userFoodData = {
       'foodId': foodId,

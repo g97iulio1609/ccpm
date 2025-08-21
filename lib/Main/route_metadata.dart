@@ -4,31 +4,19 @@ class RouteMeta {
   final String path;
   final String title;
   final IconData icon;
-  const RouteMeta({
-    required this.path,
-    required this.title,
-    required this.icon,
-  });
+  const RouteMeta({required this.path, required this.title, required this.icon});
 }
 
 // Mappa principale di metadati per rotte top-level e secondarie comuni
 class RouteMetadata {
   static const Map<String, RouteMeta> metaByPath = {
-    '/programs_screen': RouteMeta(
-      path: '/programs_screen',
-      title: 'Coaching',
-      icon: Icons.people,
-    ),
+    '/programs_screen': RouteMeta(path: '/programs_screen', title: 'Coaching', icon: Icons.people),
     '/user_programs': RouteMeta(
       path: '/user_programs',
       title: 'I Miei Allenamenti',
       icon: Icons.fitness_center,
     ),
-    '/exercises_list': RouteMeta(
-      path: '/exercises_list',
-      title: 'Esercizi',
-      icon: Icons.sports,
-    ),
+    '/exercises_list': RouteMeta(path: '/exercises_list', title: 'Esercizi', icon: Icons.sports),
     '/subscriptions': RouteMeta(
       path: '/subscriptions',
       title: 'Abbonamenti',
@@ -39,21 +27,13 @@ class RouteMetadata {
       title: 'Massimali',
       icon: Icons.trending_up,
     ),
-    '/user_profile': RouteMeta(
-      path: '/user_profile',
-      title: 'Profilo Utente',
-      icon: Icons.person,
-    ),
+    '/user_profile': RouteMeta(path: '/user_profile', title: 'Profilo Utente', icon: Icons.person),
     '/users_dashboard': RouteMeta(
       path: '/users_dashboard',
       title: 'Gestione Utenti',
       icon: Icons.supervised_user_circle,
     ),
-    '/measurements': RouteMeta(
-      path: '/measurements',
-      title: 'Misurazioni',
-      icon: Icons.straighten,
-    ),
+    '/measurements': RouteMeta(path: '/measurements', title: 'Misurazioni', icon: Icons.straighten),
     '/tdee': RouteMeta(
       path: '/tdee',
       title: 'Fabbisogno Calorico',
@@ -79,26 +59,14 @@ class RouteMetadata {
       title: 'Food Management',
       icon: Icons.fastfood,
     ),
-    '/mymeals': RouteMeta(
-      path: '/mymeals',
-      title: 'Meals Preferiti',
-      icon: Icons.favorite,
-    ),
-    '/mydays': RouteMeta(
-      path: '/mydays',
-      title: 'Giorni Preferiti',
-      icon: Icons.calendar_month,
-    ),
+    '/mymeals': RouteMeta(path: '/mymeals', title: 'Meals Preferiti', icon: Icons.favorite),
+    '/mydays': RouteMeta(path: '/mydays', title: 'Giorni Preferiti', icon: Icons.calendar_month),
     '/settings/ai': RouteMeta(
       path: '/settings/ai',
       title: 'Impostazioni AI',
       icon: Icons.smart_toy,
     ),
-    '/ai/chat': RouteMeta(
-      path: '/ai/chat',
-      title: 'AI Assistant',
-      icon: Icons.chat,
-    ),
+    '/ai/chat': RouteMeta(path: '/ai/chat', title: 'AI Assistant', icon: Icons.chat),
     '/associations': RouteMeta(
       path: '/associations',
       title: 'Association',

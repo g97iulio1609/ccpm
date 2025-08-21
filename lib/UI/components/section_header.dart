@@ -6,12 +6,7 @@ class SectionHeader extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
 
-  const SectionHeader({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-  });
+  const SectionHeader({super.key, required this.title, this.subtitle, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -29,29 +24,18 @@ class SectionHeader extends StatelessWidget {
             color: colorScheme.primaryContainer.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 18,
-          ),
+          child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 18),
         ),
         SizedBox(width: AppTheme.spacing.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
               if (subtitle != null)
                 Text(
                   subtitle!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
             ],
           ),

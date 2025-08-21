@@ -43,9 +43,7 @@ class AppGrid extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      constraints: maxWidth != null
-          ? BoxConstraints(maxWidth: maxWidth!)
-          : null,
+      constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth!) : null,
       decoration: BoxDecoration(
         color: backgroundColor ?? colorScheme.surface,
         borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
@@ -63,17 +61,12 @@ class AppGrid extends StatelessWidget {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(76),
                 borderRadius: borderRadius != null
-                    ? BorderRadius.vertical(
-                        top: Radius.circular(AppTheme.radii.lg),
-                      )
+                    ? BorderRadius.vertical(top: Radius.circular(AppTheme.radii.lg))
                     : null,
               ),
               child: Row(
                 children: [
-                  if (leading != null) ...[
-                    leading!,
-                    SizedBox(width: AppTheme.spacing.md),
-                  ],
+                  if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.md)],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,8 +101,7 @@ class AppGrid extends StatelessWidget {
                 ],
               ),
             ),
-            if (showDividers)
-              Divider(height: 1, color: colorScheme.outline.withAlpha(26)),
+            if (showDividers) Divider(height: 1, color: colorScheme.outline.withAlpha(26)),
           ],
 
           // Grid Content
@@ -244,9 +236,7 @@ class GridCell extends StatelessWidget {
             : colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.outline.withAlpha(26),
+          color: isSelected ? colorScheme.primary : colorScheme.outline.withAlpha(26),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -260,17 +250,12 @@ class GridCell extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (leading != null) ...[
-                  leading!,
-                  SizedBox(height: AppTheme.spacing.md),
-                ],
+                if (leading != null) ...[leading!, SizedBox(height: AppTheme.spacing.md)],
                 Text(
                   title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: enabled
-                        ? (isSelected
-                              ? colorScheme.primary
-                              : colorScheme.onSurface)
+                        ? (isSelected ? colorScheme.primary : colorScheme.onSurface)
                         : colorScheme.onSurfaceVariant.withAlpha(128),
                     fontWeight: isSelected ? FontWeight.w600 : null,
                   ),
@@ -288,10 +273,7 @@ class GridCell extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ],
-                if (trailing != null) ...[
-                  SizedBox(height: AppTheme.spacing.md),
-                  trailing!,
-                ],
+                if (trailing != null) ...[SizedBox(height: AppTheme.spacing.md), trailing!],
               ],
             ),
           ),

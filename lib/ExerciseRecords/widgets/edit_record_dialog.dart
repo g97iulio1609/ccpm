@@ -28,12 +28,8 @@ class EditRecordDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController = useTextEditingController(
-      text: record.maxWeight.toString(),
-    );
-    final repetitionsController = useTextEditingController(
-      text: record.repetitions.toString(),
-    );
+    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
+    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
@@ -61,24 +57,14 @@ class EditRecordDialog extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDialogTextFormField(
-              maxWeightController,
-              'Max weight',
-              context,
-            ),
-            _buildDialogTextFormField(
-              repetitionsController,
-              'Repetitions',
-              context,
-            ),
+            _buildDialogTextFormField(maxWeightController, 'Max weight', context),
+            _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
             _buildDatePicker(context, selectedDate),
             Row(
               children: [
                 Text(
                   'Keep current weight',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 Switch(
                   value: keepWeight.value,
@@ -105,10 +91,7 @@ class EditRecordDialog extends HookConsumerWidget {
     );
   }
 
-  Widget _buildDatePicker(
-    BuildContext context,
-    ValueNotifier<DateTime> selectedDate,
-  ) {
+  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DatePickerField(
@@ -134,10 +117,7 @@ class EditRecordDialog extends HookConsumerWidget {
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight = ExerciseUtils.calculateMaxRM(
-        newMaxWeight,
-        newRepetitions,
-      ).roundToDouble();
+      newMaxWeight = ExerciseUtils.calculateMaxRM(newMaxWeight, newRepetitions).roundToDouble();
       newRepetitions = 1;
     }
 
@@ -159,9 +139,9 @@ class EditRecordDialog extends HookConsumerWidget {
       );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record updated successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Record updated successfully')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -172,4 +152,3 @@ class EditRecordDialog extends HookConsumerWidget {
     }
   }
 }
-

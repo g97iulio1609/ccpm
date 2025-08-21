@@ -35,10 +35,7 @@ class UserAutocompleteField extends ConsumerWidget {
         return matches.toList();
       },
       itemBuilder: (context, suggestion) {
-        return ListTile(
-          title: Text(suggestion.name),
-          subtitle: Text('Email: ${suggestion.email}'),
-        );
+        return ListTile(title: Text(suggestion.name), subtitle: Text('Email: ${suggestion.email}'));
       },
       onSelected: (suggestion) {
         controller.text = suggestion.name;
@@ -46,10 +43,7 @@ class UserAutocompleteField extends ConsumerWidget {
         ref.read(selectedUserIdProvider.notifier).state = suggestion.id;
       },
       onChanged: onChanged,
-      emptyBuilder: const Padding(
-        padding: EdgeInsets.all(8.0),
-        child: Text('No users found'),
-      ),
+      emptyBuilder: const Padding(padding: EdgeInsets.all(8.0), child: Text('No users found')),
     );
   }
 }

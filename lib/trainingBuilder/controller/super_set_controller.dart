@@ -10,8 +10,7 @@ class SuperSetController {
     final superSets = <SuperSet>[];
     final exercisesWithSuperSet = program.weeks.expand(
       (week) => week.workouts.expand(
-        (workout) =>
-            workout.exercises.where((exercise) => exercise.superSetId != null),
+        (workout) => workout.exercises.where((exercise) => exercise.superSetId != null),
       ),
     );
 
@@ -20,14 +19,10 @@ class SuperSetController {
       if (superSetId != null) {
         final existingSuperSet = superSets.firstWhere(
           (superSet) => superSet.id == superSetId,
-          orElse: () => SuperSet(
-            id: superSetId,
-            name: 'SS${superSets.length + 1}',
-            exerciseIds: [],
-          ),
+          orElse: () =>
+              SuperSet(id: superSetId, name: 'SS${superSets.length + 1}', exerciseIds: []),
         );
-        final superSetIndex =
-            int.tryParse(existingSuperSet.name!.replaceAll('SS', '')) ?? 0;
+        final superSetIndex = int.tryParse(existingSuperSet.name!.replaceAll('SS', '')) ?? 0;
         if (superSetIndex > maxSuperSetIndex) {
           maxSuperSetIndex = superSetIndex;
         }
@@ -49,21 +44,13 @@ class SuperSetController {
 
   String generateRandomId(int length) {
     final random = Random.secure();
-    const chars =
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     return String.fromCharCodes(
-      Iterable.generate(
-        length,
-        (_) => chars.codeUnitAt(random.nextInt(chars.length)),
-      ),
+      Iterable.generate(length, (_) => chars.codeUnitAt(random.nextInt(chars.length))),
     );
   }
 
-  void createSuperSet(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-  ) {
+  void createSuperSet(TrainingProgram program, int weekIndex, int workoutIndex) {
     final superSet = SuperSet(
       id: generateRandomId(16).toString(),
       name: 'Superset ${++superSetCounter}',
@@ -73,8 +60,7 @@ class SuperSetController {
     final workout = program.weeks[weekIndex].workouts[workoutIndex];
 
     // Crea una nuova lista che include tutti i superset esistenti più il nuovo
-    final updatedSuperSets = List<SuperSet>.from(workout.superSets ?? [])
-      ..add(superSet);
+    final updatedSuperSets = List<SuperSet>.from(workout.superSets ?? [])..add(superSet);
 
     // Assegna la nuova lista al workout
     program.weeks[weekIndex].workouts[workoutIndex] = workout.copyWith(
@@ -155,8 +141,7 @@ class SuperSetController {
     // Se il superset è vuoto, rimuovilo
     List<Map<String, dynamic>> updatedSuperSets = superSets;
     if (exerciseIds.isEmpty) {
-      updatedSuperSets = List<Map<String, dynamic>>.from(superSets)
-        ..removeAt(ssIndex);
+      updatedSuperSets = List<Map<String, dynamic>>.from(superSets)..removeAt(ssIndex);
     }
 
     program.weeks[weekIndex].workouts[workoutIndex] = workout.copyWith(
@@ -165,21 +150,14 @@ class SuperSetController {
     );
   }
 
-  void removeSuperSet(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    String superSetId,
-  ) {
+  void removeSuperSet(TrainingProgram program, int weekIndex, int workoutIndex, String superSetId) {
     final workout = program.weeks[weekIndex].workouts[workoutIndex];
     final superSets = List<Map<String, dynamic>>.from(workout.superSets ?? []);
     final filtered = superSets.where((ss) => ss['id'] != superSetId).toList();
 
     // Pulisce anche gli exercise.superSetId che puntavano al superset rimosso
     final exercises = workout.exercises
-        .map(
-          (e) => e.superSetId == superSetId ? e.copyWith(superSetId: null) : e,
-        )
+        .map((e) => e.superSetId == superSetId ? e.copyWith(superSetId: null) : e)
         .toList();
 
     program.weeks[weekIndex].workouts[workoutIndex] = workout.copyWith(

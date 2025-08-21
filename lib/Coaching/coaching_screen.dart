@@ -24,8 +24,7 @@ class CoachingScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final TextEditingController typeAheadController =
-        useTextEditingController();
+    final TextEditingController typeAheadController = useTextEditingController();
     final FocusNode focusNode = useFocusNode();
     final usersService = ref.watch(usersServiceProvider);
     final coachingService = ref.watch(coachingServiceProvider);
@@ -38,22 +37,14 @@ class CoachingScreen extends HookConsumerWidget {
     // Recupero degli utenti in base al ruolo
     final usersFuture = useMemoized(() async {
       if (currentUserRole == 'admin') {
-        final snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .get();
-        return snapshot.docs
-            .map((doc) => UserModel.fromFirestore(doc))
-            .toList();
+        final snapshot = await FirebaseFirestore.instance.collection('users').get();
+        return snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
       } else if (currentUserRole == 'coach') {
-        final associations = await coachingService
-            .getCoachAssociations(currentUserId)
-            .first;
+        final associations = await coachingService.getCoachAssociations(currentUserId).first;
         List<UserModel> users = [];
         for (var association in associations) {
           if (association.status == 'accepted') {
-            final athlete = await usersService.getUserById(
-              association.athleteId,
-            );
+            final athlete = await usersService.getUserById(association.athleteId);
             if (athlete != null) {
               users.add(athlete);
             }
@@ -98,13 +89,7 @@ class CoachingScreen extends HookConsumerWidget {
           // Athletes Grid
           SliverPadding(
             padding: EdgeInsets.all(AppTheme.spacing.xl),
-            sliver: _buildAthletesList(
-              snapshot,
-              theme,
-              colorScheme,
-              currentUserRole,
-              context,
-            ),
+            sliver: _buildAthletesList(snapshot, theme, colorScheme, currentUserRole, context),
           ),
         ],
       ),
@@ -119,10 +104,7 @@ class CoachingScreen extends HookConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.surface,
-                    colorScheme.surfaceContainerHighest.withAlpha(128),
-                  ],
+                  colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
                   stops: const [0.0, 1.0],
                 ),
               ),
@@ -178,9 +160,7 @@ class CoachingScreen extends HookConsumerWidget {
     return Builder(
       builder: (context) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
         }
 
         if (snapshot.hasError) {
@@ -188,9 +168,7 @@ class CoachingScreen extends HookConsumerWidget {
             child: Center(
               child: Text(
                 'Error loading athletes: ${snapshot.error}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.error,
-                ),
+                style: theme.textTheme.titleLarge?.copyWith(color: colorScheme.error),
               ),
             ),
           );
@@ -210,9 +188,7 @@ class CoachingScreen extends HookConsumerWidget {
                   ),
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
-                    currentUserRole == 'coach'
-                        ? 'No Athletes Associated'
-                        : 'No Users Found',
+                    currentUserRole == 'coach' ? 'No Athletes Associated' : 'No Users Found',
                     style: theme.textTheme.titleLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
@@ -240,12 +216,7 @@ class CoachingScreen extends HookConsumerWidget {
         final rows = <List<UserModel>>[];
         for (var i = 0; i < users.length; i += crossAxisCount) {
           rows.add(
-            users.sublist(
-              i,
-              i + crossAxisCount > users.length
-                  ? users.length
-                  : i + crossAxisCount,
-            ),
+            users.sublist(i, i + crossAxisCount > users.length ? users.length : i + crossAxisCount),
           );
         }
 
@@ -266,16 +237,9 @@ class CoachingScreen extends HookConsumerWidget {
                         Expanded(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              right: i < crossAxisCount - 1
-                                  ? AppTheme.spacing.xl
-                                  : 0,
+                              right: i < crossAxisCount - 1 ? AppTheme.spacing.xl : 0,
                             ),
-                            child: _buildAthleteCard(
-                              rowUsers[i],
-                              theme,
-                              colorScheme,
-                              context,
-                            ),
+                            child: _buildAthleteCard(rowUsers[i], theme, colorScheme, context),
                           ),
                         )
                       else
@@ -297,9 +261,7 @@ class CoachingScreen extends HookConsumerWidget {
     ColorScheme colorScheme,
     BuildContext context,
   ) {
-    final String initials = user.name.isNotEmpty
-        ? user.name.substring(0, 1).toUpperCase()
-        : '?';
+    final String initials = user.name.isNotEmpty ? user.name.substring(0, 1).toUpperCase() : '?';
 
     return Container(
       decoration: BoxDecoration(
@@ -352,10 +314,7 @@ class CoachingScreen extends HookConsumerWidget {
                       ),
                       const Spacer(),
                       IconButton(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                        icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
                         onPressed: () => _showAthleteOptions(context, user),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -382,9 +341,7 @@ class CoachingScreen extends HookConsumerWidget {
                 // Email
                 Text(
                   user.email,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -422,9 +379,9 @@ class CoachingScreen extends HookConsumerWidget {
     try {
       context.go('/user_programs', extra: {'userId': userId});
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error navigating to user profile: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error navigating to user profile: $e')));
     }
   }
 
@@ -445,11 +402,7 @@ class CoachingScreen extends HookConsumerWidget {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.person_outline,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.person_outline, color: colorScheme.primary, size: 24),
         ),
         items: [
           BottomMenuItem(

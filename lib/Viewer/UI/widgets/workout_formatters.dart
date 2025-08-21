@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:alphanessone/Viewer/UI/workout_provider.dart'
-    as workout_provider;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
 
 extension StringExtension on String {
   String capitalize() {
@@ -9,24 +8,16 @@ extension StringExtension on String {
 }
 
 class WorkoutFormatters {
-  static dynamic formatSeriesValue(
-    Map<String, dynamic> seriesData,
-    String field,
-    WidgetRef ref,
-  ) {
+  static dynamic formatSeriesValue(Map<String, dynamic> seriesData, String field, WidgetRef ref) {
     final value = seriesData[field];
     final maxValue = seriesData['max${field.capitalize()}'];
     final valueDone = seriesData['${field}_done'];
-    final isDone = ref
-        .read(workout_provider.workoutServiceProvider)
-        .isSeriesDone(seriesData);
+    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
     final unit = field == 'reps' ? 'R' : 'Kg';
 
     // Se non ci sono valori done o sono zero, mostra solo i target
     if (valueDone == null || valueDone == 0) {
-      return maxValue != null && maxValue != value
-          ? '$value-$maxValue$unit'
-          : '$value$unit';
+      return maxValue != null && maxValue != value ? '$value-$maxValue$unit' : '$value$unit';
     }
 
     // Se la serie è completata, mostra solo il valore done
@@ -35,14 +26,9 @@ class WorkoutFormatters {
     }
 
     // Se la serie è fallita, prepara sia il formato esteso che quello compatto
-    final targetText = maxValue != null && maxValue != value
-        ? '$value-$maxValue'
-        : '$value';
+    final targetText = maxValue != null && maxValue != value ? '$value-$maxValue' : '$value';
 
-    return {
-      'compact': '$valueDone$unit',
-      'extended': '$valueDone/$targetText$unit',
-    };
+    return {'compact': '$valueDone$unit', 'extended': '$valueDone/$targetText$unit'};
   }
 
   static String formatSeriesValueForMobile(
@@ -53,15 +39,11 @@ class WorkoutFormatters {
     final value = seriesData[field];
     final maxValue = seriesData['max${field.capitalize()}'];
     final valueDone = seriesData['${field}_done'];
-    final isDone = ref
-        .read(workout_provider.workoutServiceProvider)
-        .isSeriesDone(seriesData);
+    final isDone = ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
     final unit = field == 'reps' ? 'R' : 'Kg';
 
     if (valueDone == null || valueDone == 0) {
-      return maxValue != null && maxValue != value
-          ? '$value-$maxValue$unit'
-          : '$value$unit';
+      return maxValue != null && maxValue != value ? '$value-$maxValue$unit' : '$value$unit';
     }
 
     if (isDone) {
@@ -72,13 +54,8 @@ class WorkoutFormatters {
     return '$valueDone$unit';
   }
 
-  static bool determineSeriesStatus(
-    Map<String, dynamic> seriesData,
-    WidgetRef ref,
-  ) {
-    return ref
-        .read(workout_provider.workoutServiceProvider)
-        .isSeriesDone(seriesData);
+  static bool determineSeriesStatus(Map<String, dynamic> seriesData, WidgetRef ref) {
+    return ref.read(workout_provider.workoutServiceProvider).isSeriesDone(seriesData);
   }
 
   static bool isSeriesFailed(Map<String, dynamic> seriesData) {
@@ -88,8 +65,7 @@ class WorkoutFormatters {
     final targetWeight = seriesData['weight'];
 
     // Verifica se l'utente ha tentato la serie
-    if ((repsDone != null && repsDone != 0) ||
-        (weightDone != null && weightDone != 0)) {
+    if ((repsDone != null && repsDone != 0) || (weightDone != null && weightDone != 0)) {
       // Verifica se ha fallito (valori inferiori al target)
       if ((repsDone != null && repsDone < targetReps) ||
           (weightDone != null && weightDone < targetWeight)) {
@@ -102,8 +78,7 @@ class WorkoutFormatters {
   static bool hasAttemptedSeries(Map<String, dynamic> seriesData) {
     final repsDone = seriesData['reps_done'];
     final weightDone = seriesData['weight_done'];
-    return (repsDone != null && repsDone != 0) ||
-        (weightDone != null && weightDone != 0);
+    return (repsDone != null && repsDone != 0) || (weightDone != null && weightDone != 0);
   }
 
   // Shared formatting utilities to eliminate duplication
@@ -127,9 +102,7 @@ class WorkoutFormatters {
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     if (minutes > 0) {
-      return remainingSeconds > 0
-          ? '${minutes}m ${remainingSeconds}s'
-          : '${minutes}m';
+      return remainingSeconds > 0 ? '${minutes}m ${remainingSeconds}s' : '${minutes}m';
     }
     return '${remainingSeconds}s';
   }

@@ -37,29 +37,16 @@ class UserProgramsScreen extends HookConsumerWidget {
     final content = SafeArea(
       child: CustomScrollView(
         slivers: [
-          if (userRole == 'admin' ||
-              userRole == 'client_premium' ||
-              userRole == 'coach')
+          if (userRole == 'admin' || userRole == 'client_premium' || userRole == 'coach')
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
-                child: _buildAddProgramButton(
-                  context,
-                  userId,
-                  theme,
-                  colorScheme,
-                ),
+                child: _buildAddProgramButton(context, userId, theme, colorScheme),
               ),
             ),
           SliverPadding(
             padding: EdgeInsets.all(AppTheme.spacing.xl),
-            sliver: _buildProgramList(
-              context,
-              ref,
-              userId,
-              userRole,
-              firestoreService,
-            ),
+            sliver: _buildProgramList(context, ref, userId, userRole, firestoreService),
           ),
         ],
       ),
@@ -74,10 +61,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.surface,
-                    colorScheme.surfaceContainerHighest.withAlpha(128),
-                  ],
+                  colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
                   stops: const [0.0, 1.0],
                 ),
               ),
@@ -142,14 +126,9 @@ class UserProgramsScreen extends HookConsumerWidget {
                 ),
               ),
               const Spacer(),
-              if (userRole == 'admin' ||
-                  userRole == 'coach' ||
-                  userRole == 'client_premium')
+              if (userRole == 'admin' || userRole == 'coach' || userRole == 'client_premium')
                 IconButton(
-                  icon: Icon(
-                    Icons.more_vert,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
                   onPressed: () => _showProgramOptions(
                     context,
                     doc,
@@ -182,9 +161,7 @@ class UserProgramsScreen extends HookConsumerWidget {
             SizedBox(height: AppTheme.spacing.sm),
             Text(
               doc['description'],
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -205,11 +182,7 @@ class UserProgramsScreen extends HookConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.visibility_off,
-                    size: 16,
-                    color: colorScheme.onErrorContainer,
-                  ),
+                  Icon(Icons.visibility_off, size: 16, color: colorScheme.onErrorContainer),
                   SizedBox(width: AppTheme.spacing.xs),
                   Text(
                     'Hidden',
@@ -241,18 +214,16 @@ class UserProgramsScreen extends HookConsumerWidget {
             child: Center(
               child: Text(
                 'Si è verificato un errore: ${snapshot.error}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.error),
               ),
             ),
           );
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SliverToBoxAdapter(
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
         }
 
         final documents = snapshot.data?.docs ?? [];
@@ -265,9 +236,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                   Icon(
                     Icons.fitness_center_outlined,
                     size: 64,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant.withAlpha(128),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(128),
                   ),
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
@@ -281,9 +250,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                   Text(
                     'Inizia creando un nuovo programma',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurfaceVariant.withAlpha(179),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(179),
                     ),
                   ),
                 ],
@@ -301,9 +268,7 @@ class UserProgramsScreen extends HookConsumerWidget {
           rows.add(
             documents.sublist(
               i,
-              i + crossAxisCount > documents.length
-                  ? documents.length
-                  : i + crossAxisCount,
+              i + crossAxisCount > documents.length ? documents.length : i + crossAxisCount,
             ),
           );
         }
@@ -325,9 +290,7 @@ class UserProgramsScreen extends HookConsumerWidget {
                         Expanded(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              right: i < crossAxisCount - 1
-                                  ? AppTheme.spacing.xl
-                                  : 0,
+                              right: i < crossAxisCount - 1 ? AppTheme.spacing.xl : 0,
                             ),
                             child: _buildProgramCard(
                               context,
@@ -375,11 +338,7 @@ class UserProgramsScreen extends HookConsumerWidget {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
         ),
         items: [
           BottomMenuItem(
@@ -465,9 +424,7 @@ class UserProgramsScreen extends HookConsumerWidget {
             bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
           ),
           title: const Text('Conferma eliminazione'),
-          content: const Text(
-            'Sei sicuro di voler eliminare questo programma?',
-          ),
+          content: const Text('Sei sicuro di voler eliminare questo programma?'),
           actions: [
             TextButton(
               child: const Text('Annulla'),
@@ -487,10 +444,7 @@ class UserProgramsScreen extends HookConsumerWidget {
     }
   }
 
-  Future<void> _toggleProgramVisibility(
-    String id,
-    bool currentVisibility,
-  ) async {
+  Future<void> _toggleProgramVisibility(String id, bool currentVisibility) async {
     await FirebaseFirestore.instance.collection('programs').doc(id).update({
       'hide': !currentVisibility,
     });
@@ -516,18 +470,12 @@ class UserProgramsScreen extends HookConsumerWidget {
           title: const Text('Duplica Programma'),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(
-              labelText: 'Nuovo Nome del Programma',
-            ),
+            decoration: const InputDecoration(labelText: 'Nuovo Nome del Programma'),
           ),
           actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annulla'),
-            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annulla')),
             ElevatedButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(nameController.text.trim()),
+              onPressed: () => Navigator.of(context).pop(nameController.text.trim()),
               child: const Text('OK'),
             ),
           ],
@@ -538,51 +486,32 @@ class UserProgramsScreen extends HookConsumerWidget {
     if (newProgramName != null && newProgramName.isNotEmpty) {
       try {
         if (!context.mounted) return;
-        final result = await controller.duplicateProgram(
-          docId,
-          newProgramName,
-          context,
-        );
+        final result = await controller.duplicateProgram(docId, newProgramName, context);
         if (context.mounted) {
           if (result != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Programma duplicato con successo: $newProgramName',
-                ),
-              ),
+              SnackBar(content: Text('Programma duplicato con successo: $newProgramName')),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Errore durante la duplicazione del programma'),
-              ),
+              const SnackBar(content: Text('Errore durante la duplicazione del programma')),
             );
           }
         }
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Errore durante la duplicazione del programma: $e'),
-            ),
+            SnackBar(content: Text('Errore durante la duplicazione del programma: $e')),
           );
         }
       }
     }
   }
 
-  void _navigateToTrainingViewer(
-    BuildContext context,
-    String? userId,
-    String? programId,
-  ) {
+  void _navigateToTrainingViewer(BuildContext context, String? userId, String? programId) {
     if (userId == null || programId == null) return;
 
-    context.go(
-      '/user_programs/training_viewer',
-      extra: {'userId': userId, 'programId': programId},
-    );
+    context.go('/user_programs/training_viewer', extra: {'userId': userId, 'programId': programId});
   }
 }
 
@@ -615,9 +544,7 @@ class AddProgramDialogState extends State<AddProgramDialog> {
         bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
       ),
       backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
       title: Text(
         'Create New Program',
         style: theme.textTheme.titleLarge?.copyWith(
@@ -736,9 +663,7 @@ class AddProgramDialogState extends State<AddProgramDialog> {
       decoration: InputDecoration(
         labelText: 'Mesocycle Number',
         prefixIcon: Icon(Icons.fitness_center, color: colorScheme.primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radii.md)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
           borderSide: BorderSide(color: colorScheme.outline.withAlpha(76)),
@@ -756,9 +681,7 @@ class AddProgramDialogState extends State<AddProgramDialog> {
               value: number,
               child: Text(
                 number.toString(),
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
+                style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
               ),
             ),
           )

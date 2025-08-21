@@ -55,10 +55,7 @@ class TrainingProgramPage extends HookConsumerWidget {
               weekIndex: weekIndex!,
               workoutIndex: workoutIndex!,
             )
-          : TrainingProgramWorkoutListPage(
-              controller: controller,
-              weekIndex: weekIndex!,
-            );
+          : TrainingProgramWorkoutListPage(controller: controller, weekIndex: weekIndex!);
     }
 
     return PageScaffold(
@@ -171,17 +168,9 @@ class _ProgramDetailsForm extends ConsumerWidget {
             keyboardType: TextInputType.number,
           ),
           SizedBox(height: AppTheme.spacing.lg),
-          _ProgramOptions(
-            controller: controller,
-            theme: theme,
-            colorScheme: colorScheme,
-          ),
+          _ProgramOptions(controller: controller, theme: theme, colorScheme: colorScheme),
           SizedBox(height: AppTheme.spacing.lg),
-          _ActionButtons(
-            controller: controller,
-            theme: theme,
-            colorScheme: colorScheme,
-          ),
+          _ActionButtons(controller: controller, theme: theme, colorScheme: colorScheme),
         ],
       ),
     );
@@ -193,11 +182,7 @@ class _ProgramOptions extends StatelessWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
 
-  const _ProgramOptions({
-    required this.controller,
-    required this.theme,
-    required this.colorScheme,
-  });
+  const _ProgramOptions({required this.controller, required this.theme, required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
@@ -214,8 +199,7 @@ class _ProgramOptions extends StatelessWidget {
         _OptionSwitch(
           label: 'Public Program',
           value: controller.program.status == 'public',
-          onChanged: (value) =>
-              controller.updateProgramStatus(value ? 'public' : 'private'),
+          onChanged: (value) => controller.updateProgramStatus(value ? 'public' : 'private'),
           theme: theme,
           colorScheme: colorScheme,
         ),
@@ -229,11 +213,7 @@ class _ActionButtons extends ConsumerWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
 
-  const _ActionButtons({
-    required this.controller,
-    required this.theme,
-    required this.colorScheme,
-  });
+  const _ActionButtons({required this.controller, required this.theme, required this.colorScheme});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -272,17 +252,16 @@ class _ActionButtons extends ConsumerWidget {
                 variant: AppButtonVariant.subtle,
                 onPressed: () async {
                   try {
-                    final exportMap = 
-                        TrainingShareService.programToExportMap(controller.program);
+                    final exportMap = TrainingShareService.programToExportMap(controller.program);
                     final content = await encodeJsonAsync(exportMap);
                     if (context.mounted) {
                       _showExportDialog(context, title: 'Export JSON', content: content);
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Errore export JSON: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Errore export JSON: $e')));
                     }
                   }
                 },
@@ -297,17 +276,16 @@ class _ActionButtons extends ConsumerWidget {
                 variant: AppButtonVariant.subtle,
                 onPressed: () async {
                   try {
-                    final exportMap = 
-                        TrainingShareService.programToExportMap(controller.program);
+                    final exportMap = TrainingShareService.programToExportMap(controller.program);
                     final content = await buildCsvAsync(exportMap);
                     if (context.mounted) {
                       _showExportDialog(context, title: 'Export CSV', content: content);
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Errore export CSV: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Errore export CSV: $e')));
                     }
                   }
                 },
@@ -343,9 +321,9 @@ class _ActionButtons extends ConsumerWidget {
                     );
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Errore export file JSON: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Errore export file JSON: $e')));
                     }
                   }
                 },
@@ -367,9 +345,9 @@ class _ActionButtons extends ConsumerWidget {
                     );
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Errore export file CSV: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Errore export file CSV: $e')));
                     }
                   }
                 },
@@ -384,16 +362,15 @@ class _ActionButtons extends ConsumerWidget {
                 variant: AppButtonVariant.subtle,
                 onPressed: () async {
                   try {
-                    final imported =
-                        await const share_io.TrainingShareIO().importProgramFromFile();
+                    final imported = await const share_io.TrainingShareIO().importProgramFromFile();
                     if (imported != null) {
                       // Aggiungi suffisso al nome per maggiore chiarezza
                       final importedProgram = imported.copyWith(
-                        name: imported.name.isNotEmpty 
+                        name: imported.name.isNotEmpty
                             ? '${imported.name} (import)'
                             : 'Programma Importato',
                       );
-                      
+
                       controller.importProgramModel(importedProgram);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -403,9 +380,9 @@ class _ActionButtons extends ConsumerWidget {
                     }
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Errore import da file: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Errore import da file: $e')));
                     }
                   }
                 },
@@ -418,8 +395,7 @@ class _ActionButtons extends ConsumerWidget {
     );
   }
 
-  void _showExportDialog(BuildContext context,
-      {required String title, required String content}) {
+  void _showExportDialog(BuildContext context, {required String title, required String content}) {
     final controller = TextEditingController(text: content);
     // Capture messenger from the caller context; pop the root navigator to close only the dialog.
     final messenger = ScaffoldMessenger.of(context);
@@ -437,9 +413,7 @@ class _ActionButtons extends ConsumerWidget {
             readOnly: true,
             minLines: 12,
             maxLines: 20,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
           SizedBox(height: AppTheme.spacing.md),
           Row(
@@ -453,9 +427,7 @@ class _ActionButtons extends ConsumerWidget {
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: controller.text));
                   Navigator.of(context, rootNavigator: true).pop();
-                  messenger.showSnackBar(
-                    const SnackBar(content: Text('Contenuto copiato')),
-                  );
+                  messenger.showSnackBar(const SnackBar(content: Text('Contenuto copiato')));
                 },
               ),
             ],
@@ -561,115 +533,125 @@ class _ActionButtons extends ConsumerWidget {
               ),
             );
           }
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
                   ChoiceChip(
-                  label: const Text('JSON'),
-                  selected: format == 'json',
-                  onSelected: (_) => setState(() => format = 'json'),
-                ),
-                SizedBox(width: AppTheme.spacing.sm),
-                ChoiceChip(
-                  label: const Text('CSV'),
-                  selected: format == 'csv',
-                  onSelected: (_) => setState(() => format = 'csv'),
-                ),
-              ],
-            ),
-            SizedBox(height: AppTheme.spacing.md),
-            SizedBox(
-              height: editorHeight.clamp(220, 420),
-              child: TextField(
-                controller: inputCtrl,
-                expands: true,
-                maxLines: null,
-                minLines: null,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Incolla qui il contenuto...',
+                    label: const Text('JSON'),
+                    selected: format == 'json',
+                    onSelected: (_) => setState(() => format = 'json'),
+                  ),
+                  SizedBox(width: AppTheme.spacing.sm),
+                  ChoiceChip(
+                    label: const Text('CSV'),
+                    selected: format == 'csv',
+                    onSelected: (_) => setState(() => format = 'csv'),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppTheme.spacing.md),
+              SizedBox(
+                height: editorHeight.clamp(220, 420),
+                child: TextField(
+                  controller: inputCtrl,
+                  expands: true,
+                  maxLines: null,
+                  minLines: null,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Incolla qui il contenuto...',
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: AppTheme.spacing.md),
-            // Preview area (on-demand, no slowdown during typing)
-            buildPreview(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                AppDialogHelpers.buildCancelButton(context: context),
-                TextButton.icon(
-                  onPressed: () async {
-                    setState(() { previewError = null; previewData = null; });
-                    try {
-                      final map = (format == 'json')
-                          ? await parseJsonToExportMapAsync(inputCtrl.text)
-                          : await parseCsvToExportMapAsync(inputCtrl.text);
-                      setState(() { previewData = map; previewError = null; });
-                    } catch (e) {
-                      setState(() { previewError = e.toString(); previewData = null; });
-                    }
-                  },
-                  icon: const Icon(Icons.visibility_outlined),
-                  label: const Text('Anteprima'),
-                ),
-                AppDialogHelpers.buildActionButton(
-                  context: context,
-                  label: 'Importa',
-                  icon: Icons.check,
-                  onPressed: () async {
-                    // Chiudi il dialog immediatamente per evitare problemi di lifecycle
-                    Navigator.of(context, rootNavigator: true).pop();
-                    
-                    try {
-                      TrainingProgram program;
-                      if (format == 'json') {
-                        final map = await parseJsonToExportMapAsync(inputCtrl.text);
-                        program = TrainingShareService.programFromExportMap(
-                          Map<String, dynamic>.from(map['program'] as Map),
-                        );
-                      } else {
-                        final map = await parseCsvToExportMapAsync(inputCtrl.text);
-                        program = TrainingShareService.programFromExportMap(
-                          Map<String, dynamic>.from(map['program'] as Map),
-                        );
-                      }
-                      
-                      // Aggiungi suffisso al nome per maggiore chiarezza
-                      final importedProgram = program.copyWith(
-                        name: program.name.isNotEmpty 
-                            ? '${program.name} (import)'
-                            : 'Programma Importato',
-                      );
-                      
-                      // Usa ref.read per ottenere una referenza fresca del controller
-                      // Questo evita problemi con il lifecycle del StateNotifier
+              SizedBox(height: AppTheme.spacing.md),
+              // Preview area (on-demand, no slowdown during typing)
+              buildPreview(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  AppDialogHelpers.buildCancelButton(context: context),
+                  TextButton.icon(
+                    onPressed: () async {
+                      setState(() {
+                        previewError = null;
+                        previewData = null;
+                      });
                       try {
-                        final controllerNotifier = ref.read(trainingProgramControllerProvider.notifier);
-                        controllerNotifier.importProgramModel(importedProgram);
+                        final map = (format == 'json')
+                            ? await parseJsonToExportMapAsync(inputCtrl.text)
+                            : await parseCsvToExportMapAsync(inputCtrl.text);
+                        setState(() {
+                          previewData = map;
+                          previewError = null;
+                        });
                       } catch (e) {
-                        // Fallback: se il controller non è disponibile, aggiorna direttamente lo stato
-                        debugPrint('Fallback: aggiornamento diretto dello stato - $e');
-                        final stateNotifier = ref.read(trainingProgramStateProvider.notifier);
-                        stateNotifier.updateProgram(importedProgram);
+                        setState(() {
+                          previewError = e.toString();
+                          previewData = null;
+                        });
                       }
-                      
-                      messenger.showSnackBar(
-                        const SnackBar(content: Text('Programma importato con successo')),
-                      );
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Errore import: $e')),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
-        );
+                    },
+                    icon: const Icon(Icons.visibility_outlined),
+                    label: const Text('Anteprima'),
+                  ),
+                  AppDialogHelpers.buildActionButton(
+                    context: context,
+                    label: 'Importa',
+                    icon: Icons.check,
+                    onPressed: () async {
+                      // Chiudi il dialog immediatamente per evitare problemi di lifecycle
+                      Navigator.of(context, rootNavigator: true).pop();
+
+                      try {
+                        TrainingProgram program;
+                        if (format == 'json') {
+                          final map = await parseJsonToExportMapAsync(inputCtrl.text);
+                          program = TrainingShareService.programFromExportMap(
+                            Map<String, dynamic>.from(map['program'] as Map),
+                          );
+                        } else {
+                          final map = await parseCsvToExportMapAsync(inputCtrl.text);
+                          program = TrainingShareService.programFromExportMap(
+                            Map<String, dynamic>.from(map['program'] as Map),
+                          );
+                        }
+
+                        // Aggiungi suffisso al nome per maggiore chiarezza
+                        final importedProgram = program.copyWith(
+                          name: program.name.isNotEmpty
+                              ? '${program.name} (import)'
+                              : 'Programma Importato',
+                        );
+
+                        // Usa ref.read per ottenere una referenza fresca del controller
+                        // Questo evita problemi con il lifecycle del StateNotifier
+                        try {
+                          final controllerNotifier = ref.read(
+                            trainingProgramControllerProvider.notifier,
+                          );
+                          controllerNotifier.importProgramModel(importedProgram);
+                        } catch (e) {
+                          // Fallback: se il controller non è disponibile, aggiorna direttamente lo stato
+                          debugPrint('Fallback: aggiornamento diretto dello stato - $e');
+                          final stateNotifier = ref.read(trainingProgramStateProvider.notifier);
+                          stateNotifier.updateProgram(importedProgram);
+                        }
+
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('Programma importato con successo')),
+                        );
+                      } catch (e) {
+                        messenger.showSnackBar(SnackBar(content: Text('Errore import: $e')));
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          );
         },
       ),
     );
@@ -713,11 +695,7 @@ class _ProgramWeeksSection extends StatelessWidget {
             ),
           ),
           SizedBox(height: AppTheme.spacing.md),
-          TrainingProgramWeekList(
-            programId: programId,
-            userId: userId,
-            controller: controller,
-          ),
+          TrainingProgramWeekList(programId: programId, userId: userId, controller: controller),
         ],
       ),
     );
@@ -755,9 +733,7 @@ class _CustomTextFormField extends StatelessWidget {
         labelText: labelText,
         hintText: hintText,
         prefixIcon: Icon(icon, color: colorScheme.primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.md),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radii.md)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
           borderSide: BorderSide(color: colorScheme.outline.withAlpha(76)),
@@ -792,10 +768,7 @@ class _OptionSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.sm,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.md),
@@ -803,12 +776,7 @@ class _OptionSwitch extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: colorScheme.onSurface,
-            ),
-          ),
+          Text(label, style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.onSurface)),
           Switch(
             value: value,
             onChanged: onChanged,

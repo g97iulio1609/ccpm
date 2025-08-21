@@ -7,6 +7,7 @@ class SeriesCard extends StatelessWidget {
   final Series series;
   final num maxWeight;
   final String exerciseName;
+  final String? exerciseType;
   final bool isExpanded;
   // When false, the card will not render its internal expanded content block.
   final bool showExpandedContent;
@@ -21,6 +22,7 @@ class SeriesCard extends StatelessWidget {
     required this.series,
     required this.maxWeight,
     required this.exerciseName,
+    this.exerciseType,
     this.isExpanded = false,
     this.showExpandedContent = true,
     this.onExpansionChanged,
@@ -46,18 +48,13 @@ class SeriesCard extends StatelessWidget {
       child: Column(
         children: [
           _buildHeader(context, theme, colorScheme),
-          if (isExpanded && showExpandedContent)
-            _buildExpandedContent(context, theme, colorScheme),
+          if (isExpanded && showExpandedContent) _buildExpandedContent(context, theme, colorScheme),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -90,9 +87,7 @@ class SeriesCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   _formatSeriesInfo(),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -100,10 +95,7 @@ class SeriesCard extends StatelessWidget {
               MenuAnchor(
                 builder: (context, controller, child) {
                   return IconButton(
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
                     onPressed: () {
                       if (controller.isOpen) {
                         controller.close();
@@ -165,18 +157,12 @@ class SeriesCard extends StatelessWidget {
     );
   }
 
-  Widget _buildExpandedContent(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildExpandedContent(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacing.md),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(AppTheme.radii.lg),
-        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppTheme.radii.lg)),
       ),
       child: SeriesFormFields(
         series: series,
@@ -188,17 +174,27 @@ class SeriesCard extends StatelessWidget {
   }
 
   String _formatSeriesInfo() {
-    final reps = _formatRange(
-      series.reps.toString(),
-      series.maxReps?.toString(),
-    );
-    final weight = _formatRange(
-      series.weight.toString(),
-      series.maxWeight?.toString(),
-    );
-    final intensity = (series.intensity?.isNotEmpty ?? false)
-        ? ' (${series.intensity}%)'
-        : '';
+    if ((exerciseType ?? '').toLowerCase() == 'cardio') {
+      final d = series.durationDisplay.isNotEmpty ? series.durationDisplay : '';
+      final dist = series.distanceDisplay.isNotEmpty ? '${series.distanceDisplay} km' : '';
+      final pace = series.paceDisplayCardio;
+      final spd = (series.speedKmh != null && series.speedKmh! > 0)
+          ? '${series.speedKmh!.toStringAsFixed(1)} km/h'
+          : '';
+      final inc = (series.inclinePercent != null)
+          ? ' ∠ ${series.inclinePercent!.toStringAsFixed(1)}%'
+          : '';
+      final hr = (series.hrBpm != null)
+          ? ' ❤ ${series.hrBpm} bpm${series.hrPercent != null ? ' (${series.hrPercent!.toStringAsFixed(0)}%)' : ''}'
+          : (series.hrPercent != null ? ' ❤ ${series.hrPercent!.toStringAsFixed(0)}%' : '');
+      final parts = [d, dist, pace.isNotEmpty ? pace : spd, hr].where((e) => e.isNotEmpty).toList();
+      final main = parts.join(' • ');
+      return main.isNotEmpty ? '$main$inc' : 'Cardio';
+    }
+
+    final reps = _formatRange(series.reps.toString(), series.maxReps?.toString());
+    final weight = _formatRange(series.weight.toString(), series.maxWeight?.toString());
+    final intensity = (series.intensity?.isNotEmpty ?? false) ? ' (${series.intensity}%)' : '';
     final rpe = (series.rpe?.isNotEmpty ?? false) ? ' RPE ${series.rpe}' : '';
 
     return '$reps reps × $weight kg$intensity$rpe';

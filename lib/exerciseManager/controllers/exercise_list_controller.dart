@@ -3,16 +3,14 @@ import '../exercise_model.dart';
 import '../exercises_services.dart';
 import '../../providers/providers.dart';
 
-class ExerciseListController
-    extends StateNotifier<AsyncValue<List<ExerciseModel>>> {
+class ExerciseListController extends StateNotifier<AsyncValue<List<ExerciseModel>>> {
   final ExercisesService _exercisesService;
   List<ExerciseModel> _allExercises = [];
   String _currentSearchText = '';
   List<String> _selectedMuscleGroups = [];
   String? _currentExerciseType;
 
-  ExerciseListController(this._exercisesService)
-    : super(const AsyncValue.loading()) {
+  ExerciseListController(this._exercisesService) : super(const AsyncValue.loading()) {
     _init();
   }
 
@@ -27,15 +25,10 @@ class ExerciseListController
     final filteredList = _allExercises
         .where(
           (exercise) =>
-              exercise.name.toLowerCase().contains(
-                _currentSearchText.toLowerCase(),
-              ) &&
+              exercise.name.toLowerCase().contains(_currentSearchText.toLowerCase()) &&
               (_selectedMuscleGroups.isEmpty ||
-                  _selectedMuscleGroups.any(
-                    (group) => exercise.muscleGroups.contains(group),
-                  )) &&
-              (_currentExerciseType == null ||
-                  exercise.type == _currentExerciseType),
+                  _selectedMuscleGroups.any((group) => exercise.muscleGroups.contains(group))) &&
+              (_currentExerciseType == null || exercise.type == _currentExerciseType),
         )
         .toList();
 
@@ -46,9 +39,7 @@ class ExerciseListController
       } else if (a.status != 'pending' && b.status == 'pending') {
         return 1;
       }
-      return a.name.compareTo(
-        b.name,
-      ); // Ordine alfabetico come criterio secondario
+      return a.name.compareTo(b.name); // Ordine alfabetico come criterio secondario
     });
 
     state = AsyncValue.data(filteredList);
@@ -58,11 +49,7 @@ class ExerciseListController
     return state.value ?? [];
   }
 
-  void updateFilters({
-    String? searchText,
-    List<String>? muscleGroups,
-    String? exerciseType,
-  }) {
+  void updateFilters({String? searchText, List<String>? muscleGroups, String? exerciseType}) {
     if (searchText != null) _currentSearchText = searchText;
     if (muscleGroups != null) _selectedMuscleGroups = muscleGroups;
     if (exerciseType != null) _currentExerciseType = exerciseType;
@@ -82,7 +69,6 @@ class ExerciseListController
 }
 
 final exerciseListControllerProvider =
-    StateNotifierProvider<
-      ExerciseListController,
-      AsyncValue<List<ExerciseModel>>
-    >((ref) => ExerciseListController(ref.watch(exercisesServiceProvider)));
+    StateNotifierProvider<ExerciseListController, AsyncValue<List<ExerciseModel>>>(
+      (ref) => ExerciseListController(ref.watch(exercisesServiceProvider)),
+    );

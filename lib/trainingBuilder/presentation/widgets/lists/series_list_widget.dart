@@ -61,6 +61,7 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
                   series: seriesGroup.first,
                   maxWeight: widget.latestMaxWeight,
                   exerciseName: widget.exercise.name,
+                  exerciseType: widget.exercise.type,
                   isExpanded: isExpanded,
                   showExpandedContent: false,
                   onExpansionChanged: () {
@@ -71,12 +72,11 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
                   onEdit: () => _editSeriesGroup(seriesGroup),
                   onDelete: () => _deleteSeriesGroup(seriesGroup),
                   onDuplicate: () => _duplicateSeriesGroup(seriesGroup),
-                  onSeriesUpdated: (updatedSeries) =>
-                      _updateSeries(updatedSeries),
+                  onSeriesUpdated: (updatedSeries) => _updateSeries(updatedSeries),
                 ),
                 Positioned(
-                  right: 48, // lascia spazio all'icona espandi/menu
-                  top: 10,
+                  right: 60, // maggiore spazio per evitare sovrapposizioni
+                  top: 12,
                   child: _GroupCountBadge(count: seriesGroup.length),
                 ),
               ],
@@ -98,8 +98,7 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
 
     return Column(
       children: [
-        if (groupedSeries.isNotEmpty)
-          isWide ? Expanded(child: listView) : listView,
+        if (groupedSeries.isNotEmpty) isWide ? Expanded(child: listView) : listView,
         SizedBox(height: AppTheme.spacing.md),
         _buildActionButtons(theme, colorScheme),
       ],
@@ -193,10 +192,7 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
       builder: (context) => AppDialog(
         title: const Text('Elimina Gruppo Serie'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
           FilledButton(
             onPressed: () {
               final updated = widget.exercise.series
@@ -216,9 +212,7 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
             child: const Text('Elimina'),
           ),
         ],
-        child: const Text(
-          'Sei sicuro di voler eliminare questo gruppo di serie?',
-        ),
+        child: const Text('Sei sicuro di voler eliminare questo gruppo di serie?'),
       ),
     );
   }
@@ -228,22 +222,15 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
         .map(
           (series) => series.copyWith(
             serieId: DateTime.now().millisecondsSinceEpoch.toString(),
-            order:
-                widget.exercise.series.length + seriesGroup.indexOf(series) + 1,
+            order: widget.exercise.series.length + seriesGroup.indexOf(series) + 1,
           ),
         )
         .toList();
 
-    final updated = List<Series>.from(widget.exercise.series)
-      ..addAll(duplicatedSeries);
+    final updated = List<Series>.from(widget.exercise.series)..addAll(duplicatedSeries);
     ref
         .read(trainingProgramControllerProvider.notifier)
-        .updateSeries(
-          widget.weekIndex,
-          widget.workoutIndex,
-          widget.exerciseIndex,
-          updated,
-        );
+        .updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, updated);
     setState(() {});
   }
 
@@ -303,21 +290,14 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
   }
 
   void _updateSeries(Series updatedSeries) {
-    final index = widget.exercise.series.indexWhere(
-      (s) => s.serieId == updatedSeries.serieId,
-    );
+    final index = widget.exercise.series.indexWhere((s) => s.serieId == updatedSeries.serieId);
 
     if (index != -1) {
       final updated = List<Series>.from(widget.exercise.series);
       updated[index] = updatedSeries;
       ref
           .read(trainingProgramControllerProvider.notifier)
-          .updateSeries(
-            widget.weekIndex,
-            widget.workoutIndex,
-            widget.exerciseIndex,
-            updated,
-          );
+          .updateSeries(widget.weekIndex, widget.workoutIndex, widget.exerciseIndex, updated);
       setState(() {});
     }
   }
@@ -334,20 +314,25 @@ class _GroupCountBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: 4,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
-        color: cs.secondaryContainer.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        color: cs.surface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Text(
-        '$count serie',
+        '$count',
         style: theme.textTheme.labelSmall?.copyWith(
-          color: cs.onSecondaryContainer,
-          fontWeight: FontWeight.w600,
+          color: cs.primary,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
         ),
       ),
     );

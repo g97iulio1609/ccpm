@@ -3,8 +3,7 @@ import 'package:alphanessone/models/measurement_model.dart';
 import 'package:alphanessone/services/measurements_service.dart';
 import 'measurement_constants.dart';
 
-class MeasurementController
-    extends StateNotifier<AsyncValue<List<MeasurementModel>>> {
+class MeasurementController extends StateNotifier<AsyncValue<List<MeasurementModel>>> {
   final MeasurementsService _measurementsService;
   final String userId;
 
@@ -43,10 +42,7 @@ class MeasurementController
     }
   }
 
-  Future<void> updateMeasurement(
-    String measurementId,
-    MeasurementModel measurement,
-  ) async {
+  Future<void> updateMeasurement(String measurementId, MeasurementModel measurement) async {
     try {
       await _measurementsService.updateMeasurement(
         userId: userId,
@@ -69,10 +65,7 @@ class MeasurementController
 
   Future<void> deleteMeasurement(String measurementId) async {
     try {
-      await _measurementsService.deleteMeasurement(
-        userId: userId,
-        measurementId: measurementId,
-      );
+      await _measurementsService.deleteMeasurement(userId: userId, measurementId: measurementId);
       _loadMeasurements();
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
@@ -122,15 +115,8 @@ class MeasurementController
 
 // Providers
 final measurementControllerProvider =
-    StateNotifierProvider.family<
-      MeasurementController,
-      AsyncValue<List<MeasurementModel>>,
-      String
-    >(
-      (ref, userId) =>
-          MeasurementController(ref.watch(measurementsServiceProvider), userId),
+    StateNotifierProvider.family<MeasurementController, AsyncValue<List<MeasurementModel>>, String>(
+      (ref, userId) => MeasurementController(ref.watch(measurementsServiceProvider), userId),
     );
 
-final selectedMeasurementsProvider = StateProvider<List<MeasurementModel>>(
-  (ref) => [],
-);
+final selectedMeasurementsProvider = StateProvider<List<MeasurementModel>>((ref) => []);

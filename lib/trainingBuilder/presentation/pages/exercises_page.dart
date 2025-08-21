@@ -16,7 +16,8 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/shared/widgets/page_scaffold.dart';
 import 'package:alphanessone/shared/widgets/empty_state.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
-import 'package:alphanessone/trainingBuilder/widgets/exercise_list_widgets.dart' show ReorderExercisesFAB;
+import 'package:alphanessone/trainingBuilder/widgets/exercise_list_widgets.dart'
+    show ReorderExercisesFAB;
 
 class ExercisesPage extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -38,10 +39,10 @@ class ExercisesPage extends ConsumerWidget {
     final exerciseRecordService = usersService.exerciseRecordService;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-  final screenWidth = MediaQuery.of(context).size.width;
-  // Breakpoints responsivi
-  final bool useGrid = screenWidth >= 900;
-  final bool compact = screenWidth < 700; // mobile stretto => compatto
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Breakpoints responsivi
+    final bool useGrid = screenWidth >= 900;
+    final bool compact = screenWidth < 700; // mobile stretto => compatto
 
     final page = PageScaffold(
       colorScheme: colorScheme,
@@ -58,65 +59,61 @@ class ExercisesPage extends ConsumerWidget {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final isNarrow = constraints.maxWidth < 780;
+                final isMobile = constraints.maxWidth < 600;
+                
                 final actions = [
-                  SizedBox(
-                    width: isNarrow ? 160 : 200,
-                    child: AppButton(
-                      label: isNarrow ? 'Riordina' : 'Riordina Esercizi',
-                      icon: Icons.reorder,
-                      variant: AppButtonVariant.ghost,
-                      size: compact ? AppButtonSize.sm : AppButtonSize.md,
-                      block: true,
-                      onPressed: () => _showReorderDialog(context, exercises),
+                  if (exercises.isNotEmpty) ...[
+                    Flexible(
+                      child: AppButton(
+                        label: isMobile ? 'Riordina' : 'Riordina Esercizi',
+                        icon: Icons.reorder,
+                        variant: AppButtonVariant.ghost,
+                        size: compact ? AppButtonSize.sm : AppButtonSize.md,
+                        block: !isMobile,
+                        onPressed: () => _showReorderDialog(context, exercises),
+                      ),
                     ),
-                  ),
-                  SizedBox(width: AppTheme.spacing.md),
-                  SizedBox(
-                    width: isNarrow ? 160 : 200,
+                    SizedBox(width: AppTheme.spacing.sm),
+                  ],
+                  Flexible(
                     child: AppButton(
-                      label: isNarrow ? 'Aggiungi' : 'Aggiungi Esercizio',
+                      label: isMobile ? 'Aggiungi' : 'Aggiungi Esercizio',
                       icon: Icons.add_circle_outline,
                       variant: AppButtonVariant.primary,
                       size: compact ? AppButtonSize.sm : AppButtonSize.md,
-                      block: true,
-                      onPressed: () => controller.addExercise(
-                        weekIndex,
-                        workoutIndex,
-                        context,
-                      ),
+                      block: !isMobile,
+                      onPressed: () => controller.addExercise(weekIndex, workoutIndex, context),
                     ),
                   ),
                 ];
 
                 return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Esercizi',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Esercizi',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
+                    SizedBox(width: AppTheme.spacing.md),
                     if (isNarrow)
-                      // In stretto, metti le azioni su due righe usando Wrap
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 340),
+                      Expanded(
                         child: Wrap(
-                          spacing: AppTheme.spacing.md,
-                          runSpacing: AppTheme.spacing.sm,
+                          alignment: WrapAlignment.end,
+                          spacing: AppTheme.spacing.sm,
+                          runSpacing: AppTheme.spacing.xs,
                           children: actions,
                         ),
                       )
                     else
-                      Row(children: actions),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: actions,
+                      ),
                   ],
                 );
               },
@@ -132,27 +129,23 @@ class ExercisesPage extends ConsumerWidget {
                     icon: Icons.fitness_center_outlined,
                     title: 'Nessun esercizio disponibile',
                     subtitle: 'Aggiungi il primo esercizio per iniziare',
-                    onPrimaryAction: () => controller.addExercise(
-                      weekIndex,
-                      workoutIndex,
-                      context,
-                    ),
+                    onPrimaryAction: () => controller.addExercise(weekIndex, workoutIndex, context),
                     primaryActionLabel: 'Aggiungi esercizio',
                   ),
                 )
               : (useGrid
-                  ? _buildGridView(
-                      context,
-                      exercises,
-                      exerciseRecordService,
-                      compact ? 'compact' : 'detail',
-                    )
-                  : _buildListView(
-                      context,
-                      exercises,
-                      exerciseRecordService,
-                      compact ? 'compact' : 'detail',
-                    )),
+                    ? _buildGridView(
+                        context,
+                        exercises,
+                        exerciseRecordService,
+                        compact ? 'compact' : 'detail',
+                      )
+                    : _buildListView(
+                        context,
+                        exercises,
+                        exerciseRecordService,
+                        compact ? 'compact' : 'detail',
+                      )),
         ),
       ],
     );
@@ -185,12 +178,7 @@ class ExercisesPage extends ConsumerWidget {
       builder: (context) => ReorderDialog(
         items: labels,
         onReorder: (oldIndex, newIndex) {
-          controller.reorderExercises(
-            weekIndex,
-            workoutIndex,
-            oldIndex,
-            newIndex,
-          );
+          controller.reorderExercises(weekIndex, workoutIndex, oldIndex, newIndex);
         },
       ),
     );
@@ -204,22 +192,11 @@ class ExercisesPage extends ConsumerWidget {
   ) {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
-        if (index == exercises.length) {
-          return Padding(
-            padding: EdgeInsets.only(top: AppTheme.spacing.md),
-            child: _buildAddExerciseButton(context),
-          );
-        }
         return Padding(
           padding: EdgeInsets.only(bottom: AppTheme.spacing.md),
-          child: _buildExerciseCard(
-            context,
-            exercises[index],
-            exerciseRecordService,
-            density,
-          ),
+          child: _buildExerciseCard(context, exercises[index], exerciseRecordService, density),
         );
-      }, childCount: exercises.length + 1),
+      }, childCount: exercises.length),
     );
   }
 
@@ -229,24 +206,16 @@ class ExercisesPage extends ConsumerWidget {
     dynamic exerciseRecordService,
     String density,
   ) {
-  final isCompact = density == 'compact';
-  return SliverGrid(
+    final isCompact = density == 'compact';
+    return SliverGrid(
       delegate: SliverChildBuilderDelegate((context, index) {
-        if (index == exercises.length) {
-          return _buildAddExerciseButton(context);
-        }
-        return _buildExerciseCard(
-          context,
-          exercises[index],
-          exerciseRecordService,
-          density,
-        );
-      }, childCount: exercises.length + 1),
+        return _buildExerciseCard(context, exercises[index], exerciseRecordService, density);
+      }, childCount: exercises.length),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: isCompact ? 420 : 560,
-    mainAxisSpacing: AppTheme.spacing.md,
-    crossAxisSpacing: AppTheme.spacing.md,
-    mainAxisExtent: isCompact ? 420 : 520,
+        maxCrossAxisExtent: isCompact ? 420 : 560,
+        mainAxisSpacing: AppTheme.spacing.md,
+        crossAxisSpacing: AppTheme.spacing.md,
+        mainAxisExtent: isCompact ? 420 : 520,
       ),
     );
   }
@@ -259,10 +228,7 @@ class ExercisesPage extends ConsumerWidget {
   ) {
     final workout = controller.program.weeks[weekIndex].workouts[workoutIndex];
     final superSets = (workout.superSets as List<dynamic>? ?? [])
-        .where(
-          (ss) =>
-              (ss['exerciseIds'] as List<dynamic>? ?? []).contains(exercise.id),
-        )
+        .where((ss) => (ss['exerciseIds'] as List<dynamic>? ?? []).contains(exercise.id))
         .map((ss) => SuperSet.fromMap(ss as Map<String, dynamic>))
         .toList();
 
@@ -280,8 +246,7 @@ class ExercisesPage extends ConsumerWidget {
           superSets: superSets,
           latestMaxWeight: latestMaxWeight,
           onTap: () => _navigateToExerciseDetails(context, exercise, superSets),
-          onOptions: () =>
-              _showExerciseOptions(context, exercise, latestMaxWeight),
+          onOptions: () => _showExerciseOptions(context, exercise, latestMaxWeight),
           seriesWidget: SeriesListWidget(
             exercise: exercise,
             controller: controller,
@@ -296,26 +261,6 @@ class ExercisesPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildAddExerciseButton(BuildContext context) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
-
-    return Center(
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: isSmallScreen ? double.infinity : 300,
-        ),
-        child: AppButton(
-          label: 'Aggiungi Esercizio',
-          icon: Icons.add_circle_outline,
-          variant: AppButtonVariant.primary,
-          size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
-          block: true,
-          onPressed: () =>
-              controller.addExercise(weekIndex, workoutIndex, context),
-        ),
-      ),
-    );
-  }
 
   // Max weight unified via ExerciseService.getLatestMaxWeight
 
@@ -338,8 +283,7 @@ class ExercisesPage extends ConsumerWidget {
       extra: {
         'programId': controller.program.id,
         'weekId': controller.program.weeks[weekIndex].id,
-        'workoutId':
-            controller.program.weeks[weekIndex].workouts[workoutIndex].id,
+        'workoutId': controller.program.weeks[weekIndex].workouts[workoutIndex].id,
         'exerciseId': exercise.id,
         'userId': controller.program.athleteId,
         'superSetExercises': superSets.map((s) => s.toMap()).toList(),
@@ -350,11 +294,7 @@ class ExercisesPage extends ConsumerWidget {
     );
   }
 
-  void _showExerciseOptions(
-    BuildContext context,
-    Exercise exercise,
-    num latestMaxWeight,
-  ) {
+  void _showExerciseOptions(BuildContext context, Exercise exercise, num latestMaxWeight) {
     showDialog(
       context: context,
       builder: (context) => ExerciseOptionsDialog(
@@ -365,22 +305,10 @@ class ExercisesPage extends ConsumerWidget {
         workoutIndex: workoutIndex,
         onBulkSeries: () => _showBulkSeriesDialog(context, exercise),
         onBulkDelete: () => _showBulkDeleteDialog(context, exercise),
-        onEdit: () => controller.editExercise(
-          weekIndex,
-          workoutIndex,
-          exercise.order - 1,
-          context,
-        ),
-        onDuplicate: () => controller.duplicateExercise(
-          weekIndex,
-          workoutIndex,
-          exercise.order - 1,
-        ),
-        onDelete: () => controller.removeExercise(
-          weekIndex,
-          workoutIndex,
-          exercise.order - 1,
-        ),
+        onEdit: () => controller.editExercise(weekIndex, workoutIndex, exercise.order - 1, context),
+        onDuplicate: () =>
+            controller.duplicateExercise(weekIndex, workoutIndex, exercise.order - 1),
+        onDelete: () => controller.removeExercise(weekIndex, workoutIndex, exercise.order - 1),
       ),
     );
   }
@@ -393,17 +321,9 @@ class ExercisesPage extends ConsumerWidget {
         workoutExercises: workout.exercises,
         initialSelection: initialExercise,
         onConfirm: (selected) async {
-          final ids = selected
-              .map((e) => e.id)
-              .whereType<String>()
-              .toList();
+          final ids = selected.map((e) => e.id).whereType<String>().toList();
           if (ids.isEmpty) return;
-          await controller.removeExercisesBulk(
-            weekIndex,
-            workoutIndex,
-            ids,
-            context,
-          );
+          await controller.removeExercisesBulk(weekIndex, workoutIndex, ids, context);
         },
       ),
     );
@@ -424,10 +344,7 @@ class ExercisesPage extends ConsumerWidget {
     );
   }
 
-  void _showBulkSeriesConfigurationDialog(
-    BuildContext context,
-    List<Exercise> exercises,
-  ) {
+  void _showBulkSeriesConfigurationDialog(BuildContext context, List<Exercise> exercises) {
     showDialog(
       context: context,
       builder: (context) => BulkSeriesConfigurationDialog(

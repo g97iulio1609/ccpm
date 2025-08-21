@@ -29,11 +29,8 @@ class MeasurementsPage extends ConsumerStatefulWidget {
         minChildSize: 0.5,
         maxChildSize: 0.9,
         expand: false,
-        builder: (_, controller) => MeasurementForm(
-          scrollController: controller,
-          measurement: null,
-          userId: userId,
-        ),
+        builder: (_, controller) =>
+            MeasurementForm(scrollController: controller, measurement: null, userId: userId),
       ),
     );
   }
@@ -83,11 +80,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
           Expanded(
             child: selectedUserId != null
                 ? _buildMeasurementsContent(selectedUserId)
-                : _buildUserSelectionPrompt(
-                    theme,
-                    colorScheme,
-                    currentUserRole,
-                  ),
+                : _buildUserSelectionPrompt(theme, colorScheme, currentUserRole),
           ),
         ],
       ),
@@ -102,10 +95,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.surface,
-                    colorScheme.surfaceContainerHighest.withAlpha(128),
-                  ],
+                  colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
                 ),
               ),
               child: content,
@@ -153,11 +143,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_search,
-              size: 64,
-              color: colorScheme.onSurfaceVariant.withAlpha(128),
-            ),
+            Icon(Icons.person_search, size: 64, color: colorScheme.onSurfaceVariant.withAlpha(128)),
             SizedBox(height: AppTheme.spacing.md),
             Text(
               'Seleziona un utente',
@@ -170,17 +156,13 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
         ),
       );
     }
-    return _buildMeasurementsContent(
-      ref.read(usersServiceProvider).getCurrentUserId(),
-    );
+    return _buildMeasurementsContent(ref.read(usersServiceProvider).getCurrentUserId());
   }
 
   Widget _buildMeasurementsContent(String userId) {
     return Consumer(
       builder: (context, ref, _) {
-        final measurementsAsync = ref.watch(
-          measurementControllerProvider(userId),
-        );
+        final measurementsAsync = ref.watch(measurementControllerProvider(userId));
         final userAsync = ref.watch(userProvider(userId));
 
         return userAsync.when(
@@ -195,16 +177,11 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
                   padding: EdgeInsets.all(AppTheme.spacing.lg),
                   child: AppCard(
                     title: 'Nessuna misurazione',
-                    subtitle:
-                        'Aggiungi la prima misurazione per vedere l\'andamento nel tempo',
+                    subtitle: 'Aggiungi la prima misurazione per vedere l\'andamento nel tempo',
                     leadingIcon: Icons.monitor_weight,
                     actions: [
                       FilledButton.icon(
-                        onPressed: () =>
-                            MeasurementsPage.showAddMeasurementDialog(
-                              context,
-                              userId,
-                            ),
+                        onPressed: () => MeasurementsPage.showAddMeasurementDialog(context, userId),
                         icon: const Icon(Icons.add),
                         label: const Text('Aggiungi misurazione'),
                       ),
@@ -225,11 +202,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
     );
   }
 
-  Widget _buildAddButton(
-    BuildContext context,
-    ColorScheme colorScheme,
-    String? selectedUserId,
-  ) {
+  Widget _buildAddButton(BuildContext context, ColorScheme colorScheme, String? selectedUserId) {
     return Padding(
       padding: EdgeInsets.all(AppTheme.spacing.lg),
       child: Container(
@@ -252,8 +225,7 @@ class _MeasurementsPageState extends ConsumerState<MeasurementsPage> {
           child: InkWell(
             onTap: () => MeasurementsPage.showAddMeasurementDialog(
               context,
-              selectedUserId ??
-                  ref.read(usersServiceProvider).getCurrentUserId(),
+              selectedUserId ?? ref.read(usersServiceProvider).getCurrentUserId(),
             ),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             child: Padding(
@@ -336,17 +308,10 @@ class _MeasurementsContent extends ConsumerWidget {
     final difference = currentValue - previousValue;
     final percentChange = (difference / previousValue) * 100;
 
-    return [
-      MapEntry('Absolute Change', difference),
-      MapEntry('Percent Change', percentChange),
-    ];
+    return [MapEntry('Absolute Change', difference), MapEntry('Percent Change', percentChange)];
   }
 
-  Widget _buildMeasurementCards(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    WidgetRef ref,
-  ) {
+  Widget _buildMeasurementCards(ThemeData theme, ColorScheme colorScheme, WidgetRef ref) {
     final measurementsAsync = ref.watch(measurementsProvider(userId));
 
     return measurementsAsync.when(
@@ -356,9 +321,7 @@ class _MeasurementsContent extends ConsumerWidget {
         }
 
         final referenceMeasurement = measurements.first;
-        final previousMeasurementsAsync = ref.watch(
-          previousMeasurementsProvider,
-        );
+        final previousMeasurementsAsync = ref.watch(previousMeasurementsProvider);
 
         return previousMeasurementsAsync.when(
           data: (previousMeasurements) {
@@ -378,13 +341,9 @@ class _MeasurementsContent extends ConsumerWidget {
               itemCount: MeasurementConstants.measurementLabels.length,
               itemBuilder: (context, index) {
                 final width = MediaQuery.of(context).size.width / 2.5;
-                final entry = MeasurementConstants.measurementLabels.entries
-                    .toList()[index];
+                final entry = MeasurementConstants.measurementLabels.entries.toList()[index];
 
-                final value = _getMeasurementValue(
-                  referenceMeasurement,
-                  entry.key,
-                );
+                final value = _getMeasurementValue(referenceMeasurement, entry.key);
 
                 return SizedBox(
                   width: width,
@@ -405,14 +364,12 @@ class _MeasurementsContent extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Text('Error loading previous measurements: $error'),
-          ),
+          error: (error, stack) =>
+              Center(child: Text('Error loading previous measurements: $error')),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) =>
-          Center(child: Text('Error loading measurements: $error')),
+      error: (error, stack) => Center(child: Text('Error loading measurements: $error')),
     );
   }
 
@@ -437,11 +394,7 @@ class _MeasurementsContent extends ConsumerWidget {
     }
   }
 
-  MeasurementStatus _getMeasurementStatus(
-    WidgetRef ref,
-    String key,
-    double value,
-  ) {
+  MeasurementStatus _getMeasurementStatus(WidgetRef ref, String key, double value) {
     final controller = ref.read(measurementControllerProvider(userId).notifier);
     switch (key) {
       case 'weight':

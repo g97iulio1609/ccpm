@@ -30,13 +30,7 @@ class AISettingsScreen extends HookConsumerWidget {
             const SizedBox(height: 24),
             _buildModelSelection(context, settings, settingsNotifier),
             const SizedBox(height: 24),
-            _buildAPIKeySection(
-              context,
-              settings,
-              aiKeysService,
-              aiKeys,
-              isAdmin,
-            ),
+            _buildAPIKeySection(context, settings, aiKeysService, aiKeys, isAdmin),
           ],
         ),
       ),
@@ -96,10 +90,7 @@ class AISettingsScreen extends HookConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Tema Glass “lite”',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('Tema Glass “lite”', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
                   Text(
                     'Abilita un effetto vetro leggero su superfici selezionate',
@@ -110,8 +101,7 @@ class AISettingsScreen extends HookConsumerWidget {
             ),
             Switch(
               value: enabled,
-              onChanged: (v) =>
-                  ref.read(uiGlassEnabledProvider.notifier).setEnabled(v),
+              onChanged: (v) => ref.read(uiGlassEnabledProvider.notifier).setEnabled(v),
             ),
           ],
         ),
@@ -139,10 +129,7 @@ class AISettingsScreen extends HookConsumerWidget {
                 border: OutlineInputBorder(),
               ),
               items: settings.availableProviders.map((provider) {
-                return DropdownMenuItem(
-                  value: provider,
-                  child: Text(provider.displayName),
-                );
+                return DropdownMenuItem(value: provider, child: Text(provider.displayName));
               }).toList(),
               onChanged: (provider) {
                 if (provider != null) {
@@ -153,17 +140,11 @@ class AISettingsScreen extends HookConsumerWidget {
             const SizedBox(height: 16),
             DropdownButtonFormField<AIModel>(
               value: settings.selectedModel,
-              decoration: const InputDecoration(
-                labelText: 'Modello',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Modello', border: OutlineInputBorder()),
               items: AIModel.values
                   .where((model) => model.provider == settings.selectedProvider)
                   .map((model) {
-                    return DropdownMenuItem(
-                      value: model,
-                      child: Text(model.modelId),
-                    );
+                    return DropdownMenuItem(value: model, child: Text(model.modelId));
                   })
                   .toList(),
               onChanged: (model) {
@@ -194,26 +175,20 @@ class AISettingsScreen extends HookConsumerWidget {
             Text('Chiavi API', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             if (isAdmin) ...[
-              Text(
-                'Chiavi di Default',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text('Chiavi di Default', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               _buildAPIKeyField(
                 label: 'OpenAI API Key (Default)',
                 value: aiKeys?.defaultOpenAIKey,
-                onChanged: (value) =>
-                    aiKeysService.updateDefaultKeys(openAIKey: value),
+                onChanged: (value) => aiKeysService.updateDefaultKeys(openAIKey: value),
                 context: context,
-                helpText:
-                    'Ottieni la tua API key da https://platform.openai.com/api-keys',
+                helpText: 'Ottieni la tua API key da https://platform.openai.com/api-keys',
               ),
               const SizedBox(height: 16),
               _buildAPIKeyField(
                 label: 'Google Gemini API Key (Default)',
                 value: aiKeys?.defaultGeminiKey,
-                onChanged: (value) =>
-                    aiKeysService.updateDefaultKeys(geminiKey: value),
+                onChanged: (value) => aiKeysService.updateDefaultKeys(geminiKey: value),
                 context: context,
                 helpText: 'Ottieni la tua API key da https://ai.google.dev/',
               ),
@@ -221,18 +196,15 @@ class AISettingsScreen extends HookConsumerWidget {
               _buildAPIKeyField(
                 label: 'Claude API Key (Default)',
                 value: aiKeys?.defaultClaudeKey,
-                onChanged: (value) =>
-                    aiKeysService.updateDefaultKeys(claudeKey: value),
+                onChanged: (value) => aiKeysService.updateDefaultKeys(claudeKey: value),
                 context: context,
-                helpText:
-                    'Ottieni la tua API key da https://console.anthropic.com/settings/keys',
+                helpText: 'Ottieni la tua API key da https://console.anthropic.com/settings/keys',
               ),
               const SizedBox(height: 16),
               _buildAPIKeyField(
                 label: 'Azure OpenAI API Key (Default)',
                 value: aiKeys?.defaultAzureKey,
-                onChanged: (value) =>
-                    aiKeysService.updateDefaultKeys(azureKey: value),
+                onChanged: (value) => aiKeysService.updateDefaultKeys(azureKey: value),
                 context: context,
                 helpText: 'Ottieni la tua API key dal portale Azure OpenAI.',
               ),
@@ -240,34 +212,27 @@ class AISettingsScreen extends HookConsumerWidget {
               _buildAPIKeyField(
                 label: 'Azure OpenAI Endpoint (Default)',
                 value: aiKeys?.defaultAzureEndpoint,
-                onChanged: (value) =>
-                    aiKeysService.updateDefaultKeys(azureEndpoint: value),
+                onChanged: (value) => aiKeysService.updateDefaultKeys(azureEndpoint: value),
                 context: context,
                 isEndpoint: true,
                 helpText: 'Ottieni il tuo endpoint dal portale Azure OpenAI.',
               ),
               const Divider(height: 32),
             ],
-            Text(
-              'Chiavi Personali',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Chiavi Personali', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             _buildAPIKeyField(
               label: 'OpenAI API Key (Personale)',
               value: aiKeys?.personalOpenAIKey,
-              onChanged: (value) =>
-                  aiKeysService.updatePersonalKeys(openAIKey: value),
+              onChanged: (value) => aiKeysService.updatePersonalKeys(openAIKey: value),
               context: context,
-              helpText:
-                  'Ottieni la tua API key da https://platform.openai.com/api-keys',
+              helpText: 'Ottieni la tua API key da https://platform.openai.com/api-keys',
             ),
             const SizedBox(height: 16),
             _buildAPIKeyField(
               label: 'Google Gemini API Key (Personale)',
               value: aiKeys?.personalGeminiKey,
-              onChanged: (value) =>
-                  aiKeysService.updatePersonalKeys(geminiKey: value),
+              onChanged: (value) => aiKeysService.updatePersonalKeys(geminiKey: value),
               context: context,
               helpText: 'Ottieni la tua API key da https://ai.google.dev/',
             ),
@@ -275,18 +240,15 @@ class AISettingsScreen extends HookConsumerWidget {
             _buildAPIKeyField(
               label: 'Claude API Key (Personale)',
               value: aiKeys?.personalClaudeKey,
-              onChanged: (value) =>
-                  aiKeysService.updatePersonalKeys(claudeKey: value),
+              onChanged: (value) => aiKeysService.updatePersonalKeys(claudeKey: value),
               context: context,
-              helpText:
-                  'Ottieni la tua API key da https://console.anthropic.com/settings/keys',
+              helpText: 'Ottieni la tua API key da https://console.anthropic.com/settings/keys',
             ),
             const SizedBox(height: 16),
             _buildAPIKeyField(
               label: 'Azure OpenAI API Key (Personale)',
               value: aiKeys?.personalAzureKey,
-              onChanged: (value) =>
-                  aiKeysService.updatePersonalKeys(azureKey: value),
+              onChanged: (value) => aiKeysService.updatePersonalKeys(azureKey: value),
               context: context,
               helpText: 'Ottieni la tua API key dal portale Azure OpenAI.',
             ),
@@ -294,8 +256,7 @@ class AISettingsScreen extends HookConsumerWidget {
             _buildAPIKeyField(
               label: 'Azure OpenAI Endpoint (Personale)',
               value: aiKeys?.personalAzureEndpoint,
-              onChanged: (value) =>
-                  aiKeysService.updatePersonalKeys(azureEndpoint: value),
+              onChanged: (value) => aiKeysService.updatePersonalKeys(azureEndpoint: value),
               context: context,
               isEndpoint: true,
               helpText: 'Ottieni il tuo endpoint dal portale Azure OpenAI.',
@@ -348,10 +309,7 @@ class AISettingsScreen extends HookConsumerWidget {
           title: Text(title),
           content: Text(content),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
           ],
         );
       },

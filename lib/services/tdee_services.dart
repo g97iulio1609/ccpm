@@ -5,9 +5,7 @@ class TDEEService {
 
   TDEEService(this._firestore);
 
-  Future<Map<String, dynamic>?> getMostRecentNutritionData(
-    String userId,
-  ) async {
+  Future<Map<String, dynamic>?> getMostRecentNutritionData(String userId) async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
@@ -26,10 +24,7 @@ class TDEEService {
     return null;
   }
 
-  Future<void> saveNutritionData(
-    String userId,
-    Map<String, dynamic> data,
-  ) async {
+  Future<void> saveNutritionData(String userId, Map<String, dynamic> data) async {
     final DateTime now = DateTime.now();
     final DateTime todayStart = DateTime(now.year, now.month, now.day);
 

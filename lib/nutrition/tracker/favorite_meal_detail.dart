@@ -58,8 +58,7 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
           context.push(
             '/food_tracker/food_selector',
             extra: {
-              'meal': widget.meal
-                  .toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
+              'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
               'isFavoriteMeal': true,
             },
           );
@@ -119,15 +118,11 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
           child: ListTile(
             title: Text(
               food.name,
-              style: GoogleFonts.roboto(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
             ),
             subtitle: Text(
               'C:${food.carbs.toStringAsFixed(2)}g P:${food.protein.toStringAsFixed(2)}g F:${food.fat.toStringAsFixed(2)}g, ${food.kcal.toStringAsFixed(2)}Kcal',
-              style: GoogleFonts.roboto(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
             ),
           ),
         ),
@@ -156,13 +151,9 @@ class FavoriteMealDetailState extends ConsumerState<FavoriteMealDetail> {
       });
     } else {
       context.push(
-        Uri(
-          path: '/food_tracker/food_selector',
-          queryParameters: {'myFoodId': foodId},
-        ).toString(),
+        Uri(path: '/food_tracker/food_selector', queryParameters: {'myFoodId': foodId}).toString(),
         extra: {
-          'meal': widget.meal
-              .toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
+          'meal': widget.meal.toMap(), // Convertiamo l'oggetto Meal in Map<String, dynamic>
           'myFoodId': foodId,
           'isFavoriteMeal': true,
         },

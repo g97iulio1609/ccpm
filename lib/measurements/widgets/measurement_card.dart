@@ -42,20 +42,14 @@ class MeasurementCard extends StatelessWidget {
           child: InkWell(
             onTap: () {}, // Gestire il tap se necessario
             child: Padding(
-              padding: EdgeInsets.all(
-                isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg,
-              ),
+              padding: EdgeInsets.all(isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(theme, colorScheme, isSmallScreen),
                   if (value != null) ...[
-                    SizedBox(
-                      height: isSmallScreen
-                          ? AppTheme.spacing.sm
-                          : AppTheme.spacing.md,
-                    ),
+                    SizedBox(height: isSmallScreen ? AppTheme.spacing.sm : AppTheme.spacing.md),
                     _buildValue(theme, colorScheme, isSmallScreen),
                     SizedBox(height: AppTheme.spacing.xs),
                     _buildStatus(theme, colorScheme),
@@ -76,42 +70,24 @@ class MeasurementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isSmallScreen,
-  ) {
+  Widget _buildHeader(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: EdgeInsets.all(
-            isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm,
-          ),
+          padding: EdgeInsets.all(isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm),
           decoration: BoxDecoration(
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            icon,
-            color: colorScheme.primary,
-            size: isSmallScreen ? 16 : 20,
-          ),
+          child: Icon(icon, color: colorScheme.primary, size: isSmallScreen ? 16 : 20),
         ),
-        SizedBox(
-          width: isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm,
-        ),
+        SizedBox(width: isSmallScreen ? AppTheme.spacing.xs : AppTheme.spacing.sm),
         Expanded(
           child: Text(
             title,
-            style:
-                (isSmallScreen
-                        ? theme.textTheme.titleSmall
-                        : theme.textTheme.titleMedium)
-                    ?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
+            style: (isSmallScreen ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)
+                ?.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
             overflow: TextOverflow.ellipsis,
             maxLines: 2,
           ),
@@ -120,11 +96,7 @@ class MeasurementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildValue(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isSmallScreen,
-  ) {
+  Widget _buildValue(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
     final textStyle = isSmallScreen
         ? theme.textTheme.headlineSmall
         : theme.textTheme.headlineMedium;
@@ -138,10 +110,7 @@ class MeasurementCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               '${value!.toStringAsFixed(1)} $unit',
-              style: textStyle?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w700,
-              ),
+              style: textStyle?.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.w700),
             ),
           ),
         );
@@ -153,10 +122,7 @@ class MeasurementCard extends StatelessWidget {
     final statusColor = _getStatusColor(status, colorScheme);
     return Container(
       constraints: const BoxConstraints(maxWidth: double.infinity),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: statusColor.withAlpha(26),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
@@ -173,11 +139,7 @@ class MeasurementCard extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildComparisons(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isSmallScreen,
-  ) {
+  List<Widget> _buildComparisons(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
     return comparisonValues.map((entry) {
       final difference = value! - (entry.value ?? 0);
       final isPositive = difference >= 0;
@@ -191,11 +153,8 @@ class MeasurementCard extends StatelessWidget {
               flex: 2,
               child: Text(
                 entry.key,
-                style:
-                    (isSmallScreen
-                            ? theme.textTheme.labelSmall
-                            : theme.textTheme.bodySmall)
-                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: (isSmallScreen ? theme.textTheme.labelSmall : theme.textTheme.bodySmall)
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -212,16 +171,11 @@ class MeasurementCard extends StatelessWidget {
                 const SizedBox(width: 2),
                 Text(
                   '${difference.abs().toStringAsFixed(1)} $unit',
-                  style:
-                      (isSmallScreen
-                              ? theme.textTheme.labelSmall
-                              : theme.textTheme.bodySmall)
-                          ?.copyWith(
-                            color: isPositive
-                                ? colorScheme.error
-                                : colorScheme.tertiary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  style: (isSmallScreen ? theme.textTheme.labelSmall : theme.textTheme.bodySmall)
+                      ?.copyWith(
+                        color: isPositive ? colorScheme.error : colorScheme.tertiary,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ],
             ),
@@ -234,9 +188,7 @@ class MeasurementCard extends StatelessWidget {
   Widget _buildNoData(ThemeData theme, ColorScheme colorScheme) {
     return Text(
       'Nessun dato disponibile',
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: colorScheme.onSurfaceVariant,
-      ),
+      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
     );

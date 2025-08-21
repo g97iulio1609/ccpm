@@ -17,9 +17,7 @@ class MeasurementsService {
           .get();
 
       return snapshot.docs
-          .map(
-            (doc) => MeasurementModel.fromJson({...doc.data(), 'id': doc.id}),
-          )
+          .map((doc) => MeasurementModel.fromJson({...doc.data(), 'id': doc.id}))
           .toList();
     } catch (e) {
       throw Exception('Errore nel recupero delle misurazioni: $e');
@@ -39,21 +37,17 @@ class MeasurementsService {
     required double bicepsCircumference,
   }) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('measurements')
-          .add({
-            'date': Timestamp.fromDate(date),
-            'weight': weight,
-            'height': height,
-            'bmi': bmi,
-            'bodyFatPercentage': bodyFatPercentage,
-            'waistCircumference': waistCircumference,
-            'hipCircumference': hipCircumference,
-            'chestCircumference': chestCircumference,
-            'bicepsCircumference': bicepsCircumference,
-          });
+      await _firestore.collection('users').doc(userId).collection('measurements').add({
+        'date': Timestamp.fromDate(date),
+        'weight': weight,
+        'height': height,
+        'bmi': bmi,
+        'bodyFatPercentage': bodyFatPercentage,
+        'waistCircumference': waistCircumference,
+        'hipCircumference': hipCircumference,
+        'chestCircumference': chestCircumference,
+        'bicepsCircumference': bicepsCircumference,
+      });
     } catch (e) {
       throw Exception('Errore nell\'aggiunta della misurazione: $e');
     }
@@ -94,10 +88,7 @@ class MeasurementsService {
     }
   }
 
-  Future<void> deleteMeasurement({
-    required String userId,
-    required String measurementId,
-  }) async {
+  Future<void> deleteMeasurement({required String userId, required String measurementId}) async {
     try {
       await _firestore
           .collection('users')

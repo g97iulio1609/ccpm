@@ -4,11 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppThemeMode { system, light, dark }
 
-final appThemeModeProvider =
-    StateNotifierProvider<AppThemeModeNotifier, ThemeMode>((ref) {
-      final prefs = ref.read(prefsForThemeProvider);
-      return AppThemeModeNotifier(prefs);
-    });
+final appThemeModeProvider = StateNotifierProvider<AppThemeModeNotifier, ThemeMode>((ref) {
+  final prefs = ref.read(prefsForThemeProvider);
+  return AppThemeModeNotifier(prefs);
+});
 
 // Provider pubblico da override in main.dart
 final prefsForThemeProvider = Provider<SharedPreferences>((ref) {

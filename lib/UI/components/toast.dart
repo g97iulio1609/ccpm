@@ -51,11 +51,7 @@ class AppToast extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           border: Border.all(color: colorScheme.outline.withAlpha(26)),
           boxShadow: [
-            BoxShadow(
-              color: toastColor.withAlpha(26),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
+            BoxShadow(color: toastColor.withAlpha(26), blurRadius: 8, offset: const Offset(0, 4)),
           ],
         ),
         child: Material(
@@ -79,19 +75,13 @@ class AppToast extends StatelessWidget {
                     Expanded(
                       child: Text(
                         message,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
+                        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                       ),
                     ),
                     if (onDismiss != null) ...[
                       SizedBox(width: AppTheme.spacing.sm),
                       IconButton(
-                        icon: Icon(
-                          Icons.close,
-                          color: colorScheme.onSurfaceVariant,
-                          size: 20,
-                        ),
+                        icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant, size: 20),
                         onPressed: onDismiss,
                       ),
                     ],
@@ -101,9 +91,7 @@ class AppToast extends StatelessWidget {
               if (onAction != null && actionLabel != null) ...[
                 Container(
                   decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: colorScheme.outline.withAlpha(26)),
-                    ),
+                    border: Border(top: BorderSide(color: colorScheme.outline.withAlpha(26))),
                   ),
                   child: Material(
                     color: Colors.transparent,

@@ -6,9 +6,7 @@ class RangeControllers {
   final TextEditingController min;
   final TextEditingController max;
 
-  RangeControllers()
-    : min = TextEditingController(),
-      max = TextEditingController();
+  RangeControllers() : min = TextEditingController(), max = TextEditingController();
 
   void dispose() {
     min.dispose();

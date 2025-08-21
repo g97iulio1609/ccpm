@@ -35,16 +35,12 @@ class MaxRMGridSliver extends ConsumerWidget {
         final exerciseRecordService = ref.watch(exerciseRecordServiceProvider);
         final userId = selectedUserId ?? usersService.getCurrentUserId();
 
-        List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((
-          exercise,
-        ) {
+        List<Stream<ExerciseRecord?>> exerciseRecordStreams = exercises.map((exercise) {
           return exerciseRecordService
               .getExerciseRecords(userId: userId, exerciseId: exercise.id)
               .map(
                 (records) => records.isNotEmpty
-                    ? records.reduce(
-                        (a, b) => a.date.compareTo(b.date) > 0 ? a : b,
-                      )
+                    ? records.reduce((a, b) => a.date.compareTo(b.date) > 0 ? a : b)
                     : null,
               );
         }).toList();
@@ -71,9 +67,7 @@ class MaxRMGridSliver extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     'Error: ${snapshot.error}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.error,
-                    ),
+                    style: theme.textTheme.titleLarge?.copyWith(color: colorScheme.error),
                   ),
                 ),
               );
@@ -183,9 +177,7 @@ class MaxRMGridSliver extends ConsumerWidget {
                             Expanded(
                               child: Padding(
                                 padding: EdgeInsets.only(
-                                  right: i < crossAxisCount - 1
-                                      ? AppTheme.spacing.xl
-                                      : 0,
+                                  right: i < crossAxisCount - 1 ? AppTheme.spacing.xl : 0,
                                 ),
                                 child: AppCard(
                                   glass: true,
@@ -193,9 +185,7 @@ class MaxRMGridSliver extends ConsumerWidget {
                                     title:
                                         exercises
                                             .firstWhere(
-                                              (ex) =>
-                                                  ex.id ==
-                                                  rowRecords[i].exerciseId,
+                                              (ex) => ex.id == rowRecords[i].exerciseId,
                                               orElse: () => ExerciseModel(
                                                 id: '',
                                                 name: 'Exercise not found',
@@ -215,8 +205,7 @@ class MaxRMGridSliver extends ConsumerWidget {
                                         context,
                                         rowRecords[i],
                                         exercises.firstWhere(
-                                          (ex) =>
-                                              ex.id == rowRecords[i].exerciseId,
+                                          (ex) => ex.id == rowRecords[i].exerciseId,
                                           orElse: () => ExerciseModel(
                                             id: '',
                                             name: 'Exercise not found',
@@ -258,12 +247,9 @@ class MaxRMGridSliver extends ConsumerWidget {
           },
         );
       },
-      loading: () => const SliverToBoxAdapter(
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stack) => SliverToBoxAdapter(
-        child: Center(child: Text('Error loading max RMs: $error')),
-      ),
+      loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
+      error: (error, stack) =>
+          SliverToBoxAdapter(child: Center(child: Text('Error loading max RMs: $error'))),
     );
   }
 
@@ -306,9 +292,7 @@ class MaxRMGridSliver extends ConsumerWidget {
             ),
             Text(
               DateFormat('d MMM yyyy').format(record.date),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -338,11 +322,7 @@ class MaxRMGridSliver extends ConsumerWidget {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
         ),
         items: [
           BottomMenuItem(
@@ -356,9 +336,7 @@ class MaxRMGridSliver extends ConsumerWidget {
                   return EditRecordDialog(
                     record: record,
                     exercise: exercise,
-                    exerciseRecordService: ref.read(
-                      exerciseRecordServiceProvider,
-                    ),
+                    exerciseRecordService: ref.read(exerciseRecordServiceProvider),
                     usersService: ref.read(usersServiceProvider),
                   );
                 },
@@ -408,17 +386,15 @@ class MaxRMGridSliver extends ConsumerWidget {
                       recordId: record.id,
                     );
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Record deleted successfully'),
-                    ),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Record deleted successfully')));
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete record: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Failed to delete record: $e')));
                 }
               }
             },

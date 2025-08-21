@@ -15,9 +15,7 @@ import 'providers/theme_provider.dart';
 import 'package:alphanessone/UI/components/button.dart';
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
-  (ref) => throw UnimplementedError(
-    'sharedPreferencesProvider needs to be overridden',
-  ),
+  (ref) => throw UnimplementedError('sharedPreferencesProvider needs to be overridden'),
 );
 
 Future<SharedPreferences> initializeServices() async {
@@ -109,11 +107,7 @@ class UnsupportedVersionApp extends StatelessWidget {
                 const SizedBox(height: 24),
                 const Text(
                   "L'App Deve Essere Aggiornata",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -150,9 +144,7 @@ class MyApp extends ConsumerWidget {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         final ThemeData lightTheme = lightDynamic != null
-            ? AppTheme.lightTheme.copyWith(
-                colorScheme: lightDynamic.harmonized(),
-              )
+            ? AppTheme.lightTheme.copyWith(colorScheme: lightDynamic.harmonized())
             : AppTheme.lightTheme;
         final ThemeData darkTheme = darkDynamic != null
             ? AppTheme.darkTheme.copyWith(colorScheme: darkDynamic.harmonized())

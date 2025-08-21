@@ -145,12 +145,8 @@ double? calculateRPE(double weight, num latestMaxWeight, int reps) {
 
 String generateRandomId(int length) {
   final random = Random.secure();
-  const chars =
-      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   return String.fromCharCodes(
-    Iterable.generate(
-      length,
-      (_) => chars.codeUnitAt(random.nextInt(chars.length)),
-    ),
+    Iterable.generate(length, (_) => chars.codeUnitAt(random.nextInt(chars.length))),
   );
 }

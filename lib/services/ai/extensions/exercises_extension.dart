@@ -7,9 +7,7 @@ import 'ai_extension.dart';
 
 class ExercisesExtension implements AIExtension {
   final Logger _logger = Logger(printer: PrettyPrinter());
-  final ExercisesService _exercisesService = ExercisesService(
-    FirebaseFirestore.instance,
-  );
+  final ExercisesService _exercisesService = ExercisesService(FirebaseFirestore.instance);
 
   @override
   Future<bool> canHandle(Map<String, dynamic> interpretation) async {
@@ -17,11 +15,7 @@ class ExercisesExtension implements AIExtension {
   }
 
   @override
-  Future<String?> handle(
-    Map<String, dynamic> interpretation,
-    String userId,
-    UserModel user,
-  ) async {
+  Future<String?> handle(Map<String, dynamic> interpretation, String userId, UserModel user) async {
     final action = interpretation['action'] as String?;
     _logger.d('Handling exercises action: $action');
 
@@ -48,14 +42,10 @@ class ExercisesExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleAddExercise(
-    Map<String, dynamic> interpretation,
-    String userId,
-  ) async {
+  Future<String?> _handleAddExercise(Map<String, dynamic> interpretation, String userId) async {
     final name = interpretation['name'] as String?;
     final type = interpretation['type'] as String?;
-    final muscleGroups = (interpretation['muscleGroups'] as List<dynamic>?)
-        ?.cast<String>();
+    final muscleGroups = (interpretation['muscleGroups'] as List<dynamic>?)?.cast<String>();
 
     if (name == null || type == null || muscleGroups == null) {
       return 'Nome, tipo e gruppi muscolari sono richiesti per aggiungere un esercizio.';
@@ -70,14 +60,11 @@ class ExercisesExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleUpdateExercise(
-    Map<String, dynamic> interpretation,
-  ) async {
+  Future<String?> _handleUpdateExercise(Map<String, dynamic> interpretation) async {
     final id = interpretation['id'] as String?;
     final name = interpretation['name'] as String?;
     final type = interpretation['type'] as String?;
-    final muscleGroups = (interpretation['muscleGroups'] as List<dynamic>?)
-        ?.cast<String>();
+    final muscleGroups = (interpretation['muscleGroups'] as List<dynamic>?)?.cast<String>();
 
     if (id == null || name == null || type == null || muscleGroups == null) {
       return 'ID, nome, tipo e gruppi muscolari sono richiesti per aggiornare un esercizio.';
@@ -92,9 +79,7 @@ class ExercisesExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleDeleteExercise(
-    Map<String, dynamic> interpretation,
-  ) async {
+  Future<String?> _handleDeleteExercise(Map<String, dynamic> interpretation) async {
     final id = interpretation['id'] as String?;
     final name = interpretation['name'] as String?;
 
@@ -116,9 +101,7 @@ class ExercisesExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleApproveExercise(
-    Map<String, dynamic> interpretation,
-  ) async {
+  Future<String?> _handleApproveExercise(Map<String, dynamic> interpretation) async {
     final id = interpretation['id'] as String?;
     final name = interpretation['name'] as String?;
 
@@ -140,28 +123,22 @@ class ExercisesExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleQueryExercises(
-    Map<String, dynamic> interpretation,
-  ) async {
+  Future<String?> _handleQueryExercises(Map<String, dynamic> interpretation) async {
     try {
       final exercises = await _exercisesService.getExercises().first;
 
       // Filtra per tipo se specificato
       final type = interpretation['type'] as String?;
       if (type != null) {
-        exercises.removeWhere(
-          (e) => e.type.toLowerCase() != type.toLowerCase(),
-        );
+        exercises.removeWhere((e) => e.type.toLowerCase() != type.toLowerCase());
       }
 
       // Filtra per gruppi muscolari se specificati
-      final muscleGroups = (interpretation['muscleGroups'] as List<dynamic>?)
-          ?.cast<String>();
+      final muscleGroups = (interpretation['muscleGroups'] as List<dynamic>?)?.cast<String>();
       if (muscleGroups != null && muscleGroups.isNotEmpty) {
         exercises.removeWhere(
           (e) => !e.muscleGroups.any(
-            (g) =>
-                muscleGroups.any((mg) => mg.toLowerCase() == g.toLowerCase()),
+            (g) => muscleGroups.any((mg) => mg.toLowerCase() == g.toLowerCase()),
           ),
         );
       }
@@ -169,9 +146,7 @@ class ExercisesExtension implements AIExtension {
       // Filtra per stato se specificato
       final status = interpretation['status'] as String?;
       if (status != null) {
-        exercises.removeWhere(
-          (e) => e.status?.toLowerCase() != status.toLowerCase(),
-        );
+        exercises.removeWhere((e) => e.status?.toLowerCase() != status.toLowerCase());
       }
 
       if (exercises.isEmpty) {
@@ -184,9 +159,7 @@ class ExercisesExtension implements AIExtension {
       for (var exercise in exercises) {
         buffer.writeln('\n• ${exercise.name}');
         buffer.writeln('  Tipo: ${exercise.type}');
-        buffer.writeln(
-          '  Gruppi muscolari: ${exercise.muscleGroups.join(", ")}',
-        );
+        buffer.writeln('  Gruppi muscolari: ${exercise.muscleGroups.join(", ")}');
         if (exercise.status != null) {
           buffer.writeln('  Stato: ${exercise.status}');
         }
@@ -225,8 +198,7 @@ class ExercisesExtension implements AIExtension {
       for (var type in sortedTypes) {
         buffer.writeln('\n📋 $type:');
         // Ordina gli esercizi per nome all'interno di ogni tipo
-        final sortedExercises = exercisesByType[type]!
-          ..sort((a, b) => a.name.compareTo(b.name));
+        final sortedExercises = exercisesByType[type]!..sort((a, b) => a.name.compareTo(b.name));
 
         for (var exercise in sortedExercises) {
           buffer.write('  • ${exercise.name}');
@@ -234,9 +206,7 @@ class ExercisesExtension implements AIExtension {
             buffer.write(' (in attesa di approvazione)');
           }
           buffer.writeln();
-          buffer.writeln(
-            '    Gruppi muscolari: ${exercise.muscleGroups.join(", ")}',
-          );
+          buffer.writeln('    Gruppi muscolari: ${exercise.muscleGroups.join(", ")}');
         }
       }
 

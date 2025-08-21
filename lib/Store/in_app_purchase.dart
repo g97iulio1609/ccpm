@@ -11,9 +11,7 @@ class InAppPurchaseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: kIsWeb
-          ? const InAppPurchaseScreenWeb()
-          : const InAppPurchaseScreenMobile(),
+      body: kIsWeb ? const InAppPurchaseScreenWeb() : const InAppPurchaseScreenMobile(),
     );
   }
 }

@@ -14,11 +14,7 @@ class MaxRMExtension implements AIExtension {
   }
 
   @override
-  Future<String?> handle(
-    Map<String, dynamic> interpretation,
-    String userId,
-    UserModel user,
-  ) async {
+  Future<String?> handle(Map<String, dynamic> interpretation, String userId, UserModel user) async {
     final action = interpretation['action'] as String?;
     _logger.d('Handling maxrm action: $action');
 
@@ -56,10 +52,7 @@ class MaxRMExtension implements AIExtension {
     return 'Per calcolare il 1RM, forniscimi peso e ripetizioni.';
   }
 
-  Future<String?> _handleUpdate(
-    Map<String, dynamic> interpretation,
-    String userId,
-  ) async {
+  Future<String?> _handleUpdate(Map<String, dynamic> interpretation, String userId) async {
     final exerciseName = interpretation['exercise'];
     final weight = interpretation['weight'];
     final reps = interpretation['reps'];
@@ -104,10 +97,7 @@ class MaxRMExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleQuery(
-    Map<String, dynamic> interpretation,
-    String userId,
-  ) async {
+  Future<String?> _handleQuery(Map<String, dynamic> interpretation, String userId) async {
     final exerciseName = interpretation['exercise'] as String?;
     if (exerciseName == null) {
       _logger.w('Exercise name not provided for query.');
@@ -137,18 +127,13 @@ class MaxRMExtension implements AIExtension {
     }
 
     final record = ExerciseRecord.fromFirestore(recordsQuery.docs.first);
-    _logger.d(
-      'Queried maxrm: ${record.maxWeight} kg x ${record.repetitions} reps',
-    );
+    _logger.d('Queried maxrm: ${record.maxWeight} kg x ${record.repetitions} reps');
     return 'Il tuo massimale per $exerciseName è ${record.maxWeight} kg per ${record.repetitions} ripetizioni (aggiornato il ${record.date.toLocal().toString().split(' ')[0]}).';
   }
 
   Future<String?> _handleList(String userId) async {
     _logger.i('Listing all maxrm records for user: $userId');
-    final exercisesRef = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('exercises');
+    final exercisesRef = _firestore.collection('users').doc(userId).collection('exercises');
 
     final exercisesSnapshot = await exercisesRef.get();
     if (exercisesSnapshot.docs.isEmpty) {
@@ -221,9 +206,8 @@ class MaxRMExtension implements AIExtension {
     return name
         .split(' ')
         .map(
-          (word) => word.isEmpty
-              ? ''
-              : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+          (word) =>
+              word.isEmpty ? '' : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
         )
         .join(' ');
   }

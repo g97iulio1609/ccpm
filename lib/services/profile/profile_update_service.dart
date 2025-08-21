@@ -25,9 +25,7 @@ class ProfileUpdateService {
     if (updates.containsKey('height')) {
       final height = double.tryParse(updates['height'].toString());
       if (height == null || height < 50 || height > 250) {
-        throw Exception(
-          'Invalid height. Please enter a value between 50 and 250 cm',
-        );
+        throw Exception('Invalid height. Please enter a value between 50 and 250 cm');
       }
       updates['height'] = height;
     }
@@ -41,17 +39,9 @@ class ProfileUpdateService {
 
     if (updates.containsKey('activityLevel')) {
       final level = updates['activityLevel'].toString().toLowerCase();
-      final validLevels = [
-        'sedentary',
-        'light',
-        'moderate',
-        'very active',
-        'extremely active',
-      ];
+      final validLevels = ['sedentary', 'light', 'moderate', 'very active', 'extremely active'];
       if (!validLevels.contains(level)) {
-        throw Exception(
-          'Invalid activity level. Please choose from: ${validLevels.join(", ")}',
-        );
+        throw Exception('Invalid activity level. Please choose from: ${validLevels.join(", ")}');
       }
       updates['activityLevel'] = level;
     }
@@ -69,8 +59,5 @@ class ProfileUpdateService {
 }
 
 final profileUpdateServiceProvider = Provider<ProfileUpdateService>((ref) {
-  return ProfileUpdateService(
-    FirebaseFirestore.instance,
-    FirebaseAuth.instance,
-  );
+  return ProfileUpdateService(FirebaseFirestore.instance, FirebaseAuth.instance);
 });

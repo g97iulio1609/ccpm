@@ -27,27 +27,17 @@ import '../exerciseManager/exercise_model.dart';
 // Non importa ai_providers.dart qui per evitare conflitti
 
 // Provider per Firebase Auth
-final firebaseAuthProvider = Provider<FirebaseAuth>(
-  (ref) => FirebaseAuth.instance,
-);
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 
 // Provider per Firebase Firestore
-final firebaseFirestoreProvider = Provider<FirebaseFirestore>(
-  (ref) => FirebaseFirestore.instance,
-);
+final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
 // Provider per Firebase Functions
-final firebaseFunctionsProvider = Provider<FirebaseFunctions>(
-  (ref) => FirebaseFunctions.instance,
-);
+final firebaseFunctionsProvider = Provider<FirebaseFunctions>((ref) => FirebaseFunctions.instance);
 
 // Provider per UsersService
 final usersServiceProvider = Provider<UsersService>((ref) {
-  return UsersService(
-    ref,
-    ref.watch(firebaseFirestoreProvider),
-    ref.watch(firebaseAuthProvider),
-  );
+  return UsersService(ref, ref.watch(firebaseFirestoreProvider), ref.watch(firebaseAuthProvider));
 });
 
 // Provider per TDEEService
@@ -88,10 +78,7 @@ final userNameProvider = StateProvider<String>((ref) => '');
 final userRoleProvider = StateProvider<String>((ref) => '');
 
 // Provider per ottenere un utente specifico
-final userProvider = FutureProvider.family<UserModel?, String>((
-  ref,
-  userId,
-) async {
+final userProvider = FutureProvider.family<UserModel?, String>((ref, userId) async {
   final usersService = ref.watch(usersServiceProvider);
   return await usersService.getUserById(userId);
 });
@@ -130,16 +117,13 @@ final currentUserRoleProvider = StateProvider<String>((ref) {
 final keepWeightProvider = StateProvider<bool>((ref) => false);
 
 // Provider per stream di misurazioni
-final measurementsProvider =
-    StreamProvider.family<List<MeasurementModel>, String>((ref, userId) {
-      final measurementsService = ref.watch(measurementsServiceProvider);
-      return measurementsService.getMeasurements(userId: userId);
-    });
+final measurementsProvider = StreamProvider.family<List<MeasurementModel>, String>((ref, userId) {
+  final measurementsService = ref.watch(measurementsServiceProvider);
+  return measurementsService.getMeasurements(userId: userId);
+});
 
 // Provider per confronti selezionati
-final selectedComparisonsProvider = StateProvider<List<MeasurementModel>>(
-  (ref) => [],
-);
+final selectedComparisonsProvider = StateProvider<List<MeasurementModel>>((ref) => []);
 
 // Provider per form di misurazione
 final measurementFormProvider =
@@ -153,14 +137,10 @@ final selectedUserIdProvider = StateProvider<String?>((ref) {
 });
 
 // Provider per dettagli della sottoscrizione
-final subscriptionDetailsProvider = StateProvider<SubscriptionDetails?>(
-  (ref) => null,
-);
+final subscriptionDetailsProvider = StateProvider<SubscriptionDetails?>((ref) => null);
 
 // Provider per sottoscrizione dell'utente selezionato
-final selectedUserSubscriptionProvider = StateProvider<SubscriptionDetails?>(
-  (ref) => null,
-);
+final selectedUserSubscriptionProvider = StateProvider<SubscriptionDetails?>((ref) => null);
 
 // Provider per caricamento della sottoscrizione
 final subscriptionLoadingProvider = StateProvider<bool>((ref) => false);
@@ -177,48 +157,44 @@ final exerciseServiceProvider = Provider<ExercisesService>((ref) {
 });
 
 // Provider per TrainingProgram
-final trainingProgramProvider = FutureProvider.family<TrainingProgram?, String>(
-  (ref, userId) async {
-    final trainingService = ref.watch(trainingServiceProvider);
-    final usersService = ref.watch(usersServiceProvider);
-    final user = await usersService.getUserById(userId);
-    if (user == null || user.currentProgram == null) return null;
-    return await trainingService.fetchTrainingProgram(user.currentProgram!);
-  },
-);
-
-// Provider per NutritionStats
-final nutritionStatsProvider = FutureProvider.family<NutritionStats?, String>((
+final trainingProgramProvider = FutureProvider.family<TrainingProgram?, String>((
   ref,
   userId,
 ) async {
+  final trainingService = ref.watch(trainingServiceProvider);
+  final usersService = ref.watch(usersServiceProvider);
+  final user = await usersService.getUserById(userId);
+  if (user == null || user.currentProgram == null) return null;
+  return await trainingService.fetchTrainingProgram(user.currentProgram!);
+});
+
+// Provider per NutritionStats
+final nutritionStatsProvider = FutureProvider.family<NutritionStats?, String>((ref, userId) async {
   final nutritionService = ref.watch(nutritionServiceProvider);
   return await nutritionService.getDailyStats(userId);
 });
 
 // Provider per ultime misurazioni
-final latestMeasurementsProvider =
-    FutureProvider.family<MeasurementModel?, String>((ref, userId) async {
-      final measurementsService = ref.watch(measurementsServiceProvider);
-      final measurements = await measurementsService
-          .getMeasurements(userId: userId)
-          .first;
-      return measurements.isNotEmpty ? measurements.first : null;
-    });
+final latestMeasurementsProvider = FutureProvider.family<MeasurementModel?, String>((
+  ref,
+  userId,
+) async {
+  final measurementsService = ref.watch(measurementsServiceProvider);
+  final measurements = await measurementsService.getMeasurements(userId: userId).first;
+  return measurements.isNotEmpty ? measurements.first : null;
+});
 
 // Provider per record personali
-final personalRecordsProvider =
-    StreamProvider.family<List<ExerciseRecord>, String>((ref, userId) {
-      final recordService = ref.watch(exerciseRecordServiceProvider);
-      return recordService.getExerciseRecords(userId: userId, exerciseId: '');
-    });
+final personalRecordsProvider = StreamProvider.family<List<ExerciseRecord>, String>((ref, userId) {
+  final recordService = ref.watch(exerciseRecordServiceProvider);
+  return recordService.getExerciseRecords(userId: userId, exerciseId: '');
+});
 
 // Provider per record di esercizi
-final exerciseRecordsProvider =
-    StreamProvider.family<List<ExerciseRecord>, String>((ref, userId) {
-      final service = ref.watch(exerciseRecordServiceProvider);
-      return service.getExerciseRecords(userId: userId, exerciseId: '');
-    });
+final exerciseRecordsProvider = StreamProvider.family<List<ExerciseRecord>, String>((ref, userId) {
+  final service = ref.watch(exerciseRecordServiceProvider);
+  return service.getExerciseRecords(userId: userId, exerciseId: '');
+});
 
 // Provider per NutritionService
 final nutritionServiceProvider = Provider<NutritionService>((ref) {
@@ -226,9 +202,7 @@ final nutritionServiceProvider = Provider<NutritionService>((ref) {
 });
 
 // Provider per misurazioni precedenti
-final previousMeasurementsProvider = StreamProvider<List<MeasurementModel>>((
-  ref,
-) {
+final previousMeasurementsProvider = StreamProvider<List<MeasurementModel>>((ref) {
   final firestore = ref.watch(firebaseFirestoreProvider);
   final auth = ref.watch(firebaseAuthProvider);
 
@@ -239,15 +213,11 @@ final previousMeasurementsProvider = StreamProvider<List<MeasurementModel>>((
       .orderBy('date', descending: true)
       .snapshots()
       .map(
-        (snapshot) => snapshot.docs
-            .map((doc) => MeasurementModel.fromJson(doc.data()))
-            .toList(),
+        (snapshot) => snapshot.docs.map((doc) => MeasurementModel.fromJson(doc.data())).toList(),
       );
 });
 
 // Definizione del provider per SharedPreferences
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
-  ref,
-) async {
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
   return await SharedPreferences.getInstance();
 });

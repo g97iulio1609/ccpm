@@ -5,18 +5,14 @@ class SaveDefaultTimerPresetsParams {
   final String userId;
   final List<TimerPreset> defaultPresets;
 
-  SaveDefaultTimerPresetsParams({
-    required this.userId,
-    required this.defaultPresets,
-  });
+  SaveDefaultTimerPresetsParams({required this.userId, required this.defaultPresets});
 }
 
 abstract class SaveDefaultTimerPresetsUseCase {
   Future<void> call(SaveDefaultTimerPresetsParams params);
 }
 
-class SaveDefaultTimerPresetsUseCaseImpl
-    implements SaveDefaultTimerPresetsUseCase {
+class SaveDefaultTimerPresetsUseCaseImpl implements SaveDefaultTimerPresetsUseCase {
   final TimerPresetRepository _repository;
 
   SaveDefaultTimerPresetsUseCaseImpl(this._repository);
@@ -28,9 +24,6 @@ class SaveDefaultTimerPresetsUseCaseImpl
       return;
     }
     // Ulteriori validazioni sui singoli preset potrebbero essere aggiunte qui se necessario
-    await _repository.saveDefaultTimerPresets(
-      params.userId,
-      params.defaultPresets,
-    );
+    await _repository.saveDefaultTimerPresets(params.userId, params.defaultPresets);
   }
 }

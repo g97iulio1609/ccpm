@@ -14,19 +14,13 @@ class ValidationUtils {
     if (weekIndex < 0 || weekIndex >= program.weeks.length) return false;
 
     if (workoutIndex != null) {
-      if (workoutIndex < 0 ||
-          workoutIndex >= program.weeks[weekIndex].workouts.length) {
+      if (workoutIndex < 0 || workoutIndex >= program.weeks[weekIndex].workouts.length) {
         return false;
       }
 
       if (exerciseIndex != null) {
         return exerciseIndex >= 0 &&
-            exerciseIndex <
-                program
-                    .weeks[weekIndex]
-                    .workouts[workoutIndex]
-                    .exercises
-                    .length;
+            exerciseIndex < program.weeks[weekIndex].workouts[workoutIndex].exercises.length;
       }
     }
 
@@ -41,14 +35,12 @@ class ValidationUtils {
     int? groupIndex,
   ]) {
     if (weekIndex < 0 || weekIndex >= weekProgressions.length) return false;
-    if (sessionIndex < 0 ||
-        sessionIndex >= weekProgressions[weekIndex].length) {
+    if (sessionIndex < 0 || sessionIndex >= weekProgressions[weekIndex].length) {
       return false;
     }
 
     if (groupIndex != null) {
-      return groupIndex >= 0 &&
-          groupIndex < weekProgressions[weekIndex][sessionIndex].length;
+      return groupIndex >= 0 && groupIndex < weekProgressions[weekIndex][sessionIndex].length;
     }
 
     return true;
@@ -56,9 +48,9 @@ class ValidationUtils {
 
   /// Validates exercise data
   static bool isValidExercise(Exercise exercise) {
-  // Nota: l'ordine viene assegnato dal business service in fase di aggiunta.
-  // Non blocchiamo la validazione se order è 0 durante la creazione.
-  return exercise.name.isNotEmpty && exercise.type.isNotEmpty;
+    // Nota: l'ordine viene assegnato dal business service in fase di aggiunta.
+    // Non blocchiamo la validazione se order è 0 durante la creazione.
+    return exercise.name.isNotEmpty && exercise.type.isNotEmpty;
   }
 
   /// Validates series data
@@ -72,9 +64,7 @@ class ValidationUtils {
 
   /// Validates training program data
   static bool isValidTrainingProgram(TrainingProgram program) {
-    return program.name.isNotEmpty &&
-        program.athleteId.isNotEmpty &&
-        program.mesocycleNumber > 0;
+    return program.name.isNotEmpty && program.athleteId.isNotEmpty && program.mesocycleNumber > 0;
   }
 
   /// Validates string is not null or empty

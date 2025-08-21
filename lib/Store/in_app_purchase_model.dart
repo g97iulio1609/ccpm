@@ -3,10 +3,7 @@ enum SubscriptionStatus { active, canceled, gracePeriod, expired }
 abstract class BaseInAppPurchaseService {
   Future<List<Product>> getProducts();
   Future<void> handleSuccessfulPayment(String purchaseId, String productId);
-  Future<Map<String, dynamic>> createCheckoutSession(
-    String userId,
-    String productId,
-  );
+  Future<Map<String, dynamic>> createCheckoutSession(String userId, String productId);
   Future<void> initialize();
 }
 
@@ -53,9 +50,7 @@ class SubscriptionDetails {
       status: json['status'] as String,
       currentPeriodEnd: json['currentPeriodEnd'] as DateTime,
       platform: json['platform'] as String,
-      items: (json['items'] as List)
-          .map((item) => SubscriptionItem.fromJson(item))
-          .toList(),
+      items: (json['items'] as List).map((item) => SubscriptionItem.fromJson(item)).toList(),
     );
   }
 }
@@ -65,11 +60,7 @@ class SubscriptionItem {
   final String priceId;
   final int quantity;
 
-  SubscriptionItem({
-    required this.productId,
-    required this.priceId,
-    required this.quantity,
-  });
+  SubscriptionItem({required this.productId, required this.priceId, required this.quantity});
 
   factory SubscriptionItem.fromJson(Map<String, dynamic> json) {
     return SubscriptionItem(

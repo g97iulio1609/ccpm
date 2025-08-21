@@ -34,9 +34,7 @@ class BottomInputForm extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radii.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -63,16 +61,11 @@ class BottomInputForm extends StatelessWidget {
               color: colorScheme.surfaceContainerHighest.withAlpha(76),
               borderRadius: showDragHandle
                   ? null
-                  : BorderRadius.vertical(
-                      top: Radius.circular(AppTheme.radii.xl),
-                    ),
+                  : BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
             ),
             child: Row(
               children: [
-                if (leading != null) ...[
-                  leading!,
-                  SizedBox(width: AppTheme.spacing.md),
-                ],
+                if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.md)],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,17 +122,14 @@ class BottomInputForm extends StatelessWidget {
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(76),
-                border: Border(
-                  top: BorderSide(color: colorScheme.outline.withAlpha(26)),
-                ),
+                border: Border(top: BorderSide(color: colorScheme.outline.withAlpha(26))),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   for (int i = 0; i < actions!.length; i++) ...[
                     actions![i],
-                    if (i < actions!.length - 1)
-                      SizedBox(width: AppTheme.spacing.md),
+                    if (i < actions!.length - 1) SizedBox(width: AppTheme.spacing.md),
                   ],
                 ],
               ),
@@ -204,9 +194,7 @@ class BottomInputForm extends StatelessWidget {
       child: TextFormField(
         controller: controller,
         focusNode: focusNode,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurface,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: theme.textTheme.bodyLarge?.copyWith(
@@ -214,9 +202,7 @@ class BottomInputForm extends StatelessWidget {
           ),
           prefixIcon: Icon(icon, color: colorScheme.primary, size: 20),
           suffixText: suffixText,
-          suffixStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          suffixStyle: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
         ),
@@ -239,16 +225,9 @@ class BottomInputForm extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: isPrimary
-            ? LinearGradient(
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withAlpha(204),
-                ],
-              )
+            ? LinearGradient(colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)])
             : null,
-        color: isPrimary
-            ? null
-            : colorScheme.surfaceContainerHighest.withAlpha(76),
+        color: isPrimary ? null : colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         boxShadow: isPrimary
             ? [
@@ -276,9 +255,7 @@ class BottomInputForm extends StatelessWidget {
                 if (icon != null) ...[
                   Icon(
                     icon,
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
+                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                   SizedBox(width: AppTheme.spacing.sm),
@@ -286,9 +263,7 @@ class BottomInputForm extends StatelessWidget {
                 Text(
                   label,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: isPrimary
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
+                    color: isPrimary ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

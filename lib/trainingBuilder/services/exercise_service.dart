@@ -10,10 +10,7 @@ class ExerciseService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final SeriesService _seriesService = SeriesService();
 
-  Future<String> addExerciseToWorkout(
-    String workoutId,
-    Map<String, dynamic> exerciseData,
-  ) async {
+  Future<String> addExerciseToWorkout(String workoutId, Map<String, dynamic> exerciseData) async {
     // Ensure exerciseData contains the exerciseId which will be used as originalExerciseId
     if (!exerciseData.containsKey('exerciseId')) {
       throw ArgumentError('exerciseId is required in exerciseData');
@@ -22,9 +19,7 @@ class ExerciseService {
     // Salviamo le serie separatamente
     List<Series>? series;
     if (exerciseData.containsKey('series')) {
-      series = List<Series>.from(
-        exerciseData['series']?.map((x) => Series.fromMap(x)) ?? [],
-      );
+      series = List<Series>.from(exerciseData['series']?.map((x) => Series.fromMap(x)) ?? []);
       exerciseData.remove('series');
     }
 
@@ -47,10 +42,7 @@ class ExerciseService {
     return ref.id;
   }
 
-  Future<void> updateExercise(
-    String exerciseId,
-    Map<String, dynamic> exerciseData,
-  ) async {
+  Future<void> updateExercise(String exerciseId, Map<String, dynamic> exerciseData) async {
     // Se ci sono serie da aggiornare
     if (exerciseData.containsKey('series')) {
       List<Series> series = List<Series>.from(
@@ -75,10 +67,7 @@ class ExerciseService {
       }
     }
 
-    await _db
-        .collection('exercisesWorkout')
-        .doc(exerciseId)
-        .update(exerciseData);
+    await _db.collection('exercisesWorkout').doc(exerciseId).update(exerciseData);
   }
 
   Future<void> removeExercise(String exerciseId) async {
@@ -91,9 +80,7 @@ class ExerciseService {
         .where('workoutId', isEqualTo: workoutId)
         .orderBy('order')
         .get();
-    var exercises = snapshot.docs
-        .map((doc) => Exercise.fromFirestore(doc))
-        .toList();
+    var exercises = snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList();
     return exercises;
   }
 
@@ -128,17 +115,13 @@ class ExerciseService {
     if (exercise.exerciseId == null) return;
 
     final dateFormat = DateFormat('yyyy-MM-dd');
-    final roundedMaxWeight = WeightCalculationService.roundWeight(
-      maxWeight,
-      exerciseType,
-    );
+    final roundedMaxWeight = WeightCalculationService.roundWeight(maxWeight, exerciseType);
 
     try {
-      final existingRecord = await exerciseRecordService
-          .getLatestExerciseRecord(
-            userId: athleteId,
-            exerciseId: exercise.exerciseId!,
-          );
+      final existingRecord = await exerciseRecordService.getLatestExerciseRecord(
+        userId: athleteId,
+        exerciseId: exercise.exerciseId!,
+      );
 
       if (existingRecord != null) {
         await exerciseRecordService.updateExerciseRecord(
@@ -183,11 +166,10 @@ class ExerciseService {
   }) {
     return exercises.map((exercise) {
       final maxWeight = exerciseMaxWeights[exercise.exerciseId] ?? 0;
-      final calculatedWeight =
-          WeightCalculationService.calculateWeightFromIntensity(
-            maxWeight.toDouble(),
-            double.tryParse(intensity ?? '') ?? 0,
-          );
+      final calculatedWeight = WeightCalculationService.calculateWeightFromIntensity(
+        maxWeight.toDouble(),
+        double.tryParse(intensity ?? '') ?? 0,
+      );
       final calculatedMaxWeight = maxIntensity != null
           ? WeightCalculationService.calculateWeightFromIntensity(
               maxWeight.toDouble(),
@@ -234,17 +216,13 @@ class ExerciseService {
       variant: original.variant,
       order: original.order,
       exerciseId: original.exerciseId,
-      series: original.series
-          .map((s) => s.copyWith(serieId: generateRandomId(16)))
-          .toList(),
+      series: original.series.map((s) => s.copyWith(serieId: generateRandomId(16))).toList(),
       weekProgressions: original.weekProgressions,
     );
   }
 
   /// Groups exercises by type for better organization
-  static Map<String, List<Exercise>> groupExercisesByType(
-    List<Exercise> exercises,
-  ) {
+  static Map<String, List<Exercise>> groupExercisesByType(List<Exercise> exercises) {
     final groupedExercises = <String, List<Exercise>>{};
 
     for (var exercise in exercises) {

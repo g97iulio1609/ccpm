@@ -9,21 +9,18 @@ class PrivacyPolicyScreen extends StatefulWidget {
   State<PrivacyPolicyScreen> createState() => _PrivacyPolicyScreenState();
 }
 
-class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
-    with TickerProviderStateMixin {
+class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
+    _fadeController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut));
     _fadeController.forward();
   }
 
@@ -51,19 +48,13 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen>
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest.withAlpha(
-                  ((theme.colorScheme.surfaceContainerHighest.a * 255.0 * 0.8)
-                              .round() &
-                          0xff)
+                  ((theme.colorScheme.surfaceContainerHighest.a * 255.0 * 0.8).round() & 0xff)
                       .toInt(),
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios_new,
-                  color: theme.colorScheme.onSurface,
-                  size: 20,
-                ),
+                icon: Icon(Icons.arrow_back_ios_new, color: theme.colorScheme.onSurface, size: 20),
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   context.pop();
@@ -137,33 +128,21 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
             gradient: LinearGradient(
               colors: [
                 theme.colorScheme.primaryContainer.withAlpha(
-                  ((theme.colorScheme.primaryContainer.a * 255.0 * 0.3)
-                              .round() &
-                          0xff)
-                      .toInt(),
+                  ((theme.colorScheme.primaryContainer.a * 255.0 * 0.3).round() & 0xff).toInt(),
                 ),
                 theme.colorScheme.secondaryContainer.withAlpha(
-                  ((theme.colorScheme.secondaryContainer.a * 255.0 * 0.2)
-                              .round() &
-                          0xff)
-                      .toInt(),
+                  ((theme.colorScheme.secondaryContainer.a * 255.0 * 0.2).round() & 0xff).toInt(),
                 ),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: theme.colorScheme.outline.withValues(
-                alpha: theme.colorScheme.outline.a * 0.2,
-              ),
+              color: theme.colorScheme.outline.withValues(alpha: theme.colorScheme.outline.a * 0.2),
             ),
           ),
           child: Column(
             children: [
-              Icon(
-                Icons.security_rounded,
-                size: 32,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(Icons.security_rounded, size: 32, color: theme.colorScheme.primary),
               const SizedBox(height: 12),
               Text(
                 'La tua privacy è importante',
@@ -184,14 +163,10 @@ class _PrivacyPolicyContentState extends State<PrivacyPolicyContent> {
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withAlpha(
-                    ((theme.colorScheme.primary.a * 255.0 * 0.1).round() & 0xff)
-                        .toInt(),
+                    ((theme.colorScheme.primary.a * 255.0 * 0.1).round() & 0xff).toInt(),
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -478,9 +453,7 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
           child: ElevatedButton.icon(
             onPressed: () {
               Clipboard.setData(
-                const ClipboardData(
-                  text: 'https://alphanessone.web.app/privacy-policy',
-                ),
+                const ClipboardData(text: 'https://alphanessone.web.app/privacy-policy'),
               );
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -511,15 +484,12 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withAlpha(
-          ((theme.colorScheme.surfaceContainerHighest.a * 255.0 * 0.3).round() &
-                  0xff)
-              .toInt(),
+          ((theme.colorScheme.surfaceContainerHighest.a * 255.0 * 0.3).round() & 0xff).toInt(),
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: theme.colorScheme.outline.withAlpha(
-            ((theme.colorScheme.outline.a * 255.0 * 0.2).round() & 0xff)
-                .toInt(),
+            ((theme.colorScheme.outline.a * 255.0 * 0.2).round() & 0xff).toInt(),
           ),
         ),
       ),
@@ -545,11 +515,7 @@ Hai il diritto di presentare reclamo se ritieni che il trattamento dei tuoi dati
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      icon,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
+                    child: Icon(icon, color: theme.colorScheme.primary, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

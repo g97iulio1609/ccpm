@@ -43,10 +43,7 @@ class NutritionService {
           .get();
 
       if (snapshot.docs.isEmpty) {
-        await _firestore.collection('nutrition_stats').add({
-          'userId': userId,
-          ...stats.toMap(),
-        });
+        await _firestore.collection('nutrition_stats').add({'userId': userId, ...stats.toMap()});
       } else {
         await snapshot.docs.first.reference.update(stats.toMap());
       }

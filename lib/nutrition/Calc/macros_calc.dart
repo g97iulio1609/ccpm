@@ -21,8 +21,7 @@ class MacrosCalculator {
       ].where((macro) => !macroPercentages.containsKey(macro)).toList();
 
       if (unsetMacros.isNotEmpty) {
-        final distributedPercentage =
-            (100 - totalPercentage) / unsetMacros.length;
+        final distributedPercentage = (100 - totalPercentage) / unsetMacros.length;
         for (final macro in unsetMacros) {
           macroPercentages[macro] = distributedPercentage;
         }
@@ -106,10 +105,7 @@ class MacrosCalculator {
     return calculatePercentagesFromGrams(tdee, macroGrams);
   }
 
-  static Map<String, double> calculateMacrosFromGrams(
-    double tdee,
-    Map<String, double> macroGrams,
-  ) {
+  static Map<String, double> calculateMacrosFromGrams(double tdee, Map<String, double> macroGrams) {
     final macros = <String, double>{};
     final macroPercentages = <String, double>{};
 

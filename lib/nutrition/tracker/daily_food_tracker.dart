@@ -26,20 +26,22 @@ final activeUserIdProvider = Provider.autoDispose((ref) {
 });
 
 // Provider per l'inizializzazione dei dati
-final initializationProvider = FutureProvider.autoDispose
-    .family<Map<String, dynamic>?, String>((ref, userId) async {
-      final mealsService = ref.read(mealsServiceProvider.notifier);
-      final currentDate = ref.read(selectedDateProvider);
-      final tdeeService = ref.read(tdeeServiceProvider);
+final initializationProvider = FutureProvider.autoDispose.family<Map<String, dynamic>?, String>((
+  ref,
+  userId,
+) async {
+  final mealsService = ref.read(mealsServiceProvider.notifier);
+  final currentDate = ref.read(selectedDateProvider);
+  final tdeeService = ref.read(tdeeServiceProvider);
 
-      // Esegui le operazioni di inizializzazione in parallelo
-      await Future.wait([
-        mealsService.createDailyStatsIfNotExist(userId, currentDate),
-        mealsService.createMealsIfNotExist(userId, currentDate),
-      ]);
+  // Esegui le operazioni di inizializzazione in parallelo
+  await Future.wait([
+    mealsService.createDailyStatsIfNotExist(userId, currentDate),
+    mealsService.createMealsIfNotExist(userId, currentDate),
+  ]);
 
-      return tdeeService.getMostRecentNutritionData(userId);
-    });
+  return tdeeService.getMostRecentNutritionData(userId);
+});
 
 class DailyFoodTracker extends ConsumerStatefulWidget {
   const DailyFoodTracker({super.key});
@@ -63,15 +65,9 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _controller.forward();
 
@@ -108,11 +104,9 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
 
         return _buildMainContent(context);
       },
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, stack) => Scaffold(
-        body: Center(child: Text('Errore durante l\'inizializzazione: $error')),
-      ),
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stack) =>
+          Scaffold(body: Center(child: Text('Errore durante l\'inizializzazione: $error'))),
     );
   }
 
@@ -136,8 +130,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
                     controller: _userSearchController,
                     focusNode: _userSearchFocusNode,
                     onSelected: (UserModel selectedUser) {
-                      ref.read(selectedUserIdProvider.notifier).state =
-                          selectedUser.id;
+                      ref.read(selectedUserIdProvider.notifier).state = selectedUser.id;
                       _userSearchController.text = selectedUser.name;
                     },
                     onChanged: (pattern) {
@@ -145,28 +138,17 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
                       final filteredUsers = allUsers
                           .where(
                             (user) =>
-                                user.name.toLowerCase().contains(
-                                  pattern.toLowerCase(),
-                                ) ||
-                                user.email.toLowerCase().contains(
-                                  pattern.toLowerCase(),
-                                ),
+                                user.name.toLowerCase().contains(pattern.toLowerCase()) ||
+                                user.email.toLowerCase().contains(pattern.toLowerCase()),
                           )
                           .toList();
-                      ref.read(filteredUserListProvider.notifier).state =
-                          filteredUsers;
+                      ref.read(filteredUserListProvider.notifier).state = filteredUsers;
                     },
                   ),
                 ),
               ),
             Expanded(
-              child: _buildUserContent(
-                userAsyncValue,
-                selectedDate,
-                userId,
-                theme,
-                colorScheme,
-              ),
+              child: _buildUserContent(userAsyncValue, selectedDate, userId, theme, colorScheme),
             ),
           ],
         ),
@@ -193,9 +175,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
         }
         return Consumer(
           builder: (context, ref, child) {
-            final dailyStatsAsyncValue = ref.watch(
-              dailyStatsProvider(selectedDate),
-            );
+            final dailyStatsAsyncValue = ref.watch(dailyStatsProvider(selectedDate));
             return dailyStatsAsyncValue.when(
               data: (stats) => CustomScrollView(
                 slivers: [
@@ -206,10 +186,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
                     ),
                   ),
                   SliverFillRemaining(
-                    child: FoodList(
-                      selectedDate: selectedDate,
-                      userId: user.id,
-                    ),
+                    child: FoodList(selectedDate: selectedDate, userId: user.id),
                   ),
                 ],
               ),
@@ -225,12 +202,8 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => _buildErrorWidget(
-        'Errore nel caricamento',
-        Icons.error_outline,
-        theme,
-        colorScheme,
-      ),
+      error: (err, stack) =>
+          _buildErrorWidget('Errore nel caricamento', Icons.error_outline, theme, colorScheme),
     );
   }
 
@@ -248,9 +221,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
           SizedBox(height: AppTheme.spacing.md),
           Text(
             message,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: colorScheme.error,
-            ),
+            style: theme.textTheme.titleLarge?.copyWith(color: colorScheme.error),
             textAlign: TextAlign.center,
           ),
         ],
@@ -278,11 +249,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
     );
   }
 
-  Widget _buildCaloriesSummary(
-    meals.DailyStats stats,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildCaloriesSummary(meals.DailyStats stats, ThemeData theme, ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -291,9 +258,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
           children: [
             Text(
               'Calorie Giornaliere',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             Container(
               padding: EdgeInsets.symmetric(
@@ -327,9 +292,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
             SizedBox(width: AppTheme.spacing.xs),
             Text(
               '/ $_targetCalories kcal',
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.titleLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -337,11 +300,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
     );
   }
 
-  Widget _buildMacrosList(
-    meals.DailyStats stats,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildMacrosList(meals.DailyStats stats, ThemeData theme, ColorScheme colorScheme) {
     return Column(
       children: [
         _buildMacroItem(
@@ -360,24 +319,12 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
           theme,
         ),
         SizedBox(height: AppTheme.spacing.md),
-        _buildMacroItem(
-          'Grassi',
-          stats.totalFat,
-          _targetFats,
-          colorScheme.error,
-          theme,
-        ),
+        _buildMacroItem('Grassi', stats.totalFat, _targetFats, colorScheme.error, theme),
       ],
     );
   }
 
-  Widget _buildMacroItem(
-    String title,
-    double value,
-    double target,
-    Color color,
-    ThemeData theme,
-  ) {
+  Widget _buildMacroItem(String title, double value, double target, Color color, ThemeData theme) {
     final percentage = (value / target).clamp(0.0, 1.0);
     final colorScheme = theme.colorScheme;
 
@@ -387,12 +334,7 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             Text(
               '${value.toStringAsFixed(0)} / ${target.toStringAsFixed(0)}g',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -429,20 +371,22 @@ class DailyFoodTrackerState extends ConsumerState<DailyFoodTracker>
   }
 }
 
-final dailyStatsProvider = StreamProvider.autoDispose
-    .family<meals.DailyStats, DateTime>((ref, date) async* {
-      final mealsService = ref.read(mealsServiceProvider.notifier);
-      final selectedUserId = ref.watch(selectedUserIdProvider);
+final dailyStatsProvider = StreamProvider.autoDispose.family<meals.DailyStats, DateTime>((
+  ref,
+  date,
+) async* {
+  final mealsService = ref.read(mealsServiceProvider.notifier);
+  final selectedUserId = ref.watch(selectedUserIdProvider);
 
-      if (selectedUserId == null) {
-        yield* const Stream.empty();
-        return;
-      }
+  if (selectedUserId == null) {
+    yield* const Stream.empty();
+    return;
+  }
 
-      await Future.wait([
-        mealsService.createDailyStatsIfNotExist(selectedUserId, date),
-        mealsService.createMealsIfNotExist(selectedUserId, date),
-      ]);
+  await Future.wait([
+    mealsService.createDailyStatsIfNotExist(selectedUserId, date),
+    mealsService.createMealsIfNotExist(selectedUserId, date),
+  ]);
 
-      yield* mealsService.getDailyStatsByDateStream(selectedUserId, date);
-    });
+  yield* mealsService.getDailyStatsByDateStream(selectedUserId, date);
+});

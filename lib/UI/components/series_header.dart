@@ -5,11 +5,7 @@ class SeriesHeader extends StatelessWidget {
   final List<String> labels;
   final List<int>? flex;
 
-  const SeriesHeader({
-    super.key,
-    this.labels = const ['#', 'Reps', 'Peso', 'Fatti'],
-    this.flex,
-  });
+  const SeriesHeader({super.key, this.labels = const ['#', 'Reps', 'Peso', 'Fatti'], this.flex});
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +15,7 @@ class SeriesHeader extends StatelessWidget {
     final List<int> effectiveFlex = flex ?? [1, 2, 2, 2];
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: AppTheme.spacing.xs,
-        horizontal: AppTheme.spacing.sm,
-      ),
+      padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.xs, horizontal: AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
@@ -42,9 +35,7 @@ class SeriesHeader extends StatelessWidget {
           ),
           ...List.generate(labels.length - 1, (index) {
             final label = labels[index + 1];
-            final flexValue = effectiveFlex.length > index + 1
-                ? effectiveFlex[index + 1]
-                : 2;
+            final flexValue = effectiveFlex.length > index + 1 ? effectiveFlex[index + 1] : 2;
             return Expanded(
               flex: flexValue,
               child: Text(

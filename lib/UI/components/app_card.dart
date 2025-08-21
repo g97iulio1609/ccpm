@@ -51,38 +51,29 @@ class AppCard extends StatelessWidget {
             padding: EdgeInsets.all(AppTheme.spacing.md),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(77),
-              border: Border(
-                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              ),
+              border: Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26))),
             ),
             child: header ?? _buildDefaultHeader(context),
           ),
-        Padding(
-          padding: padding ?? EdgeInsets.all(AppTheme.spacing.md),
-          child: child,
-        ),
+        Padding(padding: padding ?? EdgeInsets.all(AppTheme.spacing.md), child: child),
         if (actions != null && actions!.isNotEmpty)
           Container(
             padding: EdgeInsets.all(AppTheme.spacing.md),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withAlpha(77),
-              border: Border(
-                top: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              ),
+              border: Border(top: BorderSide(color: colorScheme.outline.withAlpha(26))),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 for (int i = 0; i < actions!.length; i++) ...[
                   actions![i],
-                  if (i < actions!.length - 1)
-                    SizedBox(width: AppTheme.spacing.md),
+                  if (i < actions!.length - 1) SizedBox(width: AppTheme.spacing.md),
                 ],
               ],
             ),
           ),
-        if (footer != null)
-          Padding(padding: EdgeInsets.all(AppTheme.spacing.md), child: footer),
+        if (footer != null) Padding(padding: EdgeInsets.all(AppTheme.spacing.md), child: footer),
       ],
     );
 
@@ -100,16 +91,10 @@ class AppCard extends StatelessWidget {
             margin: margin ?? EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              side: BorderSide(
-                color: colorScheme.outline.withAlpha(26),
-                width: 1,
-              ),
+              side: BorderSide(color: colorScheme.outline.withAlpha(26), width: 1),
             ),
             color: background ?? colorScheme.surface,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              child: core,
-            ),
+            child: ClipRRect(borderRadius: BorderRadius.circular(AppTheme.radii.lg), child: core),
           );
 
     if (onTap != null) {
@@ -160,9 +145,7 @@ class AppCard extends StatelessWidget {
                 SizedBox(height: AppTheme.spacing.xs),
                 Text(
                   subtitle!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ],

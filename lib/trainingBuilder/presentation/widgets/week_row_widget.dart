@@ -39,9 +39,7 @@ class WeekRowWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-        ),
+        border: Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26))),
       ),
       child: Padding(
         padding: EdgeInsets.all(AppTheme.spacing.md),
@@ -53,10 +51,7 @@ class WeekRowWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!isSmallScreen) _buildWeekColumn(),
-                Expanded(
-                  flex: isSmallScreen ? 12 : 10,
-                  child: _buildGroupsColumn(context),
-                ),
+                Expanded(flex: isSmallScreen ? 12 : 10, child: _buildGroupsColumn(context)),
               ],
             ),
           ],
@@ -119,11 +114,7 @@ class WeekRowWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildGroupRow(
-    BuildContext context,
-    int groupIndex,
-    ProgressionControllers controllers,
-  ) {
+  Widget _buildGroupRow(BuildContext context, int groupIndex, ProgressionControllers controllers) {
     final groupContent = Row(
       children: [
         Expanded(
@@ -144,13 +135,8 @@ class WeekRowWidget extends StatelessWidget {
         ),
         if (!isSmallScreen)
           IconButton(
-            icon: Icon(
-              Icons.delete_outline,
-              size: 20,
-              color: colorScheme.error,
-            ),
-            onPressed: () =>
-                onRemoveSeriesGroup(weekIndex, sessionIndex, groupIndex),
+            icon: Icon(Icons.delete_outline, size: 20, color: colorScheme.error),
+            onPressed: () => onRemoveSeriesGroup(weekIndex, sessionIndex, groupIndex),
             tooltip: 'Rimuovi Gruppo',
           ),
       ],
@@ -170,8 +156,7 @@ class WeekRowWidget extends StatelessWidget {
         motion: const ScrollMotion(),
         children: [
           SlidableAction(
-            onPressed: (_) =>
-                onRemoveSeriesGroup(weekIndex, sessionIndex, groupIndex),
+            onPressed: (_) => onRemoveSeriesGroup(weekIndex, sessionIndex, groupIndex),
             backgroundColor: colorScheme.error,
             foregroundColor: colorScheme.onError,
             icon: Icons.delete,
@@ -191,22 +176,12 @@ class WeekRowWidget extends StatelessWidget {
         children: [
           TextButton.icon(
             onPressed: () {
-              onAddSeriesGroup(
-                weekIndex,
-                sessionIndex,
-                sessionControllers.length,
-              );
+              onAddSeriesGroup(weekIndex, sessionIndex, sessionControllers.length);
             },
-            icon: Icon(
-              Icons.add_circle_outline,
-              size: 16,
-              color: colorScheme.primary,
-            ),
+            icon: Icon(Icons.add_circle_outline, size: 16, color: colorScheme.primary),
             label: Text(
               'Aggiungi Gruppo',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.primary,
-              ),
+              style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.primary),
             ),
             style: TextButton.styleFrom(
               padding: EdgeInsets.symmetric(

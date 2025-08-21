@@ -20,14 +20,8 @@ class AuthService {
 
   UsersService get usersService => ref.read(usersServiceProvider);
 
-  Future<UserCredential> signInWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
-    final userCredential = await auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+  Future<UserCredential> signInWithEmailAndPassword(String email, String password) async {
+    final userCredential = await auth.signInWithEmailAndPassword(email: email, password: password);
     await usersService.setUserRole(userCredential.user!.uid);
     return userCredential;
   }
@@ -100,14 +94,10 @@ class AuthService {
       }
 
       // If lightweight auth didn't work, try full authentication
-      googleUser ??= await googleSignIn.authenticate(
-        scopeHint: ['email', 'profile'],
-      );
+      googleUser ??= await googleSignIn.authenticate(scopeHint: ['email', 'profile']);
 
       final googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
+      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
 
       final userCredential = await auth.signInWithCredential(credential);
       await updateUserDataIfNeeded(userCredential.user!);
@@ -163,10 +153,7 @@ class AuthService {
                   if (userRole == 'admin') {
                     Navigator.pushNamed(context, '/programs_screen');
                   } else {
-                    Navigator.pushNamed(
-                      context,
-                      '/programs_screen/user_programs/$userId',
-                    );
+                    Navigator.pushNamed(context, '/programs_screen/user_programs/$userId');
                   }
                 });
               }

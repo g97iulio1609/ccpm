@@ -64,9 +64,7 @@ class ModelUtils {
       // Update superset IDs in exercises by creating new instances
       for (int i = 0; i < copiedExercises.length; i++) {
         if (newExerciseIds.contains(copiedExercises[i].id)) {
-          copiedExercises[i] = copiedExercises[i].copyWith(
-            superSetId: newSuperSetId,
-          );
+          copiedExercises[i] = copiedExercises[i].copyWith(superSetId: newSuperSetId);
         }
       }
 
@@ -77,21 +75,19 @@ class ModelUtils {
       };
     }).toList();
 
-    return source.copyWith(
-      id: null,
-      exercises: copiedExercises,
-      superSets: copiedSuperSets,
-    );
+    return source.copyWith(id: null, exercises: copiedExercises, superSets: copiedSuperSets);
   }
 
   /// Creates a deep copy of a week with new IDs
   static Week copyWeek(Week source, {int? targetWeekNumber}) {
     final newWeekNumber = targetWeekNumber ?? source.number;
-    
+
     return source.copyWith(
       id: null, // Forza un nuovo ID
       number: newWeekNumber,
-      workouts: source.workouts.map((w) => copyWorkout(w, targetWeekIndex: newWeekNumber - 1)).toList(),
+      workouts: source.workouts
+          .map((w) => copyWorkout(w, targetWeekIndex: newWeekNumber - 1))
+          .toList(),
     );
   }
 

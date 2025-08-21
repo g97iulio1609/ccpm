@@ -47,7 +47,6 @@ class ProgressionControllers {
     }
   }
 
-
   /// Sets safe default values to prevent null errors
   void _setSafeDefaults() {
     reps.min.text = '0';
@@ -86,11 +85,7 @@ class ProgressionControllersNotifier
     state = weekProgressions
         .map(
           (week) => week
-              .map(
-                (session) => session.series
-                    .map((_) => ProgressionControllers())
-                    .toList(),
-              )
+              .map((session) => session.series.map((_) => ProgressionControllers()).toList())
               .toList(),
         )
         .toList();
@@ -98,22 +93,15 @@ class ProgressionControllersNotifier
     _initializeFromProgressions(weekProgressions);
   }
 
-  void _initializeFromProgressions(
-    List<List<WeekProgression>> weekProgressions,
-  ) {
+  void _initializeFromProgressions(List<List<WeekProgression>> weekProgressions) {
     for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
       for (
         int sessionIndex = 0;
         sessionIndex < weekProgressions[weekIndex].length;
         sessionIndex++
       ) {
-        final seriesFromProgressions =
-            weekProgressions[weekIndex][sessionIndex].series;
-        for (
-          int seriesIndex = 0;
-          seriesIndex < seriesFromProgressions.length;
-          seriesIndex++
-        ) {
+        final seriesFromProgressions = weekProgressions[weekIndex][sessionIndex].series;
+        for (int seriesIndex = 0; seriesIndex < seriesFromProgressions.length; seriesIndex++) {
           final series = seriesFromProgressions[seriesIndex];
           updateControllers(weekIndex, sessionIndex, seriesIndex, series);
         }
@@ -121,18 +109,8 @@ class ProgressionControllersNotifier
     }
   }
 
-  void updateControllers(
-    int weekIndex,
-    int sessionIndex,
-    int groupIndex,
-    Series series,
-  ) {
-    if (ProgressionService.isValidIndex(
-      state,
-      weekIndex,
-      sessionIndex,
-      groupIndex,
-    )) {
+  void updateControllers(int weekIndex, int sessionIndex, int groupIndex, Series series) {
+    if (ProgressionService.isValidIndex(state, weekIndex, sessionIndex, groupIndex)) {
       final controllers = state[weekIndex][sessionIndex][groupIndex];
       controllers.updateFromSeries(series);
       state = [...state];
@@ -149,12 +127,7 @@ class ProgressionControllersNotifier
   }
 
   void removeControllers(int weekIndex, int sessionIndex, int groupIndex) {
-    if (ProgressionService.isValidIndex(
-      state,
-      weekIndex,
-      sessionIndex,
-      groupIndex,
-    )) {
+    if (ProgressionService.isValidIndex(state, weekIndex, sessionIndex, groupIndex)) {
       final newState = List<List<List<ProgressionControllers>>>.from(state);
       newState[weekIndex][sessionIndex].removeAt(groupIndex);
       state = newState;
@@ -164,9 +137,8 @@ class ProgressionControllersNotifier
 
 /// Provider for progression controllers
 final progressionControllersProvider =
-    StateNotifierProvider<
-      ProgressionControllersNotifier,
-      List<List<List<ProgressionControllers>>>
-    >((ref) {
-      return ProgressionControllersNotifier();
-    });
+    StateNotifierProvider<ProgressionControllersNotifier, List<List<List<ProgressionControllers>>>>(
+      (ref) {
+        return ProgressionControllersNotifier();
+      },
+    );

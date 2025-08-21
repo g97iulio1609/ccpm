@@ -25,12 +25,8 @@ class RangeSeriesTranslator {
 
     for (int i = 0; i < maxLength; i++) {
       int currentReps = i < reps.length ? reps[i] : reps.last;
-      int currentSets = isSetRange
-          ? (i < sets.length ? sets[i] : sets.last)
-          : 1;
-      String currentIntensity = i < intensity.length
-          ? intensity[i]
-          : intensity.last;
+      int currentSets = isSetRange ? (i < sets.length ? sets[i] : sets.last) : 1;
+      String currentIntensity = i < intensity.length ? intensity[i] : intensity.last;
       String currentRpe = i < rpe.length ? rpe[i] : rpe.last;
       double currentWeight = i < weight.length ? weight[i] : weight.last;
 

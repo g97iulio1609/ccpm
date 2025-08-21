@@ -35,9 +35,7 @@ class WeightInputFields extends HookConsumerWidget {
     final minIntensity = double.tryParse(intensity ?? '') ?? 0;
     final maxIntensityValue = double.tryParse(maxIntensity ?? '');
 
-    final calculatedWeight = maxWeight > 0
-        ? (maxWeight.toDouble() * minIntensity / 100)
-        : 0;
+    final calculatedWeight = maxWeight > 0 ? (maxWeight.toDouble() * minIntensity / 100) : 0;
     final calculatedMaxWeight = maxIntensityValue != null && maxWeight > 0
         ? (maxWeight.toDouble() * maxIntensityValue / 100)
         : null;
@@ -84,9 +82,9 @@ class WeightInputFields extends HookConsumerWidget {
                 if (maxWeight > 0)
                   Text(
                     'Max: ${maxWeight.toStringAsFixed(1)} kg',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
               ],
             ),

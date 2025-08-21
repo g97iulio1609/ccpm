@@ -10,9 +10,7 @@ abstract class WorkoutRepository {
   Future<void> createWeek(Week week);
   Future<void> updateWeek(Week week);
   Future<void> deleteWeek(String weekId);
-  Future<String> getWeekName(
-    String weekId,
-  ); // Spostato da TrainingProgramServices
+  Future<String> getWeekName(String weekId); // Spostato da TrainingProgramServices
 
   // Workout Operations
   Stream<List<Workout>> getWorkouts(String weekId);
@@ -28,10 +26,7 @@ abstract class WorkoutRepository {
   Future<void> createExercise(Exercise exercise);
   Future<void> updateExercise(Exercise exercise);
   Future<void> deleteExercise(String exerciseId);
-  Future<void> updateExercisesInWorkout(
-    String workoutId,
-    List<Exercise> exercises,
-  );
+  Future<void> updateExercisesInWorkout(String workoutId, List<Exercise> exercises);
 
   // Series Operations
   Stream<List<Series>> getSeriesForExercise(String exerciseId);
@@ -46,19 +41,11 @@ abstract class WorkoutRepository {
     int repsDone,
     double weightDone,
   );
-  Future<void> updateSeriesRepsAndWeight(
-    String seriesId,
-    int repsDone,
-    double weightDone,
-  );
+  Future<void> updateSeriesRepsAndWeight(String seriesId, int repsDone, double weightDone);
 
   // Note Operations
   Future<String?> getNoteForExercise(String workoutId, String exerciseId);
-  Future<void> saveNoteForExercise(
-    String workoutId,
-    String exerciseId,
-    String note,
-  );
+  Future<void> saveNoteForExercise(String workoutId, String exerciseId, String note);
   Future<void> deleteNoteForExercise(String workoutId, String exerciseId);
   Stream<Map<String, String>> getNotesForWorkoutStream(String workoutId);
 }

@@ -51,10 +51,7 @@ class PageScaffold extends ConsumerWidget {
         gradient: LinearGradient(
           begin: begin,
           end: end,
-          colors: [
-            colorScheme.surface,
-            colorScheme.surfaceContainerHighest.withAlpha(128),
-          ],
+          colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
           stops: const [0.0, 1.0],
         ),
       ),

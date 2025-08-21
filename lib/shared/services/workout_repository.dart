@@ -6,14 +6,12 @@ import 'exercise_repository.dart';
 
 /// Repository for Workout operations
 /// Consolidates workout data access from both trainingBuilder and Viewer modules
-class WorkoutRepository extends BaseRepository<Workout>
-    with RepositoryMixin<Workout> {
+class WorkoutRepository extends BaseRepository<Workout> with RepositoryMixin<Workout> {
   static const String collectionName = 'workouts';
   final ExerciseRepository _exerciseRepository = ExerciseRepository();
 
   @override
-  CollectionReference get collection =>
-      FirebaseFirestore.instance.collection(collectionName);
+  CollectionReference get collection => FirebaseFirestore.instance.collection(collectionName);
 
   @override
   Workout fromFirestore(DocumentSnapshot doc) {
@@ -57,8 +55,7 @@ class WorkoutRepository extends BaseRepository<Workout>
       return await getWhere(
         field: 'isCompleted',
         value: true,
-        queryBuilder: (query) =>
-            query.orderBy('lastPerformed', descending: true),
+        queryBuilder: (query) => query.orderBy('lastPerformed', descending: true),
       );
     } catch (e) {
       handleError('get completed workouts', e);
@@ -97,9 +94,7 @@ class WorkoutRepository extends BaseRepository<Workout>
       final workout = await getById(workoutId);
       if (workout == null) return null;
 
-      final exercises = await _exerciseRepository.getOrderedByWorkout(
-        workoutId,
-      );
+      final exercises = await _exerciseRepository.getOrderedByWorkout(workoutId);
 
       return workout.copyWith(exercises: exercises);
     } catch (e) {
@@ -108,20 +103,11 @@ class WorkoutRepository extends BaseRepository<Workout>
   }
 
   /// Update workout completion status
-  Future<void> updateCompletionStatus(
-    String workoutId,
-    bool isCompleted,
-  ) async {
+  Future<void> updateCompletionStatus(String workoutId, bool isCompleted) async {
     try {
-      logOperation('updateCompletionStatus', {
-        'workoutId': workoutId,
-        'isCompleted': isCompleted,
-      });
+      logOperation('updateCompletionStatus', {'workoutId': workoutId, 'isCompleted': isCompleted});
 
-      final updateData = {
-        'isCompleted': isCompleted,
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+      final updateData = {'isCompleted': isCompleted, 'updatedAt': FieldValue.serverTimestamp()};
 
       if (isCompleted) {
         updateData['lastPerformed'] = FieldValue.serverTimestamp();
@@ -164,25 +150,16 @@ class WorkoutRepository extends BaseRepository<Workout>
   /// Update workout notes
   Future<void> updateNotes(String workoutId, String notes) async {
     try {
-      logOperation('updateNotes', {
-        'workoutId': workoutId,
-        'notesLength': notes.length,
-      });
+      logOperation('updateNotes', {'workoutId': workoutId, 'notesLength': notes.length});
 
-      await updateFields(workoutId, {
-        'notes': notes,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await updateFields(workoutId, {'notes': notes, 'updatedAt': FieldValue.serverTimestamp()});
     } catch (e) {
       handleError('update workout notes', e);
     }
   }
 
   /// Update estimated duration
-  Future<void> updateEstimatedDuration(
-    String workoutId,
-    int durationMinutes,
-  ) async {
+  Future<void> updateEstimatedDuration(String workoutId, int durationMinutes) async {
     try {
       logOperation('updateEstimatedDuration', {
         'workoutId': workoutId,
@@ -199,11 +176,7 @@ class WorkoutRepository extends BaseRepository<Workout>
   }
 
   /// Duplicate workout with new order
-  Future<String> duplicateWorkout(
-    String workoutId,
-    int newOrder, {
-    String? newWeekId,
-  }) async {
+  Future<String> duplicateWorkout(String workoutId, int newOrder, {String? newWeekId}) async {
     try {
       logOperation('duplicateWorkout', {
         'originalWorkoutId': workoutId,
@@ -213,9 +186,7 @@ class WorkoutRepository extends BaseRepository<Workout>
 
       final originalWorkout = await getWithExercises(workoutId);
       if (originalWorkout == null) {
-        throw RepositoryException(
-          'Workout not found for duplication: $workoutId',
-        );
+        throw RepositoryException('Workout not found for duplication: $workoutId');
       }
 
       // Create duplicated workout
@@ -296,9 +267,7 @@ class WorkoutRepository extends BaseRepository<Workout>
       }
 
       int totalExercises = workout.exercises.length;
-      int completedExercises = workout.exercises
-          .where((e) => e.isCompleted)
-          .length;
+      int completedExercises = workout.exercises.where((e) => e.isCompleted).length;
       int totalSeries = 0;
       int completedSeries = 0;
       double totalVolume = 0.0;
@@ -322,9 +291,7 @@ class WorkoutRepository extends BaseRepository<Workout>
         exerciseCompletionRate: totalExercises > 0
             ? (completedExercises / totalExercises) * 100
             : 0.0,
-        seriesCompletionRate: totalSeries > 0
-            ? (completedSeries / totalSeries) * 100
-            : 0.0,
+        seriesCompletionRate: totalSeries > 0 ? (completedSeries / totalSeries) * 100 : 0.0,
         estimatedDuration: workout.estimatedDuration,
         lastPerformed: workout.lastPerformed,
       );
@@ -334,10 +301,7 @@ class WorkoutRepository extends BaseRepository<Workout>
   }
 
   /// Get workouts performed in date range
-  Future<List<Workout>> getPerformedInDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
+  Future<List<Workout>> getPerformedInDateRange(DateTime startDate, DateTime endDate) async {
     try {
       logOperation('getPerformedInDateRange', {
         'startDate': startDate.toIso8601String(),
@@ -347,14 +311,8 @@ class WorkoutRepository extends BaseRepository<Workout>
       return await getWhere(
         queryBuilder: (query) => query
             .where('isCompleted', isEqualTo: true)
-            .where(
-              'lastPerformed',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
-            )
-            .where(
-              'lastPerformed',
-              isLessThanOrEqualTo: Timestamp.fromDate(endDate),
-            )
+            .where('lastPerformed', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+            .where('lastPerformed', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
             .orderBy('lastPerformed', descending: true),
       );
     } catch (e) {
@@ -399,9 +357,7 @@ class WorkoutRepository extends BaseRepository<Workout>
     return listenById(workoutId).asyncMap((workout) async {
       if (workout == null) return null;
 
-      final exercises = await _exerciseRepository.getOrderedByWorkout(
-        workoutId,
-      );
+      final exercises = await _exerciseRepository.getOrderedByWorkout(workoutId);
       return workout.copyWith(exercises: exercises);
     });
   }
@@ -451,8 +407,7 @@ class WorkoutStats {
 }
 
 /// Cached version of WorkoutRepository for better performance
-class CachedWorkoutRepository extends CachedRepository<Workout>
-    with RepositoryMixin<Workout> {
+class CachedWorkoutRepository extends CachedRepository<Workout> with RepositoryMixin<Workout> {
   final WorkoutRepository _baseRepository = WorkoutRepository();
 
   CachedWorkoutRepository({super.cacheDuration});
@@ -461,57 +416,40 @@ class CachedWorkoutRepository extends CachedRepository<Workout>
   CollectionReference get collection => _baseRepository.collection;
 
   @override
-  Workout fromFirestore(DocumentSnapshot doc) =>
-      _baseRepository.fromFirestore(doc);
+  Workout fromFirestore(DocumentSnapshot doc) => _baseRepository.fromFirestore(doc);
 
   @override
-  Map<String, dynamic> toFirestore(Workout model) =>
-      _baseRepository.toFirestore(model);
+  Map<String, dynamic> toFirestore(Workout model) => _baseRepository.toFirestore(model);
 
   @override
   void validateModel(Workout model) => _baseRepository.validateModel(model);
 
   // Delegate methods to base repository
-  Future<List<Workout>> getByWeekId(String weekId) =>
-      _baseRepository.getByWeekId(weekId);
+  Future<List<Workout>> getByWeekId(String weekId) => _baseRepository.getByWeekId(weekId);
   Future<List<Workout>> getCompleted() => _baseRepository.getCompleted();
   Future<List<Workout>> getByCompletionStatus(bool isCompleted) =>
       _baseRepository.getByCompletionStatus(isCompleted);
-  Future<List<Workout>> getOrderedByWeek(String weekId) =>
-      _baseRepository.getOrderedByWeek(weekId);
+  Future<List<Workout>> getOrderedByWeek(String weekId) => _baseRepository.getOrderedByWeek(weekId);
   Future<Workout?> getWithExercises(String workoutId) =>
       _baseRepository.getWithExercises(workoutId);
   Future<void> updateCompletionStatus(String workoutId, bool isCompleted) =>
       _baseRepository.updateCompletionStatus(workoutId, isCompleted);
-  Future<void> markAsCompleted(String workoutId) =>
-      _baseRepository.markAsCompleted(workoutId);
-  Future<void> resetCompletion(String workoutId) =>
-      _baseRepository.resetCompletion(workoutId);
+  Future<void> markAsCompleted(String workoutId) => _baseRepository.markAsCompleted(workoutId);
+  Future<void> resetCompletion(String workoutId) => _baseRepository.resetCompletion(workoutId);
   Future<void> updateNotes(String workoutId, String notes) =>
       _baseRepository.updateNotes(workoutId, notes);
   Future<void> updateEstimatedDuration(String workoutId, int durationMinutes) =>
       _baseRepository.updateEstimatedDuration(workoutId, durationMinutes);
-  Future<String> duplicateWorkout(
-    String workoutId,
-    int newOrder, {
-    String? newWeekId,
-  }) => _baseRepository.duplicateWorkout(
-    workoutId,
-    newOrder,
-    newWeekId: newWeekId,
-  );
-  Future<void> reorderWorkouts(List<Workout> workouts) =>
-      _baseRepository.reorderWorkouts(workouts);
+  Future<String> duplicateWorkout(String workoutId, int newOrder, {String? newWeekId}) =>
+      _baseRepository.duplicateWorkout(workoutId, newOrder, newWeekId: newWeekId);
+  Future<void> reorderWorkouts(List<Workout> workouts) => _baseRepository.reorderWorkouts(workouts);
   Future<WorkoutStats> getWorkoutStats(String workoutId) =>
       _baseRepository.getWorkoutStats(workoutId);
-  Future<List<Workout>> getPerformedInDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) => _baseRepository.getPerformedInDateRange(startDate, endDate);
+  Future<List<Workout>> getPerformedInDateRange(DateTime startDate, DateTime endDate) =>
+      _baseRepository.getPerformedInDateRange(startDate, endDate);
   Future<void> deleteWithExercises(String workoutId) =>
       _baseRepository.deleteWithExercises(workoutId);
-  Stream<List<Workout>> listenByWeekId(String weekId) =>
-      _baseRepository.listenByWeekId(weekId);
+  Stream<List<Workout>> listenByWeekId(String weekId) => _baseRepository.listenByWeekId(weekId);
   Stream<Workout?> listenWithExercises(String workoutId) =>
       _baseRepository.listenWithExercises(workoutId);
 }

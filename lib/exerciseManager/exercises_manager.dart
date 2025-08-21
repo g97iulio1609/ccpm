@@ -22,20 +22,14 @@ final muscleGroupsProvider = StreamProvider<List<String>>((ref) {
   return FirebaseFirestore.instance
       .collection('muscleGroups')
       .snapshots()
-      .map(
-        (snapshot) =>
-            snapshot.docs.map((doc) => doc['name'].toString()).toList(),
-      );
+      .map((snapshot) => snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
 final exerciseTypesProvider = StreamProvider<List<String>>((ref) {
   return FirebaseFirestore.instance
       .collection('ExerciseTypes')
       .snapshots()
-      .map(
-        (snapshot) =>
-            snapshot.docs.map((doc) => doc['name'].toString()).toList(),
-      );
+      .map((snapshot) => snapshot.docs.map((doc) => doc['name'].toString()).toList());
 });
 
 class ExercisesManager extends ConsumerWidget {
@@ -54,10 +48,8 @@ class ExercisesManager extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => _ExerciseForm(
-        exercise: null,
-        userId: ref.read(usersServiceProvider).getCurrentUserId(),
-      ),
+      builder: (context) =>
+          _ExerciseForm(exercise: null, userId: ref.read(usersServiceProvider).getCurrentUserId()),
     );
   }
 
@@ -109,16 +101,9 @@ class ExercisesList extends HookConsumerWidget {
             suggestionsCallback: (pattern) async {
               if (pattern.isEmpty) return [];
 
-              final exercises = await ref
-                  .read(exercisesServiceProvider)
-                  .getExercises()
-                  .first;
+              final exercises = await ref.read(exercisesServiceProvider).getExercises().first;
               return exercises
-                  .where(
-                    (exercise) => exercise.name.toLowerCase().contains(
-                      pattern.toLowerCase(),
-                    ),
-                  )
+                  .where((exercise) => exercise.name.toLowerCase().contains(pattern.toLowerCase()))
                   .toList();
             },
             itemBuilder: (context, exercise) {
@@ -172,8 +157,7 @@ class ExercisesList extends HookConsumerWidget {
                       children: [
                         const SizedBox(width: 4),
                         ...muscleGroups.map((group) {
-                          final isSelected = selectedMuscleGroups.value
-                              .contains(group);
+                          final isSelected = selectedMuscleGroups.value.contains(group);
                           return Padding(
                             padding: const EdgeInsets.only(right: 8.0),
                             child: SizedBox(
@@ -196,47 +180,34 @@ class ExercisesList extends HookConsumerWidget {
                                       group,
                                     ];
                                   } else {
-                                    selectedMuscleGroups.value =
-                                        selectedMuscleGroups.value
-                                            .where((g) => g != group)
-                                            .toList();
+                                    selectedMuscleGroups.value = selectedMuscleGroups.value
+                                        .where((g) => g != group)
+                                        .toList();
                                   }
                                   controller.updateFilters(
                                     muscleGroups: selectedMuscleGroups.value,
                                   );
                                 },
                                 showCheckmark: false,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0,
-                                ),
-                                labelPadding: const EdgeInsets.symmetric(
-                                  horizontal: 4.0,
-                                ),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                labelPadding: const EdgeInsets.symmetric(horizontal: 4.0),
                                 avatar: isSelected
                                     ? Icon(
                                         Icons.check,
                                         size: 16,
-                                        color: theme
-                                            .colorScheme
-                                            .onSecondaryContainer,
+                                        color: theme.colorScheme.onSecondaryContainer,
                                       )
                                     : null,
-                                selectedColor:
-                                    theme.colorScheme.secondaryContainer,
-                                backgroundColor: theme
-                                    .colorScheme
-                                    .surfaceContainerHighest
+                                selectedColor: theme.colorScheme.secondaryContainer,
+                                backgroundColor: theme.colorScheme.surfaceContainerHighest
                                     .withAlpha(128),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   side: BorderSide(
                                     color: isSelected
                                         ? theme.colorScheme.secondary
-                                        : theme.colorScheme.outline.withAlpha(
-                                            26,
-                                          ),
+                                        : theme.colorScheme.outline.withAlpha(26),
                                     width: 1,
                                   ),
                                 ),
@@ -246,9 +217,7 @@ class ExercisesList extends HookConsumerWidget {
                         }),
                         if (selectedMuscleGroups.value.isNotEmpty)
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
                             child: SizedBox(
                               height: 32,
                               child: TextButton.icon(
@@ -256,25 +225,15 @@ class ExercisesList extends HookConsumerWidget {
                                   selectedMuscleGroups.value = [];
                                   controller.updateFilters(muscleGroups: []);
                                 },
-                                icon: Icon(
-                                  Icons.clear,
-                                  size: 16,
-                                  color: theme.colorScheme.error,
-                                ),
+                                icon: Icon(Icons.clear, size: 16, color: theme.colorScheme.error),
                                 label: Text(
                                   'Clear',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: theme.colorScheme.error,
-                                  ),
+                                  style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
                                 ),
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8.0,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
                                   minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
                               ),
                             ),
@@ -315,17 +274,9 @@ class ExercisesList extends HookConsumerWidget {
                   currentUserRole: currentUserRole,
                   currentUserId: currentUserId,
                   onEdit: (exercise) =>
-                      ExercisesManager.showEditExerciseBottomSheet(
-                        context,
-                        ref,
-                        exercise,
-                      ),
-                  onDelete: (exercise) => _showDeleteConfirmationDialog(
-                    context,
-                    exercise,
-                    ref,
-                    theme,
-                  ),
+                      ExercisesManager.showEditExerciseBottomSheet(context, ref, exercise),
+                  onDelete: (exercise) =>
+                      _showDeleteConfirmationDialog(context, exercise, ref, theme),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -344,10 +295,7 @@ class ExercisesList extends HookConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surface.withAlpha(235),
-          ],
+          colors: [theme.colorScheme.surface, theme.colorScheme.surface.withAlpha(235)],
         ),
       ),
       child: core,
@@ -382,9 +330,7 @@ class ExercisesList extends HookConsumerWidget {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Annulla',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ),
           Container(
@@ -421,9 +367,7 @@ class ExercisesList extends HookConsumerWidget {
         children: [
           Text(
             'Questa azione non può essere annullata.',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -469,11 +413,7 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
         ),
         items: [
           BottomMenuItem(
@@ -491,8 +431,7 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
             },
             isDestructive: true,
           ),
-          if ((widget.currentUserRole == 'admin' ||
-                  widget.currentUserRole == 'coach') &&
+          if ((widget.currentUserRole == 'admin' || widget.currentUserRole == 'coach') &&
               exercise.status == 'pending')
             BottomMenuItem(
               title: 'Approva Esercizio',
@@ -538,17 +477,11 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
                 if (i < rowExercises.length)
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(
-                        right: i < crossAxisCount - 1 ? 24.0 : 0,
-                      ),
+                      padding: EdgeInsets.only(right: i < crossAxisCount - 1 ? 24.0 : 0),
                       child: ExerciseCardContent(
                         exercise: rowExercises[i],
-                        onTap: () =>
-                            _showExerciseDetails(context, rowExercises[i]),
-                        actions: _buildExerciseActions(
-                          context,
-                          rowExercises[i],
-                        ),
+                        onTap: () => _showExerciseDetails(context, rowExercises[i]),
+                        actions: _buildExerciseActions(context, rowExercises[i]),
                       ),
                     ),
                   )
@@ -570,10 +503,7 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
     return 1;
   }
 
-  List<Widget> _buildExerciseActions(
-    BuildContext context,
-    ExerciseModel exercise,
-  ) {
+  List<Widget> _buildExerciseActions(BuildContext context, ExerciseModel exercise) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final actions = <Widget>[];
@@ -599,8 +529,7 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
     );
 
     // Azione Approva (solo per admin/coach)
-    if ((widget.currentUserRole == 'admin' ||
-            widget.currentUserRole == 'coach') &&
+    if ((widget.currentUserRole == 'admin' || widget.currentUserRole == 'coach') &&
         exercise.status == 'pending') {
       actions.add(
         IconButtonWithBackground(
@@ -630,33 +559,23 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
         ),
         title: Text(
           'Approve Exercise',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: theme.colorScheme.onSurface,
-          ),
+          style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
         ),
         content: Text(
           'Are you sure you want to approve "${exercise.name}"?',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: theme.colorScheme.primary),
-            ),
+            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary)),
           ),
           TextButton(
             onPressed: () {
               ref.read(exercisesServiceProvider).approveExercise(exercise.id);
               Navigator.pop(dialogContext);
             },
-            child: Text(
-              'Approve',
-              style: TextStyle(color: theme.colorScheme.tertiary),
-            ),
+            child: Text('Approve', style: TextStyle(color: theme.colorScheme.tertiary)),
           ),
         ],
       ),
@@ -676,9 +595,7 @@ class _ExerciseForm extends HookConsumerWidget {
     final colorScheme = theme.colorScheme;
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final nameController = useTextEditingController(text: exercise?.name);
-    final selectedMuscleGroups = useState<List<String>>(
-      exercise?.muscleGroups ?? [],
-    );
+    final selectedMuscleGroups = useState<List<String>>(exercise?.muscleGroups ?? []);
     final selectedExerciseType = useState<String?>(exercise?.type);
 
     return MediaQuery.removePadding(
@@ -712,18 +629,13 @@ class _ExerciseForm extends HookConsumerWidget {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Annulla',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ),
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary,
-                      colorScheme.primary.withAlpha(204),
-                    ],
+                    colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
                   ),
                   borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                   boxShadow: [
@@ -739,9 +651,7 @@ class _ExerciseForm extends HookConsumerWidget {
                   child: InkWell(
                     onTap: () {
                       if (formKey.currentState!.validate()) {
-                        final exercisesService = ref.read(
-                          exercisesServiceProvider,
-                        );
+                        final exercisesService = ref.read(exercisesServiceProvider);
 
                         if (exercise == null) {
                           // Aggiunta nuovo esercizio
@@ -823,51 +733,42 @@ class _ExerciseForm extends HookConsumerWidget {
                     // Muscle Groups
                     Consumer(
                       builder: (context, ref, child) {
-                        final muscleGroupsAsyncValue = ref.watch(
-                          muscleGroupsProvider,
-                        );
+                        final muscleGroupsAsyncValue = ref.watch(muscleGroupsProvider);
                         return muscleGroupsAsyncValue.when(
-                          data: (muscleGroups) =>
-                              BottomInputForm.buildFormField(
-                                label: 'Gruppi Muscolari',
-                                theme: theme,
-                                colorScheme: colorScheme,
-                                helperText:
-                                    'Seleziona i gruppi muscolari coinvolti',
-                                child: Wrap(
-                                  spacing: AppTheme.spacing.sm,
-                                  runSpacing: AppTheme.spacing.sm,
-                                  children: muscleGroups.map((group) {
-                                    final isSelected = selectedMuscleGroups
-                                        .value
-                                        .contains(group);
-                                    return FilterChip(
-                                      label: Text(group),
-                                      selected: isSelected,
-                                      onSelected: (selected) {
-                                        if (selected) {
-                                          selectedMuscleGroups.value = [
-                                            ...selectedMuscleGroups.value,
-                                            group,
-                                          ];
-                                        } else {
-                                          selectedMuscleGroups.value =
-                                              selectedMuscleGroups.value
-                                                  .where((g) => g != group)
-                                                  .toList();
-                                        }
-                                      },
-                                      selectedColor:
-                                          colorScheme.primaryContainer,
-                                      checkmarkColor: colorScheme.primary,
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                          loading: () => const CircularProgressIndicator(),
-                          error: (_, __) => const Text(
-                            'Errore nel caricamento dei gruppi muscolari',
+                          data: (muscleGroups) => BottomInputForm.buildFormField(
+                            label: 'Gruppi Muscolari',
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            helperText: 'Seleziona i gruppi muscolari coinvolti',
+                            child: Wrap(
+                              spacing: AppTheme.spacing.sm,
+                              runSpacing: AppTheme.spacing.sm,
+                              children: muscleGroups.map((group) {
+                                final isSelected = selectedMuscleGroups.value.contains(group);
+                                return FilterChip(
+                                  label: Text(group),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      selectedMuscleGroups.value = [
+                                        ...selectedMuscleGroups.value,
+                                        group,
+                                      ];
+                                    } else {
+                                      selectedMuscleGroups.value = selectedMuscleGroups.value
+                                          .where((g) => g != group)
+                                          .toList();
+                                    }
+                                  },
+                                  selectedColor: colorScheme.primaryContainer,
+                                  checkmarkColor: colorScheme.primary,
+                                );
+                              }).toList(),
+                            ),
                           ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) =>
+                              const Text('Errore nel caricamento dei gruppi muscolari'),
                         );
                       },
                     ),
@@ -876,61 +777,46 @@ class _ExerciseForm extends HookConsumerWidget {
                     // Exercise Type
                     Consumer(
                       builder: (context, ref, child) {
-                        final exerciseTypesAsyncValue = ref.watch(
-                          exerciseTypesProvider,
-                        );
+                        final exerciseTypesAsyncValue = ref.watch(exerciseTypesProvider);
                         return exerciseTypesAsyncValue.when(
-                          data: (exerciseTypes) =>
-                              BottomInputForm.buildFormField(
-                                label: 'Tipo di Esercizio',
-                                theme: theme,
-                                colorScheme: colorScheme,
-                                helperText: 'Seleziona il tipo di esercizio',
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surfaceContainerHighest
-                                        .withAlpha(128),
-                                    borderRadius: BorderRadius.circular(
-                                      AppTheme.radii.lg,
-                                    ),
-                                    border: Border.all(
-                                      color: colorScheme.outline.withAlpha(26),
-                                    ),
-                                  ),
-                                  child: DropdownButtonFormField<String>(
-                                    value: selectedExerciseType.value,
-                                    items: exerciseTypes.map((type) {
-                                      return DropdownMenuItem(
-                                        value: type,
-                                        child: Text(type),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) =>
-                                        selectedExerciseType.value = value,
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.all(
-                                        AppTheme.spacing.md,
-                                      ),
-                                      prefixIcon: Icon(
-                                        Icons.category_outlined,
-                                        color: colorScheme.primary,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Seleziona un tipo di esercizio';
-                                      }
-                                      return null;
-                                    },
+                          data: (exerciseTypes) => BottomInputForm.buildFormField(
+                            label: 'Tipo di Esercizio',
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            helperText: 'Seleziona il tipo di esercizio',
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest.withAlpha(128),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                                border: Border.all(color: colorScheme.outline.withAlpha(26)),
+                              ),
+                              child: DropdownButtonFormField<String>(
+                                value: selectedExerciseType.value,
+                                items: exerciseTypes.map((type) {
+                                  return DropdownMenuItem(value: type, child: Text(type));
+                                }).toList(),
+                                onChanged: (value) => selectedExerciseType.value = value,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.all(AppTheme.spacing.md),
+                                  prefixIcon: Icon(
+                                    Icons.category_outlined,
+                                    color: colorScheme.primary,
+                                    size: 20,
                                   ),
                                 ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Seleziona un tipo di esercizio';
+                                  }
+                                  return null;
+                                },
                               ),
-                          loading: () => const CircularProgressIndicator(),
-                          error: (_, __) => const Text(
-                            'Errore nel caricamento dei tipi di esercizio',
+                            ),
                           ),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (_, __) =>
+                              const Text('Errore nel caricamento dei tipi di esercizio'),
                         );
                       },
                     ),

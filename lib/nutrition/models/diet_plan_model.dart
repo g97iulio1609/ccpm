@@ -65,8 +65,7 @@ class DietPlanDay {
   final String dayOfWeek;
   final List<String> mealIds;
 
-  DietPlanDay({required this.dayOfWeek, List<String>? mealIds})
-    : mealIds = mealIds ?? [];
+  DietPlanDay({required this.dayOfWeek, List<String>? mealIds}) : mealIds = mealIds ?? [];
 
   factory DietPlanDay.fromMap(Map<String, dynamic> map) {
     return DietPlanDay(
@@ -91,9 +90,6 @@ class DietPlanDay {
   }
 
   DietPlanDay removeMealId(String mealId) {
-    return DietPlanDay(
-      dayOfWeek: dayOfWeek,
-      mealIds: mealIds.where((id) => id != mealId).toList(),
-    );
+    return DietPlanDay(dayOfWeek: dayOfWeek, mealIds: mealIds.where((id) => id != mealId).toList());
   }
 }

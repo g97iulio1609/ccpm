@@ -18,9 +18,6 @@ class DeleteExerciseNoteUseCaseImpl implements DeleteExerciseNoteUseCase {
 
   @override
   Future<void> call(DeleteExerciseNoteParams params) async {
-    await _workoutRepository.deleteNoteForExercise(
-      params.workoutId,
-      params.exerciseId,
-    );
+    await _workoutRepository.deleteNoteForExercise(params.workoutId, params.exerciseId);
   }
 }

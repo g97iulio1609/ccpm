@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:alphanessone/providers/providers.dart' as app_providers;
-import 'package:alphanessone/Viewer/UI/workout_provider.dart'
-    as workout_provider;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
 import 'package:alphanessone/Viewer/UI/widgets/workout_dialogs.dart';
 import 'package:alphanessone/Viewer/UI/widgets/workout_formatters.dart';
 
@@ -44,12 +43,7 @@ class SeriesWidgets {
     List<Map<String, dynamic>> series,
     BuildContext context,
     WidgetRef ref,
-    Function(
-      BuildContext,
-      WidgetRef,
-      Map<String, dynamic>,
-      List<Map<String, dynamic>>,
-    )
+    Function(BuildContext, WidgetRef, Map<String, dynamic>, List<Map<String, dynamic>>)
     onEditSeries,
   ) {
     return series.asMap().entries.map((entry) {
@@ -60,12 +54,7 @@ class SeriesWidgets {
 
       return GestureDetector(
         onTap: () {
-          WorkoutDialogs.showUserSeriesInputDialog(
-            context,
-            ref,
-            seriesData,
-            'reps',
-          );
+          WorkoutDialogs.showUserSeriesInputDialog(context, ref, seriesData, 'reps');
         },
         onLongPress: isAdminOrCoach
             ? () {
@@ -86,27 +75,20 @@ class SeriesWidgets {
                 _buildSeriesDoneIcon(seriesData, context, ref, 1),
               ],
             ),
-            if (seriesIndex < series.length - 1)
-              const Divider(height: 16, thickness: 1),
+            if (seriesIndex < series.length - 1) const Divider(height: 16, thickness: 1),
           ],
         ),
       );
     }).toList();
   }
 
-  static Widget _buildSeriesIndexText(
-    int seriesIndex,
-    BuildContext context,
-    int flex,
-  ) {
+  static Widget _buildSeriesIndexText(int seriesIndex, BuildContext context, int flex) {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       flex: flex,
       child: Text(
         '${seriesIndex + 1}',
-        style: Theme.of(
-          context,
-        ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
         textAlign: TextAlign.center,
       ),
     );
@@ -124,11 +106,7 @@ class SeriesWidgets {
     final isAdminOrCoach = userRole == 'admin' || userRole == 'coach';
 
     // Ottieni il valore formattato
-    final formattedValue = WorkoutFormatters.formatSeriesValue(
-      seriesData,
-      field,
-      ref,
-    );
+    final formattedValue = WorkoutFormatters.formatSeriesValue(seriesData, field, ref);
 
     // Se è una stringa semplice, mostrala direttamente
     if (formattedValue is String) {
@@ -136,12 +114,7 @@ class SeriesWidgets {
         flex: flex,
         child: GestureDetector(
           onTap: () {
-            WorkoutDialogs.showUserSeriesInputDialog(
-              context,
-              ref,
-              seriesData,
-              field,
-            );
+            WorkoutDialogs.showUserSeriesInputDialog(context, ref, seriesData, field);
           },
           onLongPress: isAdminOrCoach
               ? () {
@@ -151,9 +124,7 @@ class SeriesWidgets {
               : null,
           child: Text(
             formattedValue,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
             textAlign: TextAlign.center,
           ),
         ),
@@ -185,12 +156,7 @@ class SeriesWidgets {
 
           return GestureDetector(
             onTap: () {
-              WorkoutDialogs.showUserSeriesInputDialog(
-                context,
-                ref,
-                seriesData,
-                field,
-              );
+              WorkoutDialogs.showUserSeriesInputDialog(context, ref, seriesData, field);
             },
             onLongPress: isAdminOrCoach
                 ? () {
@@ -199,9 +165,7 @@ class SeriesWidgets {
                   }
                 : null,
             child: Text(
-              hasEnoughSpace
-                  ? formattedValue['extended']!
-                  : formattedValue['compact']!,
+              hasEnoughSpace ? formattedValue['extended']! : formattedValue['compact']!,
               style: textStyle,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -247,9 +211,8 @@ class SeriesWidgets {
       child: Container(
         alignment: Alignment.center,
         child: GestureDetector(
-          onTap: () => ref
-              .read(workout_provider.workoutServiceProvider)
-              .toggleSeriesDone(seriesData),
+          onTap: () =>
+              ref.read(workout_provider.workoutServiceProvider).toggleSeriesDone(seriesData),
           child: Icon(iconData, color: iconColor),
         ),
       ),

@@ -77,18 +77,14 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
     try {
       final email = widget.userEmail.value.trim();
       final password = widget.userPassword.value.trim();
-      final UserCredential userCredential = await _performAuthentication(
-        email,
-        password,
-      );
+      final UserCredential userCredential = await _performAuthentication(email, password);
 
       final userId = userCredential.user?.uid;
       if (userId != null) {
         await widget.authService.updateUserName(userCredential.user!);
 
         // Salva il consenso privacy se è una registrazione
-        if (!widget.isLogin.value &&
-            widget.privacyConsentAccepted?.value == true) {
+        if (!widget.isLogin.value && widget.privacyConsentAccepted?.value == true) {
           try {
             await PrivacyConsentService.saveConsentOnRegistration(
               userId: userId,
@@ -116,15 +112,9 @@ class SubmitButtonState extends ConsumerState<SubmitButton> {
     }
   }
 
-  Future<UserCredential> _performAuthentication(
-    String email,
-    String password,
-  ) async {
+  Future<UserCredential> _performAuthentication(String email, String password) async {
     if (widget.isLogin.value) {
-      return await widget.authService.signInWithEmailAndPassword(
-        email,
-        password,
-      );
+      return await widget.authService.signInWithEmailAndPassword(email, password);
     } else {
       return await widget.authService.signUpWithEmailAndPassword(
         email,
@@ -200,11 +190,7 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
       }
     } catch (error) {
       if (context.mounted) {
-        _showSnackBar(
-          context,
-          'Failed to sign in with Google: $error',
-          Colors.red,
-        );
+        _showSnackBar(context, 'Failed to sign in with Google: $error', Colors.red);
       }
     }
   }
@@ -221,11 +207,7 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
     );
   }
 
-  void _navigateToAppropriateScreen(
-    BuildContext context,
-    String userRole,
-    String userId,
-  ) {
+  void _navigateToAppropriateScreen(BuildContext context, String userRole, String userId) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (userRole == 'admin' || userRole == 'coach') {
         context.go('/programs_screen');
@@ -264,9 +246,7 @@ class ToggleAuthModeButton extends StatelessWidget {
     return TextButton(
       onPressed: () => isLogin.value = !isLogin.value,
       child: Text(
-        isLogin.value
-            ? 'Not a Member? Create an Account'
-            : 'I already have an account',
+        isLogin.value ? 'Not a Member? Create an Account' : 'I already have an account',
         style: const TextStyle(color: Colors.blue, fontSize: 16),
       ),
     );

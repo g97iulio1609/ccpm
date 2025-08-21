@@ -134,27 +134,19 @@ class _WeekListViewState extends State<_WeekListView> with TrainingListMixin {
   void _navigateToWeek(int index) {
     context.go(
       '/user_programs/training_program/week',
-      extra: {
-        'userId': widget.userId,
-        'programId': widget.programId,
-        'weekIndex': index,
-      },
+      extra: {'userId': widget.userId, 'programId': widget.programId, 'weekIndex': index},
     );
   }
 
   // Opzioni portate a MenuAnchor in _WeekCardContent
 
   void _showReorderDialog() {
-    final weekNames = widget.controller.program.weeks
-        .map((week) => 'Week ${week.number}')
-        .toList();
+    final weekNames = widget.controller.program.weeks.map((week) => 'Week ${week.number}').toList();
 
     showDialog(
       context: context,
-      builder: (context) => ReorderDialog(
-        items: weekNames,
-        onReorder: widget.controller.reorderWeeks,
-      ),
+      builder: (context) =>
+          ReorderDialog(items: weekNames, onReorder: widget.controller.reorderWeeks),
     );
   }
 

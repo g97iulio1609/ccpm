@@ -47,9 +47,7 @@ class ExerciseTimerState {
       remainingDuration: remainingDuration ?? this.remainingDuration,
       status: status ?? this.status,
       presets: presets ?? this.presets,
-      selectedPreset: clearSelectedPreset
-          ? null
-          : selectedPreset ?? this.selectedPreset,
+      selectedPreset: clearSelectedPreset ? null : selectedPreset ?? this.selectedPreset,
       error: error ?? this.error,
       isLoadingPresets: isLoadingPresets ?? this.isLoadingPresets,
     );
@@ -108,10 +106,7 @@ class ExerciseTimerNotifier extends StateNotifier<ExerciseTimerState> {
     ];
     try {
       await _saveDefaultTimerPresetsUseCase.call(
-        SaveDefaultTimerPresetsParams(
-          userId: _currentUserId,
-          defaultPresets: defaultPresets,
-        ),
+        SaveDefaultTimerPresetsParams(userId: _currentUserId, defaultPresets: defaultPresets),
       );
       final presets = await _getTimerPresetsUseCase.call(_currentUserId);
       state = state.copyWith(presets: presets, isLoadingPresets: false);
@@ -145,19 +140,14 @@ class ExerciseTimerNotifier extends StateNotifier<ExerciseTimerState> {
 
   void startTimer() {
     if (state.status == TimerStatus.running && state.remainingDuration == 0) {
-      state = state.copyWith(
-        remainingDuration: state.initialDuration,
-        status: TimerStatus.initial,
-      );
+      state = state.copyWith(remainingDuration: state.initialDuration, status: TimerStatus.initial);
     }
     if (state.status != TimerStatus.running) {
       _timer?.cancel();
       state = state.copyWith(status: TimerStatus.running, error: null);
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (state.remainingDuration > 0) {
-          state = state.copyWith(
-            remainingDuration: state.remainingDuration - 1,
-          );
+          state = state.copyWith(remainingDuration: state.remainingDuration - 1);
         } else {
           _timer?.cancel();
           state = state.copyWith(status: TimerStatus.finished);
@@ -175,10 +165,7 @@ class ExerciseTimerNotifier extends StateNotifier<ExerciseTimerState> {
 
   void resetTimer() {
     _timer?.cancel();
-    state = state.copyWith(
-      remainingDuration: state.initialDuration,
-      status: TimerStatus.initial,
-    );
+    state = state.copyWith(remainingDuration: state.initialDuration, status: TimerStatus.initial);
   }
 
   Future<void> saveCurrentTimeAsPreset(String label) async {
@@ -216,10 +203,7 @@ class ExerciseTimerNotifier extends StateNotifier<ExerciseTimerState> {
     state = state.copyWith(isLoadingPresets: true, error: null);
     try {
       await _deleteTimerPresetUseCase.call(
-        DeleteTimerPresetParams(
-          userId: _currentUserId,
-          presetId: state.selectedPreset!.id,
-        ),
+        DeleteTimerPresetParams(userId: _currentUserId, presetId: state.selectedPreset!.id),
       );
       state = state.copyWith(clearSelectedPreset: true);
       await loadPresets();
@@ -233,15 +217,11 @@ class ExerciseTimerNotifier extends StateNotifier<ExerciseTimerState> {
 
   Future<void> updateSelectedPreset(String newLabel, int newSeconds) async {
     if (state.selectedPreset == null) {
-      state = state.copyWith(
-        error: "Nessun preset selezionato per l'aggiornamento",
-      );
+      state = state.copyWith(error: "Nessun preset selezionato per l'aggiornamento");
       return;
     }
     if (newLabel.trim().isEmpty || newSeconds <= 0) {
-      state = state.copyWith(
-        error: "Etichetta o durata non valide per l'aggiornamento",
-      );
+      state = state.copyWith(error: "Etichetta o durata non valide per l'aggiornamento");
       return;
     }
 
@@ -256,9 +236,7 @@ class ExerciseTimerNotifier extends StateNotifier<ExerciseTimerState> {
       );
 
       await loadPresets();
-      final reloadedPresets = await _getTimerPresetsUseCase.call(
-        _currentUserId,
-      );
+      final reloadedPresets = await _getTimerPresetsUseCase.call(_currentUserId);
       final potentiallyUpdatedSelectedPreset = reloadedPresets.firstWhere(
         (p) => p.id == updatedPreset.id,
         orElse: () => state.selectedPreset!,
@@ -303,9 +281,7 @@ class _SaveTimerPresetUseCaseImpl implements SaveTimerPresetUseCase {
       throw ArgumentError('Il nome del preset non può essere vuoto.');
     }
     if (params.preset.seconds <= 0) {
-      throw ArgumentError(
-        'I secondi del preset devono essere maggiori di zero.',
-      );
+      throw ArgumentError('I secondi del preset devono essere maggiori di zero.');
     }
     await _repository.saveTimerPreset(params.userId, params.preset);
   }
@@ -324,8 +300,7 @@ class _DeleteTimerPresetUseCaseImpl implements DeleteTimerPresetUseCase {
   }
 }
 
-class _SaveDefaultTimerPresetsUseCaseImpl
-    implements SaveDefaultTimerPresetsUseCase {
+class _SaveDefaultTimerPresetsUseCaseImpl implements SaveDefaultTimerPresetsUseCase {
   final TimerPresetRepository _repository;
   _SaveDefaultTimerPresetsUseCaseImpl(this._repository);
 
@@ -334,10 +309,7 @@ class _SaveDefaultTimerPresetsUseCaseImpl
     if (params.defaultPresets.isEmpty) {
       return;
     }
-    await _repository.saveDefaultTimerPresets(
-      params.userId,
-      params.defaultPresets,
-    );
+    await _repository.saveDefaultTimerPresets(params.userId, params.defaultPresets);
   }
 }
 
@@ -354,9 +326,7 @@ class _UpdateTimerPresetUseCaseImpl implements UpdateTimerPresetUseCase {
       throw ArgumentError('Il nome del preset non può essere vuoto.');
     }
     if (params.preset.seconds <= 0) {
-      throw ArgumentError(
-        'I secondi del preset devono essere maggiori di zero.',
-      );
+      throw ArgumentError('I secondi del preset devono essere maggiori di zero.');
     }
     await _repository.updateTimerPreset(params.userId, params.preset);
   }
@@ -393,8 +363,7 @@ class _DummyDeleteTimerPresetUseCase implements DeleteTimerPresetUseCase {
   }
 }
 
-class _DummySaveDefaultTimerPresetsUseCase
-    implements SaveDefaultTimerPresetsUseCase {
+class _DummySaveDefaultTimerPresetsUseCase implements SaveDefaultTimerPresetsUseCase {
   final String error;
   _DummySaveDefaultTimerPresetsUseCase(this.error);
 
@@ -421,24 +390,46 @@ final currentUserIdProvider = Provider<String>((ref) {
 
 /// Provider FutureProvider per ExerciseTimerNotifier che gestisce i FutureProvider degli use case
 final exerciseTimerNotifierProvider = FutureProvider.family
-    .autoDispose<ExerciseTimerNotifier, ({String userId, int initialDuration})>(
-      (ref, params) async {
-        // Ottieni gli use case dai FutureProvider
-        final getPresets = await ref.watch(
-          getTimerPresetsUseCaseProvider.future,
-        );
-        final savePreset = await ref.watch(
-          saveTimerPresetUseCaseProvider.future,
-        );
-        final deletePreset = await ref.watch(
-          deleteTimerPresetUseCaseProvider.future,
-        );
-        final saveDefaults = await ref.watch(
-          saveDefaultTimerPresetsUseCaseProvider.future,
-        );
-        final updatePreset = await ref.watch(
-          updateTimerPresetUseCaseProvider.future,
-        );
+    .autoDispose<ExerciseTimerNotifier, ({String userId, int initialDuration})>((
+      ref,
+      params,
+    ) async {
+      // Ottieni gli use case dai FutureProvider
+      final getPresets = await ref.watch(getTimerPresetsUseCaseProvider.future);
+      final savePreset = await ref.watch(saveTimerPresetUseCaseProvider.future);
+      final deletePreset = await ref.watch(deleteTimerPresetUseCaseProvider.future);
+      final saveDefaults = await ref.watch(saveDefaultTimerPresetsUseCaseProvider.future);
+      final updatePreset = await ref.watch(updateTimerPresetUseCaseProvider.future);
+
+      return ExerciseTimerNotifier(
+        getPresets,
+        savePreset,
+        deletePreset,
+        saveDefaults,
+        updatePreset,
+        params.userId,
+        params.initialDuration,
+      );
+    });
+
+/// Provider StateNotifierProvider per gestire lo stato del timer in modo sincrono
+final exerciseTimerStateProvider = StateNotifierProvider.family
+    .autoDispose<ExerciseTimerNotifier, ExerciseTimerState, ({String userId, int initialDuration})>(
+      (ref, params) {
+        // Usa il repository fallback sincrono
+        final timerRepo = ref.watch(timerPresetRepositoryFallbackProvider);
+
+        if (timerRepo == null) {
+          // Se il repository non è disponibile, ritorna un notifier con stato di errore
+          return _createErrorNotifier(params.initialDuration, 'Repository timer non disponibile');
+        }
+
+        // Crea gli use case con il repository disponibile
+        final getPresets = _GetTimerPresetsUseCaseImpl(timerRepo);
+        final savePreset = _SaveTimerPresetUseCaseImpl(timerRepo);
+        final deletePreset = _DeleteTimerPresetUseCaseImpl(timerRepo);
+        final saveDefaults = _SaveDefaultTimerPresetsUseCaseImpl(timerRepo);
+        final updatePreset = _UpdateTimerPresetUseCaseImpl(timerRepo);
 
         return ExerciseTimerNotifier(
           getPresets,
@@ -451,42 +442,6 @@ final exerciseTimerNotifierProvider = FutureProvider.family
         );
       },
     );
-
-/// Provider StateNotifierProvider per gestire lo stato del timer in modo sincrono
-final exerciseTimerStateProvider = StateNotifierProvider.family
-    .autoDispose<
-      ExerciseTimerNotifier,
-      ExerciseTimerState,
-      ({String userId, int initialDuration})
-    >((ref, params) {
-      // Usa il repository fallback sincrono
-      final timerRepo = ref.watch(timerPresetRepositoryFallbackProvider);
-
-      if (timerRepo == null) {
-        // Se il repository non è disponibile, ritorna un notifier con stato di errore
-        return _createErrorNotifier(
-          params.initialDuration,
-          'Repository timer non disponibile',
-        );
-      }
-
-      // Crea gli use case con il repository disponibile
-      final getPresets = _GetTimerPresetsUseCaseImpl(timerRepo);
-      final savePreset = _SaveTimerPresetUseCaseImpl(timerRepo);
-      final deletePreset = _DeleteTimerPresetUseCaseImpl(timerRepo);
-      final saveDefaults = _SaveDefaultTimerPresetsUseCaseImpl(timerRepo);
-      final updatePreset = _UpdateTimerPresetUseCaseImpl(timerRepo);
-
-      return ExerciseTimerNotifier(
-        getPresets,
-        savePreset,
-        deletePreset,
-        saveDefaults,
-        updatePreset,
-        params.userId,
-        params.initialDuration,
-      );
-    });
 
 /// Helper per creare un notifier con stato di errore
 ExerciseTimerNotifier _createErrorNotifier(int initialDuration, String error) {

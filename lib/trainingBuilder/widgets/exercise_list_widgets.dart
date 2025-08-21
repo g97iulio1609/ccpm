@@ -57,10 +57,9 @@ class EmptyExerciseState extends StatelessWidget {
   Widget _buildEmptyTitle(BuildContext context) {
     return Text(
       'Nessun esercizio disponibile',
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-        color: colorScheme.onSurface,
-        fontWeight: FontWeight.w600,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
       textAlign: TextAlign.center,
     );
   }
@@ -68,9 +67,7 @@ class EmptyExerciseState extends StatelessWidget {
   Widget _buildEmptySubtitle(BuildContext context) {
     return Text(
       'Aggiungi il primo esercizio per iniziare',
-      style: Theme.of(
-        context,
-      ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
       textAlign: TextAlign.center,
     );
   }
@@ -78,9 +75,7 @@ class EmptyExerciseState extends StatelessWidget {
   Widget _buildAddButton() {
     return Center(
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: isCompact ? double.infinity : 300,
-        ),
+        constraints: BoxConstraints(maxWidth: isCompact ? double.infinity : 300),
         child: AppButton(
           label: 'Add Exercise',
           icon: Icons.add_circle_outline,
@@ -140,9 +135,7 @@ class ExerciseCardWithActions extends StatelessWidget {
           onPressed: (_) => onAddExercise(),
           backgroundColor: colorScheme.primaryContainer,
           foregroundColor: colorScheme.onPrimaryContainer,
-          borderRadius: BorderRadius.horizontal(
-            left: Radius.circular(AppTheme.radii.lg),
-          ),
+          borderRadius: BorderRadius.horizontal(left: Radius.circular(AppTheme.radii.lg)),
           icon: Icons.add,
           label: 'Add',
         ),
@@ -158,9 +151,7 @@ class ExerciseCardWithActions extends StatelessWidget {
           onPressed: (_) => onDeleteExercise(),
           backgroundColor: colorScheme.errorContainer,
           foregroundColor: colorScheme.onErrorContainer,
-          borderRadius: BorderRadius.horizontal(
-            right: Radius.circular(AppTheme.radii.lg),
-          ),
+          borderRadius: BorderRadius.horizontal(right: Radius.circular(AppTheme.radii.lg)),
           icon: Icons.delete_outline,
           label: 'Delete',
         ),
@@ -239,19 +230,13 @@ class AddExerciseButton extends StatelessWidget {
   final VoidCallback onPressed;
   final bool isCompact;
 
-  const AddExerciseButton({
-    required this.onPressed,
-    required this.isCompact,
-    super.key,
-  });
+  const AddExerciseButton({required this.onPressed, required this.isCompact, super.key});
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: isCompact ? double.infinity : 300,
-        ),
+        constraints: BoxConstraints(maxWidth: isCompact ? double.infinity : 300),
         child: AppButton(
           label: 'Add Exercise',
           icon: Icons.add_circle_outline,
@@ -290,9 +275,7 @@ class ReorderExercisesFAB extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
     );
   }
 }
@@ -302,11 +285,7 @@ class ExerciseListBackground extends StatelessWidget {
   final Widget child;
   final ColorScheme colorScheme;
 
-  const ExerciseListBackground({
-    required this.child,
-    required this.colorScheme,
-    super.key,
-  });
+  const ExerciseListBackground({required this.child, required this.colorScheme, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -315,10 +294,7 @@ class ExerciseListBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surface,
-            colorScheme.surfaceContainerHighest.withAlpha(128),
-          ],
+          colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
           stops: const [0.0, 1.0],
         ),
       ),
@@ -339,9 +315,7 @@ class ResponsiveLayoutHelper {
 
   static EdgeInsets getPadding(BuildContext context) {
     final isCompactLayout = isCompact(context);
-    return EdgeInsets.all(
-      isCompactLayout ? AppTheme.spacing.md : AppTheme.spacing.lg,
-    );
+    return EdgeInsets.all(isCompactLayout ? AppTheme.spacing.md : AppTheme.spacing.lg);
   }
 
   static int getGridCrossAxisCount(BuildContext context) {

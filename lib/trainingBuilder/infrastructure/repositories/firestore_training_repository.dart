@@ -59,9 +59,7 @@ class FirestoreTrainingRepository implements TrainingRepository {
   @override
   Stream<List<TrainingProgram>> streamTrainingPrograms() {
     return _db.collection('programs').snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => TrainingProgram.fromFirestore(doc))
-          .toList();
+      return snapshot.docs.map((doc) => TrainingProgram.fromFirestore(doc)).toList();
     });
   }
 
@@ -121,9 +119,7 @@ class FirestoreTrainingRepository implements TrainingRepository {
         .orderBy('order')
         .get();
 
-    final workouts = snapshot.docs
-        .map((doc) => Workout.fromFirestore(doc))
-        .toList();
+    final workouts = snapshot.docs.map((doc) => Workout.fromFirestore(doc)).toList();
 
     // Fetch exercises for each workout in parallel
     final updatedWorkouts = <Workout>[];
@@ -142,9 +138,7 @@ class FirestoreTrainingRepository implements TrainingRepository {
         .orderBy('order')
         .get();
 
-    final exercises = snapshot.docs
-        .map((doc) => Exercise.fromFirestore(doc))
-        .toList();
+    final exercises = snapshot.docs.map((doc) => Exercise.fromFirestore(doc)).toList();
 
     // Fetch series for each exercise in parallel
     final updatedExercises = <Exercise>[];
@@ -172,9 +166,7 @@ class FirestoreTrainingRepository implements TrainingRepository {
         : program.id!;
 
     // Create a new program with the correct ID if needed
-    final programToSave = program.id != programId
-        ? program.copyWith(id: programId)
-        : program;
+    final programToSave = program.id != programId ? program.copyWith(id: programId) : program;
 
     final programRef = _db.collection('programs').doc(programId);
     batch.set(programRef, programToSave.toMap(), SetOptions(merge: true));
@@ -187,9 +179,7 @@ class FirestoreTrainingRepository implements TrainingRepository {
   }
 
   Future<void> _saveWeek(WriteBatch batch, Week week, String programId) async {
-    final weekId = week.id?.trim().isEmpty ?? true
-        ? _db.collection('weeks').doc().id
-        : week.id!;
+    final weekId = week.id?.trim().isEmpty ?? true ? _db.collection('weeks').doc().id : week.id!;
 
     // Create a new week with the correct ID if needed
     final weekToSave = week.id != weekId ? week.copyWith(id: weekId) : week;
@@ -206,19 +196,13 @@ class FirestoreTrainingRepository implements TrainingRepository {
     }
   }
 
-  Future<void> _saveWorkout(
-    WriteBatch batch,
-    Workout workout,
-    String weekId,
-  ) async {
+  Future<void> _saveWorkout(WriteBatch batch, Workout workout, String weekId) async {
     final workoutId = workout.id?.trim().isEmpty ?? true
         ? _db.collection('workouts').doc().id
         : workout.id!;
 
     // Create a new workout with the correct ID if needed
-    final workoutToSave = workout.id != workoutId
-        ? workout.copyWith(id: workoutId)
-        : workout;
+    final workoutToSave = workout.id != workoutId ? workout.copyWith(id: workoutId) : workout;
 
     final workoutRef = _db.collection('workouts').doc(workoutId);
     batch.set(workoutRef, {
@@ -233,19 +217,13 @@ class FirestoreTrainingRepository implements TrainingRepository {
     }
   }
 
-  Future<void> _saveExercise(
-    WriteBatch batch,
-    Exercise exercise,
-    String workoutId,
-  ) async {
+  Future<void> _saveExercise(WriteBatch batch, Exercise exercise, String workoutId) async {
     final exerciseId = exercise.id?.trim().isEmpty ?? true
         ? _db.collection('exercisesWorkout').doc().id
         : exercise.id!;
 
     // Create a new exercise with the correct ID if needed
-    final exerciseToSave = exercise.id != exerciseId
-        ? exercise.copyWith(id: exerciseId)
-        : exercise;
+    final exerciseToSave = exercise.id != exerciseId ? exercise.copyWith(id: exerciseId) : exercise;
 
     final exerciseRef = _db.collection('exercisesWorkout').doc(exerciseId);
     batch.set(exerciseRef, {
@@ -283,9 +261,7 @@ class FirestoreTrainingRepository implements TrainingRepository {
         : series.serieId!;
 
     // Create a new series with the correct ID if needed
-    final seriesToSave = series.serieId != seriesId
-        ? series.copyWith(serieId: seriesId)
-        : series;
+    final seriesToSave = series.serieId != seriesId ? series.copyWith(serieId: seriesId) : series;
 
     final seriesRef = _db.collection('series').doc(seriesId);
     batch.set(seriesRef, {

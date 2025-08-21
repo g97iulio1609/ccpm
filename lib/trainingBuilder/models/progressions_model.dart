@@ -5,11 +5,7 @@ class WeekProgression {
   int sessionNumber;
   List<Series> series;
 
-  WeekProgression({
-    required this.weekNumber,
-    required this.sessionNumber,
-    required this.series,
-  });
+  WeekProgression({required this.weekNumber, required this.sessionNumber, required this.series});
 
   factory WeekProgression.fromMap(Map<String, dynamic> map) {
     List<Series> parseSeries(dynamic data) {
@@ -45,15 +41,15 @@ class WeekProgression {
     return WeekProgression(
       weekNumber: weekNumber ?? this.weekNumber,
       sessionNumber: sessionNumber ?? this.sessionNumber,
-      series: series ?? this.series.map((series) => 
-        resetCompletionData 
-          ? series.copyWith(
-              done: false,
-              repsDone: 0,
-              weightDone: 0.0,
-            )
-          : series.copyWith()
-      ).toList(),
+      series:
+          series ??
+          this.series
+              .map(
+                (series) => resetCompletionData
+                    ? series.copyWith(done: false, repsDone: 0, weightDone: 0.0)
+                    : series.copyWith(),
+              )
+              .toList(),
     );
   }
 

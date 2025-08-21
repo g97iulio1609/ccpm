@@ -6,11 +6,7 @@ import 'package:alphanessone/shared/shared.dart';
 /// - Nessuna dipendenza da UI/Controller
 class SeriesBusinessService {
   /// Reordina la lista delle serie restituendo una nuova lista con `order` ricalcolato (1-based).
-  static List<Series> reorderSeries(
-    List<Series> originalSeries,
-    int oldIndex,
-    int newIndex,
-  ) {
+  static List<Series> reorderSeries(List<Series> originalSeries, int oldIndex, int newIndex) {
     if (originalSeries.isEmpty) {
       return originalSeries;
     }
@@ -35,10 +31,7 @@ class SeriesBusinessService {
   }
 
   /// Ricalcola il campo `order` per tutte le serie (1-based). Facoltativo `startIndex`.
-  static List<Series> recalculateOrders(
-    List<Series> originalSeries, {
-    int startIndex = 0,
-  }) {
+  static List<Series> recalculateOrders(List<Series> originalSeries, {int startIndex = 0}) {
     final List<Series> updated = List<Series>.from(originalSeries);
     for (int i = startIndex; i < updated.length; i++) {
       updated[i] = updated[i].copyWith(order: i + 1);
@@ -47,11 +40,7 @@ class SeriesBusinessService {
   }
 
   /// Sostituisce in modo immutabile l'elemento in posizione [index].
-  static List<Series> replaceAt(
-    List<Series> originalSeries,
-    int index,
-    Series newValue,
-  ) {
+  static List<Series> replaceAt(List<Series> originalSeries, int index, Series newValue) {
     if (index < 0 || index >= originalSeries.length) {
       return originalSeries;
     }

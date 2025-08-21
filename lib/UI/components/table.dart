@@ -58,16 +58,11 @@ class AppTable<T> extends StatelessWidget {
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(76),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(AppTheme.radii.lg),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.lg)),
               ),
               child: Row(
                 children: [
-                  if (leading != null) ...[
-                    leading!,
-                    SizedBox(width: AppTheme.spacing.md),
-                  ],
+                  if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.md)],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,9 +125,7 @@ class AppTable<T> extends StatelessWidget {
             )
           else
             Container(
-              constraints: maxHeight != null
-                  ? BoxConstraints(maxHeight: maxHeight!)
-                  : null,
+              constraints: maxHeight != null ? BoxConstraints(maxHeight: maxHeight!) : null,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SingleChildScrollView(
@@ -146,13 +139,7 @@ class AppTable<T> extends StatelessWidget {
                       else
                         _buildHeader(colorScheme, theme),
                       for (int i = 0; i < rows.length; i++) ...[
-                        _buildRow(
-                          rows[i],
-                          i,
-                          colorScheme,
-                          theme,
-                          isLastRow: i == rows.length - 1,
-                        ),
+                        _buildRow(rows[i], i, colorScheme, theme, isLastRow: i == rows.length - 1),
                       ],
                     ],
                   ),
@@ -169,9 +156,7 @@ class AppTable<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
         border: showDividers
-            ? Border(
-                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              )
+            ? Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26)))
             : null,
       ),
       child: Row(
@@ -213,17 +198,11 @@ class AppTable<T> extends StatelessWidget {
           color: backgroundColor,
           child: InkWell(
             onTap: onRowTap != null ? () => onRowTap!(row) : null,
-            onLongPress: onRowLongPress != null
-                ? () => onRowLongPress!(row)
-                : null,
+            onLongPress: onRowLongPress != null ? () => onRowLongPress!(row) : null,
             child: Container(
               decoration: BoxDecoration(
                 border: showDividers && !isLastRow
-                    ? Border(
-                        bottom: BorderSide(
-                          color: colorScheme.outline.withAlpha(26),
-                        ),
-                      )
+                    ? Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26)))
                     : null,
               ),
               child: Row(
@@ -234,9 +213,7 @@ class AppTable<T> extends StatelessWidget {
                       vertical: AppTheme.spacing.md,
                     ),
                     child: DefaultTextStyle(
-                      style: theme.textTheme.bodyMedium!.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
+                      style: theme.textTheme.bodyMedium!.copyWith(color: colorScheme.onSurface),
                       child: cell.child,
                     ),
                   );
@@ -274,9 +251,8 @@ class AppTable<T> extends StatelessWidget {
     return AppTable<Map<String, dynamic>>(
       columns: columns,
       rows: data,
-      buildCells: (row) => columns
-          .map((column) => DataCell(Text(row[column]?.toString() ?? '')))
-          .toList(),
+      buildCells: (row) =>
+          columns.map((column) => DataCell(Text(row[column]?.toString() ?? ''))).toList(),
       title: title,
       subtitle: subtitle,
       leading: leading,
@@ -298,13 +274,7 @@ class BadgeCell extends StatelessWidget {
   final Color? textColor;
   final IconData? icon;
 
-  const BadgeCell({
-    super.key,
-    required this.text,
-    this.backgroundColor,
-    this.textColor,
-    this.icon,
-  });
+  const BadgeCell({super.key, required this.text, this.backgroundColor, this.textColor, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -312,10 +282,7 @@ class BadgeCell extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: backgroundColor ?? colorScheme.primaryContainer.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),

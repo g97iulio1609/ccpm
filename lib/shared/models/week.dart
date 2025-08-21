@@ -114,8 +114,7 @@ class Week {
       metadata: metadata ?? this.metadata,
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
-      targetWorkoutsPerWeek:
-          targetWorkoutsPerWeek ?? this.targetWorkoutsPerWeek,
+      targetWorkoutsPerWeek: targetWorkoutsPerWeek ?? this.targetWorkoutsPerWeek,
       isActive: isActive ?? this.isActive,
     );
   }
@@ -137,8 +136,7 @@ class Week {
       if (metadata != null) 'metadata': metadata,
       if (notes != null) 'notes': notes,
       if (tags != null) 'tags': tags,
-      if (targetWorkoutsPerWeek != null)
-        'targetWorkoutsPerWeek': targetWorkoutsPerWeek,
+      if (targetWorkoutsPerWeek != null) 'targetWorkoutsPerWeek': targetWorkoutsPerWeek,
       'isActive': isActive,
     };
   }
@@ -197,16 +195,13 @@ class Week {
   bool get hasWorkouts => workouts.isNotEmpty;
 
   /// Check if week is fully completed
-  bool get isFullyCompleted =>
-      workouts.isNotEmpty && workouts.every((w) => w.isCompleted);
+  bool get isFullyCompleted => workouts.isNotEmpty && workouts.every((w) => w.isCompleted);
 
   /// Get total exercises across all workouts
-  int get totalExercises =>
-      workouts.fold(0, (total, workout) => total + workout.totalExercises);
+  int get totalExercises => workouts.fold(0, (total, workout) => total + workout.totalExercises);
 
   /// Get total series across all workouts
-  int get totalSeries =>
-      workouts.fold(0, (total, workout) => total + workout.totalSeries);
+  int get totalSeries => workouts.fold(0, (total, workout) => total + workout.totalSeries);
 
   /// Get estimated total duration for the week
   int get estimatedTotalDuration =>
@@ -376,8 +371,7 @@ extension WeekCompatibility on Week {
         .where((w) => !w.isCompleted)
         .fold<Workout?>(
           null,
-          (next, workout) =>
-              next == null || workout.order < next.order ? workout : next,
+          (next, workout) => next == null || workout.order < next.order ? workout : next,
         );
   }
 
@@ -387,8 +381,7 @@ extension WeekCompatibility on Week {
         .where((w) => w.isCompleted)
         .fold<Workout?>(
           null,
-          (last, workout) =>
-              last == null || workout.order > last.order ? workout : last,
+          (last, workout) => last == null || workout.order > last.order ? workout : last,
         );
   }
 
@@ -401,8 +394,6 @@ extension WeekCompatibility on Week {
   /// Get remaining workouts to meet target
   int get remainingWorkoutsForTarget {
     if (targetWorkoutsPerWeek == null) return 0;
-    return (targetWorkoutsPerWeek! - completedWorkouts)
-        .clamp(0, double.infinity)
-        .toInt();
+    return (targetWorkoutsPerWeek! - completedWorkouts).clamp(0, double.infinity).toInt();
   }
 }

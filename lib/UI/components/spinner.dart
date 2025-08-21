@@ -48,9 +48,7 @@ class AppSpinner extends StatelessWidget {
                 SizedBox(height: AppTheme.spacing.md),
                 Text(
                   message!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
                   textAlign: TextAlign.center,
                 ),
               ],

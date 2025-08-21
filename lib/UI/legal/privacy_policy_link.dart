@@ -71,9 +71,7 @@ class PrivacyPolicyLink extends StatelessWidget {
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(12),
-              color: theme.colorScheme.surface.withValues(
-                alpha: theme.colorScheme.surface.a * 0.5,
-              ),
+              color: theme.colorScheme.surface.withValues(alpha: theme.colorScheme.surface.a * 0.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -116,11 +114,7 @@ class PrivacyPolicyLink extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(width: 8),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                Icon(Icons.arrow_forward_ios, size: 14, color: theme.colorScheme.onSurfaceVariant),
               ],
             ),
           ),

@@ -52,10 +52,8 @@ class TimerModel {
       totalSeries: totalSeries ?? this.totalSeries,
       restTime: restTime ?? this.restTime,
       isEmomMode: isEmomMode ?? this.isEmomMode,
-      superSetExerciseIndex:
-          superSetExerciseIndex ?? this.superSetExerciseIndex,
-      superSetExercises:
-          superSetExercises ?? this.superSetExercises, // Aggiungi questo campo
+      superSetExerciseIndex: superSetExerciseIndex ?? this.superSetExerciseIndex,
+      superSetExercises: superSetExercises ?? this.superSetExercises, // Aggiungi questo campo
     );
   }
 }

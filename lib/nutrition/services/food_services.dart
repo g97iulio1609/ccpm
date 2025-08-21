@@ -5,11 +5,9 @@ import 'dart:async';
 class FoodService {
   final FirebaseFirestore _firestore;
   bool _isImporting = false; // Stato per tracciare l'importazione
-  final _importProgressController =
-      StreamController<Map<String, int>>.broadcast();
+  final _importProgressController = StreamController<Map<String, int>>.broadcast();
 
-  Stream<Map<String, int>> get importProgressStream =>
-      _importProgressController.stream;
+  Stream<Map<String, int>> get importProgressStream => _importProgressController.stream;
 
   FoodService(this._firestore) {
     // Imposta l'User-Agent per OpenFoodFacts
@@ -112,14 +110,8 @@ class FoodService {
         // importing page (debug removed)
         final configuration = ProductSearchQueryConfiguration(
           parametersList: <Parameter>[
-            TagFilter.fromType(
-              tagFilterType: TagFilterType.CATEGORIES,
-              tagName: category,
-            ),
-            TagFilter.fromType(
-              tagFilterType: TagFilterType.COUNTRIES,
-              tagName: country.offTag,
-            ),
+            TagFilter.fromType(tagFilterType: TagFilterType.CATEGORIES, tagName: category),
+            TagFilter.fromType(tagFilterType: TagFilterType.COUNTRIES, tagName: country.offTag),
             const SortBy(option: SortOption.POPULARITY),
             const PageSize(size: 100),
             PageNumber(page: page),
@@ -130,23 +122,15 @@ class FoodService {
         );
 
         try {
-          importedProducts += await _importWithRetry(
-            configuration,
-            category,
-            page,
-          );
-          _importProgressController.add({
-            category: importedProducts,
-          }); // Aggiorna il progresso
+          importedProducts += await _importWithRetry(configuration, category, page);
+          _importProgressController.add({category: importedProducts}); // Aggiorna il progresso
         } catch (e, st) {
           // Log import failure for the category/page so it can be retried later
           // ignore: avoid_print
           print('Failed importing category "$category" page $page: $e\n$st');
         }
 
-        await Future.delayed(
-          const Duration(seconds: 60),
-        ); // Aspetta 60 secondi tra le pagine
+        await Future.delayed(const Duration(seconds: 60)); // Aspetta 60 secondi tra le pagine
       }
     }
   }
@@ -168,22 +152,14 @@ class FoodService {
         return 0; // Fermare l'importazione se _isImporting è false
       }
       try {
-        SearchResult result = await OpenFoodAPIClient.searchProducts(
-          null,
-          configuration,
-        );
+        SearchResult result = await OpenFoodAPIClient.searchProducts(null, configuration);
 
         if (result.products != null && result.products!.isNotEmpty) {
           for (var product in result.products!) {
             await _importOrUpdateProduct(product, category);
           }
-          await _updateLastImportedPage(
-            category,
-            page,
-          ); // Update the last imported page
-          return result
-              .products!
-              .length; // Ritorna il numero di prodotti importati
+          await _updateLastImportedPage(category, page); // Update the last imported page
+          return result.products!.length; // Ritorna il numero di prodotti importati
         } else {
           break; // Exit the loop if no products are found
         }
@@ -204,10 +180,7 @@ class FoodService {
   }
 
   Future<int> _getLastImportedPage(String category) async {
-    final doc = await _firestore
-        .collection('import_status')
-        .doc(category)
-        .get();
+    final doc = await _firestore.collection('import_status').doc(category).get();
     if (doc.exists && doc.data() != null && doc.data()!['lastPage'] != null) {
       return doc.data()!['lastPage'];
     }
@@ -215,9 +188,7 @@ class FoodService {
   }
 
   Future<void> _updateLastImportedPage(String category, int page) async {
-    await _firestore.collection('import_status').doc(category).set({
-      'lastPage': page,
-    });
+    await _firestore.collection('import_status').doc(category).set({'lastPage': page});
   }
 
   Future<void> _importOrUpdateProduct(Product product, String category) async {
@@ -260,32 +231,14 @@ class FoodService {
           'Unknown',
       'brands': product.brands ?? 'Unknown',
       'categories': product.categoriesTags ?? [category],
-      'kcal':
-          product.nutriments?.getValue(
-            Nutrient.energyKCal,
-            PerSize.oneHundredGrams,
-          ) ??
-          0.0,
-      'carbs':
-          product.nutriments?.getValue(
-            Nutrient.carbohydrates,
-            PerSize.oneHundredGrams,
-          ) ??
-          0.0,
-      'fat':
-          product.nutriments?.getValue(Nutrient.fat, PerSize.oneHundredGrams) ??
-          0.0,
-      'protein':
-          product.nutriments?.getValue(
-            Nutrient.proteins,
-            PerSize.oneHundredGrams,
-          ) ??
-          0.0,
+      'kcal': product.nutriments?.getValue(Nutrient.energyKCal, PerSize.oneHundredGrams) ?? 0.0,
+      'carbs': product.nutriments?.getValue(Nutrient.carbohydrates, PerSize.oneHundredGrams) ?? 0.0,
+      'fat': product.nutriments?.getValue(Nutrient.fat, PerSize.oneHundredGrams) ?? 0.0,
+      'protein': product.nutriments?.getValue(Nutrient.proteins, PerSize.oneHundredGrams) ?? 0.0,
     };
   }
 
   Future<void> updateFoodTranslations() async {
-
     final snapshot = await _firestore.collection('foods').get();
     for (var doc in snapshot.docs) {
       final foodData = doc.data();
@@ -296,10 +249,7 @@ class FoodService {
     }
   }
 
-  Future<void> _retryUpdateProductTranslations(
-    String barcode, {
-    int retryCount = 3,
-  }) async {
+  Future<void> _retryUpdateProductTranslations(String barcode, {int retryCount = 3}) async {
     int attempts = 0;
     while (attempts < retryCount) {
       try {

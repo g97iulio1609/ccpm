@@ -26,17 +26,17 @@ class ExerciseNotesService {
         .where('workoutId', isEqualTo: workoutId)
         .snapshots()
         .map((snapshot) {
-      final notes = <String, String>{};
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final exerciseId = data['exerciseId'] as String?;
-        final note = data['note'] as String?;
-        if (exerciseId != null && note != null) {
-          notes[exerciseId] = note;
-        }
-      }
-      return notes;
-    });
+          final notes = <String, String>{};
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            final exerciseId = data['exerciseId'] as String?;
+            final note = data['note'] as String?;
+            if (exerciseId != null && note != null) {
+              notes[exerciseId] = note;
+            }
+          }
+          return notes;
+        });
   }
 
   Future<void> saveNote({
@@ -52,12 +52,7 @@ class ExerciseNotesService {
     });
   }
 
-  Future<void> deleteNote({
-    required String workoutId,
-    required String exerciseId,
-  }) async {
+  Future<void> deleteNote({required String workoutId, required String exerciseId}) async {
     await _db.collection('exercise_notes').doc('${workoutId}_$exerciseId').delete();
   }
 }
-
-

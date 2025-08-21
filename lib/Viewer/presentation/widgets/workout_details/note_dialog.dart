@@ -9,9 +9,7 @@ Future<void> showNoteDialog({
   required Future<void> Function() onDelete,
   required Future<void> Function(String note) onSave,
 }) async {
-  final TextEditingController noteController = TextEditingController(
-    text: existingNote,
-  );
+  final TextEditingController noteController = TextEditingController(text: existingNote);
   final colorScheme = Theme.of(context).colorScheme;
 
   return showAppDialog(
@@ -23,9 +21,7 @@ Future<void> showNoteDialog({
       decoration: InputDecoration(
         hintText: 'Inserisci una nota...',
         hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.sm),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radii.sm)),
       ),
       style: TextStyle(color: colorScheme.onSurface),
     ),

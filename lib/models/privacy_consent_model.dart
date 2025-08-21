@@ -55,9 +55,7 @@ class PrivacyConsentModel {
       consentGiven: data['consentGiven'] ?? false,
       consentTimestamp: data['consentTimestamp'] is Timestamp
           ? (data['consentTimestamp'] as Timestamp).toDate()
-          : DateTime.parse(
-              data['consentTimestamp'] ?? DateTime.now().toIso8601String(),
-            ),
+          : DateTime.parse(data['consentTimestamp'] ?? DateTime.now().toIso8601String()),
       ipAddress: data['ipAddress'],
       userAgent: data['userAgent'],
       privacyPolicyVersion: data['privacyPolicyVersion'] ?? '1.0',
@@ -173,13 +171,7 @@ class PrivacyConsentModel {
 
   @override
   int get hashCode {
-    return Object.hash(
-      id,
-      userId,
-      consentGiven,
-      consentTimestamp,
-      privacyPolicyVersion,
-    );
+    return Object.hash(id, userId, consentGiven, consentTimestamp, privacyPolicyVersion);
   }
 }
 

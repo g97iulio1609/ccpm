@@ -31,8 +31,7 @@ class UserProfile extends ConsumerStatefulWidget {
   UserProfileState createState() => UserProfileState();
 }
 
-class UserProfileState extends ConsumerState<UserProfile>
-    with SingleTickerProviderStateMixin {
+class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProviderStateMixin {
   final Map<String, TextEditingController> _controllers = {};
   final List<String> _excludedFields = [
     'currentProgram',
@@ -97,9 +96,7 @@ class UserProfileState extends ConsumerState<UserProfile>
   void _updateControllers(Map<String, dynamic> data) {
     data.forEach((key, value) {
       if (!_excludedFields.contains(key)) {
-        _controllers[key] = TextEditingController(
-          text: value?.toString() ?? '',
-        );
+        _controllers[key] = TextEditingController(text: value?.toString() ?? '');
       }
     });
   }
@@ -176,9 +173,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         await storageRef.putFile(file);
         final downloadURL = await storageRef.getDownloadURL();
 
-        await ref.read(usersServiceProvider).updateUser(uid, {
-          'photoURL': downloadURL,
-        });
+        await ref.read(usersServiceProvider).updateUser(uid, {'photoURL': downloadURL});
 
         setState(() {
           _photoURL = downloadURL;
@@ -203,10 +198,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         if (isSelfDelete) {
           await FirebaseAuth.instance.signOut();
           if (mounted) {
-            _showSnackBar(
-              'Il tuo account è stato eliminato con successo.',
-              Colors.green,
-            );
+            _showSnackBar('Il tuo account è stato eliminato con successo.', Colors.green);
             context.go('/');
           }
         } else {
@@ -235,9 +227,7 @@ class UserProfileState extends ConsumerState<UserProfile>
         );
 
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          idToken: googleAuth.idToken,
-        );
+        final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
 
         await user.reauthenticateWithCredential(credential);
       }
@@ -271,9 +261,7 @@ class UserProfileState extends ConsumerState<UserProfile>
   }
 
   bool _isGoogleUser(User user) {
-    return user.providerData.any(
-      (userInfo) => userInfo.providerId == 'google.com',
-    );
+    return user.providerData.any((userInfo) => userInfo.providerId == 'google.com');
   }
 
   @override
@@ -296,9 +284,7 @@ class UserProfileState extends ConsumerState<UserProfile>
       backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(color: colorScheme.primary),
-              )
+            ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
             : LayoutBuilder(
                 builder: (context, constraints) {
                   // final isWide = constraints.maxWidth >= 1000;
@@ -334,19 +320,12 @@ class UserProfileState extends ConsumerState<UserProfile>
                           child: TabBarView(
                             controller: _tabController,
                             children: [
-                              SingleChildScrollView(
-                                child: _buildPersonalInfoCard(glass),
-                              ),
-                              SingleChildScrollView(
-                                child: _buildAccountSettingsCard(glass),
-                              ),
-                              SingleChildScrollView(
-                                child: _buildFitnessDataCard(glass),
-                              ),
+                              SingleChildScrollView(child: _buildPersonalInfoCard(glass)),
+                              SingleChildScrollView(child: _buildAccountSettingsCard(glass)),
+                              SingleChildScrollView(child: _buildFitnessDataCard(glass)),
                               SingleChildScrollView(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     _buildSubscriptionsCard(),
                                     SizedBox(height: AppTheme.spacing.xl),
@@ -457,16 +436,10 @@ class UserProfileState extends ConsumerState<UserProfile>
         height: 120,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-            color: theme.colorScheme.primary.withAlpha(26),
-            width: 3,
-          ),
+          border: Border.all(color: theme.colorScheme.primary.withAlpha(26), width: 3),
           color: theme.colorScheme.surfaceContainerHighest,
           image: _photoURL != null
-              ? DecorationImage(
-                  image: NetworkImage(_photoURL!),
-                  fit: BoxFit.cover,
-                )
+              ? DecorationImage(image: NetworkImage(_photoURL!), fit: BoxFit.cover)
               : null,
           boxShadow: [
             BoxShadow(
@@ -477,11 +450,7 @@ class UserProfileState extends ConsumerState<UserProfile>
           ],
         ),
         child: _photoURL == null
-            ? Icon(
-                Icons.person,
-                size: 60,
-                color: theme.colorScheme.onSurfaceVariant,
-              )
+            ? Icon(Icons.person, size: 60, color: theme.colorScheme.onSurfaceVariant)
             : null,
       ),
     );
@@ -573,9 +542,7 @@ class UserProfileState extends ConsumerState<UserProfile>
       glass: ref.watch(uiGlassEnabledProvider),
       title: 'Abbonamenti',
       leadingIcon: Icons.subscriptions_outlined,
-      child: SubscriptionsScreen(
-        userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid,
-      ),
+      child: SubscriptionsScreen(userId: widget.userId ?? FirebaseAuth.instance.currentUser!.uid),
     );
   }
 
@@ -736,15 +703,9 @@ class UserProfileState extends ConsumerState<UserProfile>
         dropdownColor: theme.colorScheme.surfaceContainerHighest,
         style: TextStyle(color: theme.colorScheme.onSurface),
         items: genderMap.entries.map((entry) {
-          return DropdownMenuItem<int>(
-            value: entry.key,
-            child: Text(entry.value),
-          );
+          return DropdownMenuItem<int>(value: entry.key, child: Text(entry.value));
         }).toList(),
-        hint: Text(
-          'Seleziona genere',
-          style: TextStyle(color: Colors.white.withAlpha(179)),
-        ),
+        hint: Text('Seleziona genere', style: TextStyle(color: Colors.white.withAlpha(179))),
       ),
     );
   }

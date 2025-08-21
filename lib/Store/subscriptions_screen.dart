@@ -103,12 +103,7 @@ class SubscriptionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(
-    BuildContext context,
-    String label,
-    String value,
-    IconData icon,
-  ) {
+  Widget _buildInfoRow(BuildContext context, String label, String value, IconData icon) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
@@ -162,11 +157,7 @@ class SubscriptionItemTile extends StatelessWidget {
   final SubscriptionItem item;
   final bool glass;
 
-  const SubscriptionItemTile({
-    super.key,
-    required this.item,
-    this.glass = false,
-  });
+  const SubscriptionItemTile({super.key, required this.item, this.glass = false});
 
   @override
   Widget build(BuildContext context) {
@@ -175,10 +166,7 @@ class SubscriptionItemTile extends StatelessWidget {
       title: 'Prodotto: ${item.productId}',
       subtitle: 'ID Prezzo: ${item.priceId}',
       leadingIcon: Icons.shopping_bag_outlined,
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Text('Quantità: ${item.quantity}'),
-      ),
+      child: Align(alignment: Alignment.centerRight, child: Text('Quantità: ${item.quantity}')),
     );
   }
 }
@@ -189,8 +177,7 @@ class SubscriptionsScreen extends ConsumerStatefulWidget {
   const SubscriptionsScreen({super.key, required this.userId});
 
   @override
-  ConsumerState<SubscriptionsScreen> createState() =>
-      _SubscriptionsScreenState();
+  ConsumerState<SubscriptionsScreen> createState() => _SubscriptionsScreenState();
 }
 
 class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
@@ -221,10 +208,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
     try {
       final targetUserId = userId ?? widget.userId;
 
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(targetUserId)
-          .get();
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(targetUserId).get();
 
       if (!userDoc.exists) {
         throw Exception('Utente non trovato');
@@ -252,17 +236,12 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
           ],
         };
 
-        final subscriptionDetails = SubscriptionDetails.fromJson(
-          subscriptionData,
-        );
-        ref.read(selectedUserSubscriptionProvider.notifier).state =
-            subscriptionDetails;
+        final subscriptionDetails = SubscriptionDetails.fromJson(subscriptionData);
+        ref.read(selectedUserSubscriptionProvider.notifier).state = subscriptionDetails;
         return;
       }
 
-      final details = await _inAppPurchaseService.getSubscriptionDetails(
-        userId: targetUserId,
-      );
+      final details = await _inAppPurchaseService.getSubscriptionDetails(userId: targetUserId);
 
       ref.read(selectedUserSubscriptionProvider.notifier).state = details;
     } catch (e) {
@@ -297,9 +276,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _cancelSubscription() async {
@@ -327,20 +304,15 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isAdmin = ref.watch(isAdminProvider);
-    final isOwnProfile =
-        widget.userId == FirebaseAuth.instance.currentUser?.uid;
+    final isOwnProfile = widget.userId == FirebaseAuth.instance.currentUser?.uid;
     final glassEnabled = ref.watch(uiGlassEnabledProvider);
 
     if (isAdmin && isOwnProfile) {
-      return const Center(
-        child: Text('Gli amministratori non necessitano di un abbonamento'),
-      );
+      return const Center(child: Text('Gli amministratori non necessitano di un abbonamento'));
     }
 
     if (_isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: colorScheme.primary),
-      );
+      return Center(child: CircularProgressIndicator(color: colorScheme.primary));
     }
 
     final subscription = ref.watch(selectedUserSubscriptionProvider);
@@ -367,15 +339,12 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                         block: true,
                       ),
                     ),
-                  if (isAdmin && !isOwnProfile && isWideScreen)
-                    const SizedBox(width: 12),
+                  if (isAdmin && !isOwnProfile && isWideScreen) const SizedBox(width: 12),
                   Expanded(
                     child: AppButton(
                       label: 'Sincronizza Abbonamento',
                       icon: Icons.sync,
-                      onPressed: ref.watch(syncingProvider)
-                          ? null
-                          : _syncStripeSubscription,
+                      onPressed: ref.watch(syncingProvider) ? null : _syncStripeSubscription,
                       isLoading: ref.watch(syncingProvider),
                       variant: AppButtonVariant.primary,
                       block: true,
@@ -387,10 +356,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                     ? Row(children: buttons)
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ...buttons,
-                          if (buttons.length > 1) const SizedBox(height: 12),
-                        ],
+                        children: [...buttons, if (buttons.length > 1) const SizedBox(height: 12)],
                       );
               },
             ),
@@ -416,16 +382,10 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
             SubscriptionCard(
               title: 'Abbonamento',
               status: subscription.status.capitalize(),
-              expiry: DateFormat.yMMMd().add_jm().format(
-                subscription.currentPeriodEnd,
-              ),
+              expiry: DateFormat.yMMMd().add_jm().format(subscription.currentPeriodEnd),
               isGift: subscription.platform == 'gift',
-              giftInfo: subscription.platform == 'gift'
-                  ? 'Abbonamento regalo'
-                  : null,
-              showCancelButton:
-                  (isAdmin || isOwnProfile) &&
-                  subscription.platform == 'stripe',
+              giftInfo: subscription.platform == 'gift' ? 'Abbonamento regalo' : null,
+              showCancelButton: (isAdmin || isOwnProfile) && subscription.platform == 'stripe',
               onCancelSubscription: _cancelSubscription,
               glass: glassEnabled,
             ),
@@ -440,10 +400,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                   ...subscription.items.map((item) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: SubscriptionItemTile(
-                        item: item,
-                        glass: glassEnabled,
-                      ),
+                      child: SubscriptionItemTile(item: item, glass: glassEnabled),
                     );
                   }),
                 ],
@@ -485,9 +442,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
                     value: selectedDays,
                     decoration: InputDecoration(
                       labelText: 'Durata',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     items: [
                       DropdownMenuItem(value: 7, child: Text('7 giorni')),
@@ -514,10 +469,7 @@ class _SubscriptionsScreenState extends ConsumerState<SubscriptionsScreen> {
   Future<void> _createGiftSubscription(int durationInDays) async {
     setState(() => _isLoading = true);
     try {
-      await _inAppPurchaseService.createGiftSubscription(
-        widget.userId,
-        durationInDays,
-      );
+      await _inAppPurchaseService.createGiftSubscription(widget.userId, durationInDays);
       _showSnackBar('Abbonamento regalo creato con successo!');
       await _fetchSubscriptionDetails();
     } catch (e) {

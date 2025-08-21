@@ -248,11 +248,7 @@ class PaginatedResult<T> {
   final DocumentSnapshot? lastDocument;
   final bool hasMore;
 
-  const PaginatedResult({
-    required this.items,
-    this.lastDocument,
-    required this.hasMore,
-  });
+  const PaginatedResult({required this.items, this.lastDocument, required this.hasMore});
 }
 
 /// Batch operation definition
@@ -261,13 +257,9 @@ class BatchOperation<T> {
   final String? id;
   final T? model;
 
-  const BatchOperation.create(this.model, {this.id})
-    : type = BatchOperationType.create;
-  const BatchOperation.update(this.id, this.model)
-    : type = BatchOperationType.update;
-  const BatchOperation.delete(this.id)
-    : type = BatchOperationType.delete,
-      model = null;
+  const BatchOperation.create(this.model, {this.id}) : type = BatchOperationType.create;
+  const BatchOperation.update(this.id, this.model) : type = BatchOperationType.update;
+  const BatchOperation.delete(this.id) : type = BatchOperationType.delete, model = null;
 }
 
 /// Batch operation types

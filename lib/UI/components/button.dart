@@ -90,9 +90,7 @@ class AppButton extends StatelessWidget {
         case AppButtonVariant.ghost:
           return Colors.transparent;
         case AppButtonVariant.subtle:
-          return glass
-              ? Colors.transparent
-              : colorScheme.primaryContainer.withAlpha(77);
+          return glass ? Colors.transparent : colorScheme.primaryContainer.withAlpha(77);
         case AppButtonVariant.secondary:
           return glass ? Colors.transparent : colorScheme.secondary;
       }
@@ -176,9 +174,7 @@ class AppButton extends StatelessWidget {
     );
 
     final shouldUseGlass =
-        glass &&
-        variant != AppButtonVariant.outline &&
-        variant != AppButtonVariant.ghost;
+        glass && variant != AppButtonVariant.outline && variant != AppButtonVariant.ghost;
     if (!shouldUseGlass) return coreButton;
 
     return GlassLite(

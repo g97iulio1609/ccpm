@@ -29,12 +29,7 @@ class LLMService {
   Future<Map<String, dynamic>> analyzeText(String text) async {
     try {
       // Qui implementiamo una struttura più flessibile per l'analisi del testo
-      final analysis = {
-        'rawText': text,
-        'context': {},
-        'requirements': [],
-        'suggestedActions': [],
-      };
+      final analysis = {'rawText': text, 'context': {}, 'requirements': [], 'suggestedActions': []};
 
       return analysis;
     } catch (e) {
@@ -43,9 +38,7 @@ class LLMService {
     }
   }
 
-  Future<ActionPlan> createActionPlan(
-    Map<String, dynamic> interpretation,
-  ) async {
+  Future<ActionPlan> createActionPlan(Map<String, dynamic> interpretation) async {
     try {
       final actions = <Map<String, dynamic>>[];
       final context = <String, dynamic>{};
@@ -60,10 +53,7 @@ class LLMService {
     }
   }
 
-  Future<ActionPlan> adjustPlan(
-    ActionPlan originalPlan,
-    ActionResult result,
-  ) async {
+  Future<ActionPlan> adjustPlan(ActionPlan originalPlan, ActionResult result) async {
     try {
       final adjustedActions = <Map<String, dynamic>>[];
       final newContext = Map<String, dynamic>.from(originalPlan.context);

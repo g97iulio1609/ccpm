@@ -89,6 +89,7 @@ class AppSearchField<T> extends HookConsumerWidget {
           searchController.text = controller.text;
         }
       }
+
       controller.addListener(listener);
       return () => controller.removeListener(listener);
     }, [controller]);
@@ -101,6 +102,7 @@ class AppSearchField<T> extends HookConsumerWidget {
         onChanged?.call(value);
         fetch(value);
       }
+
       searchController.addListener(scListener);
       return () => searchController.removeListener(scListener);
     }, [searchController]);
@@ -109,9 +111,7 @@ class AppSearchField<T> extends HookConsumerWidget {
       data: Theme.of(context).copyWith(
         // Apply glass-like overlay for the search view
         searchViewTheme: SearchViewThemeData(
-          backgroundColor: glassEnabled
-              ? cs.surfaceContainerHighest.withAlpha(184)
-              : cs.surface,
+          backgroundColor: glassEnabled ? cs.surfaceContainerHighest.withAlpha(184) : cs.surface,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -140,13 +140,9 @@ class AppSearchField<T> extends HookConsumerWidget {
               controller.text = value;
               onChanged?.call(value);
             },
-            padding: MaterialStatePropertyAll(
-              EdgeInsets.all(AppTheme.spacing.md),
-            ),
+            padding: MaterialStatePropertyAll(EdgeInsets.all(AppTheme.spacing.md)),
             elevation: const MaterialStatePropertyAll(0),
-            backgroundColor: MaterialStatePropertyAll(
-              cs.surfaceContainerHighest.withAlpha(184),
-            ),
+            backgroundColor: MaterialStatePropertyAll(cs.surfaceContainerHighest.withAlpha(184)),
             shape: MaterialStatePropertyAll(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -179,10 +175,7 @@ class AppSearchField<T> extends HookConsumerWidget {
                 color: cs.surface.withAlpha(196),
                 child: ListTile(
                   leading: Icon(Icons.error_outline, color: cs.error),
-                  title: Text(
-                    'Errore nel caricamento',
-                    style: TextStyle(color: cs.error),
-                  ),
+                  title: Text('Errore nel caricamento', style: TextStyle(color: cs.error)),
                 ),
               ),
             );
@@ -195,10 +188,9 @@ class AppSearchField<T> extends HookConsumerWidget {
                   color: cs.surface.withAlpha(196),
                   child: ListTile(
                     title: DefaultTextStyle.merge(
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: cs.onSurfaceVariant),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                       child: emptyBuilder!,
                     ),
                   ),
@@ -209,9 +201,7 @@ class AppSearchField<T> extends HookConsumerWidget {
           }
           return results.value.map((e) {
             return Container(
-              decoration: BoxDecoration(
-                color: cs.surface.withAlpha(196),
-              ),
+              decoration: BoxDecoration(color: cs.surface.withAlpha(196)),
               child: InkWell(
                 onTap: () {
                   onSelected(e);

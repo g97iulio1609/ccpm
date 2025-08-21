@@ -64,18 +64,12 @@ class AthleteSelectionDialog extends ConsumerWidget {
                   prefixIcon: Icons.search,
                   suggestionsCallback: (pattern) async {
                     return users
-                        .where(
-                          (u) => u.name.toLowerCase().contains(
-                            pattern.toLowerCase(),
-                          ),
-                        )
+                        .where((u) => u.name.toLowerCase().contains(pattern.toLowerCase()))
                         .toList();
                   },
                   itemBuilder: (context, user) => ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: colorScheme.primaryContainer.withAlpha(
-                        76,
-                      ),
+                      backgroundColor: colorScheme.primaryContainer.withAlpha(76),
                       child: Icon(Icons.person, color: colorScheme.primary),
                     ),
                     title: Text(user.name),
@@ -88,14 +82,10 @@ class AthleteSelectionDialog extends ConsumerWidget {
               } else if (snap.hasError) {
                 return Text(
                   'Errore: ${snap.error}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.error,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.error),
                 );
               } else {
-                return Center(
-                  child: CircularProgressIndicator(color: colorScheme.primary),
-                );
+                return Center(child: CircularProgressIndicator(color: colorScheme.primary));
               }
             },
           );

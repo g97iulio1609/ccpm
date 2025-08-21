@@ -131,18 +131,8 @@ class Meal {
     };
   }
 
-  static Meal emptyMeal(
-    String userId,
-    String dailyStatsId,
-    DateTime date,
-    String mealType,
-  ) {
-    return Meal(
-      userId: userId,
-      dailyStatsId: dailyStatsId,
-      date: date,
-      mealType: mealType,
-    );
+  static Meal emptyMeal(String userId, String dailyStatsId, DateTime date, String mealType) {
+    return Meal(userId: userId, dailyStatsId: dailyStatsId, date: date, mealType: mealType);
   }
 }
 
@@ -165,8 +155,7 @@ class DailyStats {
     this.totalProtein = 0,
   });
 
-  factory DailyStats.fromJson(String source) =>
-      DailyStats.fromMap(json.decode(source));
+  factory DailyStats.fromJson(String source) => DailyStats.fromMap(json.decode(source));
 
   String toJson() => json.encode(toMap());
 
@@ -285,15 +274,9 @@ class FavoriteDay {
   DateTime date;
   String favoriteName;
 
-  FavoriteDay({
-    this.id,
-    required this.userId,
-    required this.date,
-    required this.favoriteName,
-  });
+  FavoriteDay({this.id, required this.userId, required this.date, required this.favoriteName});
 
-  factory FavoriteDay.fromJson(String source) =>
-      FavoriteDay.fromMap(json.decode(source));
+  factory FavoriteDay.fromJson(String source) => FavoriteDay.fromMap(json.decode(source));
 
   String toJson() => json.encode(toMap());
 

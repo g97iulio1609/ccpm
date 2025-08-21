@@ -7,8 +7,7 @@ class ValidationUtils {
   /// Validation result class
   static const ValidationResult valid = ValidationResult._(true, null);
 
-  static ValidationResult invalid(String message) =>
-      ValidationResult._(false, message);
+  static ValidationResult invalid(String message) => ValidationResult._(false, message);
 
   // Exercise validation
   static ValidationResult validateExerciseName(String name) {
@@ -108,9 +107,7 @@ class ValidationUtils {
 
     // Check if it's a percentage
     if (intensity.endsWith('%')) {
-      final percentValue = double.tryParse(
-        intensity.substring(0, intensity.length - 1),
-      );
+      final percentValue = double.tryParse(intensity.substring(0, intensity.length - 1));
       if (percentValue == null) {
         return invalid('Intensity percentage must be a valid number');
       }
@@ -202,10 +199,7 @@ class ValidationUtils {
     return valid;
   }
 
-  static ValidationResult validateDateRange(
-    DateTime? startDate,
-    DateTime? endDate,
-  ) {
+  static ValidationResult validateDateRange(DateTime? startDate, DateTime? endDate) {
     if (startDate == null || endDate == null) {
       return valid; // Date range is optional
     }
@@ -292,9 +286,7 @@ class ValidationUtils {
     }
     // Check for valid characters (alphanumeric, hyphens, underscores)
     if (!RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(id)) {
-      return invalid(
-        '$fieldName ID can only contain letters, numbers, hyphens, and underscores',
-      );
+      return invalid('$fieldName ID can only contain letters, numbers, hyphens, and underscores');
     }
     return valid;
   }
@@ -347,6 +339,80 @@ class ValidationUtils {
       validateRange(reps, maxReps, 'Reps'),
       validateWeightRange(weight, maxWeight),
     ].where((result) => !result.isValid).toList();
+  }
+
+  // Cardio-specific validation
+  static ValidationResult validateDurationSeconds(int? seconds) {
+    if (seconds == null) return valid;
+    if (seconds < 0) return invalid('Duration cannot be negative');
+    if (seconds > 24 * 3600) return invalid('Duration too long');
+    return valid;
+  }
+
+  static ValidationResult validateDistanceMeters(int? meters) {
+    if (meters == null) return valid;
+    if (meters < 0) return invalid('Distance cannot be negative');
+    if (meters > 1000000) return invalid('Distance too large');
+    return valid;
+  }
+
+  static ValidationResult validateSpeedKmh(double? speed) {
+    if (speed == null) return valid;
+    if (speed < 0) return invalid('Speed cannot be negative');
+    if (speed > 60) return invalid('Speed too large (>60 km/h)');
+    return valid;
+  }
+
+  static ValidationResult validatePaceSecPerKm(int? pace) {
+    if (pace == null) return valid;
+    if (pace <= 0) return invalid('Pace must be > 0');
+    if (pace > 1800) return invalid('Pace too slow (>30:00/km)');
+    return valid;
+  }
+
+  static ValidationResult validateInclinePercent(double? incline) {
+    if (incline == null) return valid;
+    if (incline < 0 || incline > 30) return invalid('Incline must be 0–30%');
+    return valid;
+  }
+
+  static ValidationResult validateHrPercent(double? hrPercent) {
+    if (hrPercent == null) return valid;
+    if (hrPercent < 0 || hrPercent > 100) return invalid('HR% must be 0–100');
+    return valid;
+  }
+
+  static ValidationResult validateHrBpm(int? hrBpm) {
+    if (hrBpm == null) return valid;
+    if (hrBpm < 0 || hrBpm > 240) return invalid('HR bpm must be 0–240');
+    return valid;
+  }
+
+  static List<ValidationResult> validateCardio({
+    int? durationSeconds,
+    int? distanceMeters,
+    double? speedKmh,
+    int? paceSecPerKm,
+    double? inclinePercent,
+    double? hrPercent,
+    int? hrBpm,
+    int? kcal,
+  }) {
+    final results = <ValidationResult>[
+      validateDurationSeconds(durationSeconds),
+      validateDistanceMeters(distanceMeters),
+      validateSpeedKmh(speedKmh),
+      validatePaceSecPerKm(paceSecPerKm),
+      validateInclinePercent(inclinePercent),
+      validateHrPercent(hrPercent),
+      validateHrBpm(hrBpm),
+    ];
+    // Ensure at least duration or distance present for cardio targets
+    final hasOne = (durationSeconds ?? 0) > 0 || (distanceMeters ?? 0) > 0;
+    if (!hasOne) {
+      results.add(invalid('For cardio, set duration and/or distance'));
+    }
+    return results.where((r) => !r.isValid).toList();
   }
 
   static List<ValidationResult> validateWorkout({
@@ -402,9 +468,7 @@ class ValidationResult {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ValidationResult &&
-        other.isValid == isValid &&
-        other.message == message;
+    return other is ValidationResult && other.isValid == isValid && other.message == message;
   }
 
   @override
@@ -421,9 +485,7 @@ extension ValidationExtensions on List<ValidationResult> {
 
   /// Get all error messages
   List<String> get errorMessages {
-    return where(
-      (result) => result.isInvalid,
-    ).map((result) => result.message!).toList();
+    return where((result) => result.isInvalid).map((result) => result.message!).toList();
   }
 
   /// Get first error message

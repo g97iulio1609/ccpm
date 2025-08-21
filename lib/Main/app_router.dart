@@ -44,17 +44,11 @@ class AppRouter {
   static GoRouter router(WidgetRef ref) => GoRouter(
     routes: [
       // Route pubblica per la Privacy Policy (senza autenticazione)
-      GoRoute(
-        path: Routes.privacyPolicy,
-        builder: (context, state) => const PrivacyPolicyScreen(),
-      ),
+      GoRoute(path: Routes.privacyPolicy, builder: (context, state) => const PrivacyPolicyScreen()),
       ShellRoute(
         builder: (context, state, child) => HomeScreen(child: child),
         routes: [
-          GoRoute(
-            path: Routes.home,
-            builder: (context, state) => const AuthWrapper(),
-          ),
+          GoRoute(path: Routes.home, builder: (context, state) => const AuthWrapper()),
           GoRoute(
             path: Routes.programsScreen,
             builder: (context, state) {
@@ -86,10 +80,7 @@ class AppRouter {
                   final extra = state.extra as Map<String, dynamic>;
                   final programId = extra['programId'] as String;
                   final userId = extra['userId'] as String;
-                  return TrainingProgramPage(
-                    programId: programId,
-                    userId: userId,
-                  );
+                  return TrainingProgramPage(programId: programId, userId: userId);
                 },
                 routes: [
                   GoRoute(
@@ -132,10 +123,7 @@ class AppRouter {
                   final extra = state.extra as Map<String, dynamic>;
                   final programId = extra['programId'] as String;
                   final userId = extra['userId'] as String;
-                  return UnifiedTrainingViewer(
-                    programId: programId,
-                    userId: userId,
-                  );
+                  return UnifiedTrainingViewer(programId: programId, userId: userId);
                 },
                 routes: [
                   GoRoute(
@@ -169,14 +157,10 @@ class AppRouter {
           ),
           GoRoute(
             path: Routes.status,
-            builder: (context, state) => SubscriptionsScreen(
-              userId: FirebaseAuth.instance.currentUser!.uid,
-            ),
+            builder: (context, state) =>
+                SubscriptionsScreen(userId: FirebaseAuth.instance.currentUser!.uid),
           ),
-          GoRoute(
-            path: Routes.measurements,
-            builder: (context, state) => const MeasurementsPage(),
-          ),
+          GoRoute(path: Routes.measurements, builder: (context, state) => const MeasurementsPage()),
           GoRoute(
             path: Routes.tdee,
             builder: (context, state) {
@@ -192,8 +176,7 @@ class AppRouter {
                       }
                       return TDEEScreen(userId: user.id);
                     },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: CircularProgressIndicator()),
                     error: (err, stack) => Center(child: Text('Error: $err')),
                   );
                 },
@@ -215,8 +198,7 @@ class AppRouter {
                       }
                       return MacrosSelector(userId: user.id);
                     },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: CircularProgressIndicator()),
                     error: (err, stack) => Center(child: Text('Error: $err')),
                   );
                 },
@@ -247,11 +229,7 @@ class AppRouter {
                 builder: (context, ref, child) {
                   final selectedUserId = ref.watch(selectedUserIdProvider);
                   final userAsyncValue = ref.watch(
-                    userProvider(
-                      selectedUserId ??
-                          FirebaseAuth.instance.currentUser?.uid ??
-                          '',
-                    ),
+                    userProvider(selectedUserId ?? FirebaseAuth.instance.currentUser?.uid ?? ''),
                   );
                   return userAsyncValue.when(
                     data: (user) {
@@ -260,8 +238,7 @@ class AppRouter {
                       }
                       return const DailyFoodTracker();
                     },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: CircularProgressIndicator()),
                     error: (err, stack) => Center(child: Text('Error: $err')),
                   );
                 },
@@ -283,10 +260,7 @@ class AppRouter {
                   );
                 },
               ),
-              GoRoute(
-                path: Routes.dietPlan,
-                builder: (context, state) => const DietPlanScreen(),
-              ),
+              GoRoute(path: Routes.dietPlan, builder: (context, state) => const DietPlanScreen()),
               GoRoute(
                 path: Routes.dietPlanEdit,
                 builder: (context, state) {
@@ -300,14 +274,8 @@ class AppRouter {
               ),
             ],
           ),
-          GoRoute(
-            path: Routes.foodManagement,
-            builder: (context, state) => const FoodManagement(),
-          ),
-          GoRoute(
-            path: Routes.exercisesList,
-            builder: (context, state) => const ExercisesList(),
-          ),
+          GoRoute(path: Routes.foodManagement, builder: (context, state) => const FoodManagement()),
+          GoRoute(path: Routes.exercisesList, builder: (context, state) => const ExercisesList()),
           GoRoute(
             path: Routes.maxRmDashboard,
             builder: (context, state) => const MaxRMDashboard(),
@@ -323,10 +291,7 @@ class AppRouter {
               ),
             ],
           ),
-          GoRoute(
-            path: Routes.usersDashboard,
-            builder: (context, state) => const UsersDashboard(),
-          ),
+          GoRoute(path: Routes.usersDashboard, builder: (context, state) => const UsersDashboard()),
           GoRoute(
             path: Routes.userProfile,
             builder: (context, state) {
@@ -335,18 +300,11 @@ class AppRouter {
               return UserProfile(userId: userId);
             },
           ),
-          GoRoute(
-            path: Routes.dashboard,
-            builder: (context, state) => const DashboardScreen(),
-          ),
-          GoRoute(
-            path: '/settings/ai',
-            builder: (context, state) => const AISettingsScreen(),
-          ),
+          GoRoute(path: Routes.dashboard, builder: (context, state) => const DashboardScreen()),
+          GoRoute(path: '/settings/ai', builder: (context, state) => const AISettingsScreen()),
           GoRoute(
             path: '/ai/chat',
-            builder: (context, state) =>
-                AIChatWidget(userService: ref.read(usersServiceProvider)),
+            builder: (context, state) => AIChatWidget(userService: ref.read(usersServiceProvider)),
           ),
         ],
       ),
@@ -379,10 +337,7 @@ class AuthWrapper extends ConsumerWidget {
                     if (userRole == 'admin' || userRole == 'coach') {
                       context.go(Routes.programsScreen);
                     } else {
-                      context.go(
-                        Routes.userPrograms,
-                        extra: {'userId': user.uid},
-                      );
+                      context.go(Routes.userPrograms, extra: {'userId': user.uid});
                     }
                   }
                 });

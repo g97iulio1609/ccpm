@@ -26,8 +26,7 @@ class BatchCollector {
     }
   }
 
-  void set(DocumentReference ref, Map<String, dynamic> data,
-      [SetOptions? options]) {
+  void set(DocumentReference ref, Map<String, dynamic> data, [SetOptions? options]) {
     _ensureCapacity(1);
     _current.set(ref, data, options);
     _opsInCurrent += 1;
@@ -93,9 +92,7 @@ class FirestoreService {
 
   Stream<List<TrainingProgram>> streamTrainingPrograms() {
     return _db.collection('programs').snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => TrainingProgram.fromFirestore(doc))
-          .toList();
+      return snapshot.docs.map((doc) => TrainingProgram.fromFirestore(doc)).toList();
     });
   }
 
@@ -108,10 +105,7 @@ class FirestoreService {
     }
   }
 
-  Future<void> updateProgram(
-    String programId,
-    Map<String, dynamic> programData,
-  ) async {
+  Future<void> updateProgram(String programId, Map<String, dynamic> programData) async {
     try {
       await _db.collection('programs').doc(programId).update(programData);
     } catch (e) {
@@ -155,10 +149,7 @@ class FirestoreService {
     }
   }
 
-  Future<void> _removeRelatedExercises(
-    BatchCollector batch,
-    String workoutId,
-  ) async {
+  Future<void> _removeRelatedExercises(BatchCollector batch, String workoutId) async {
     QuerySnapshot exercisesSnapshot = await _db
         .collection('exercisesWorkout')
         .where('workoutId', isEqualTo: workoutId)
@@ -220,9 +211,7 @@ class FirestoreService {
           .orderBy('number')
           .get();
 
-      List<Week> weeks = weeksSnapshot.docs
-          .map((doc) => Week.fromFirestore(doc))
-          .toList();
+      List<Week> weeks = weeksSnapshot.docs.map((doc) => Week.fromFirestore(doc)).toList();
 
       List<Future<void>> fetchWorkoutsFutures = [];
       for (int i = 0; i < weeks.length; i++) {
@@ -277,8 +266,7 @@ class FirestoreService {
 
     List<Exercise> exercises = exercisesSnapshot.docs.map((doc) {
       Exercise exercise = Exercise.fromFirestore(doc);
-      String? superSetId =
-          (doc.data() as Map<String, dynamic>)['superSetId'] as String?;
+      String? superSetId = (doc.data() as Map<String, dynamic>)['superSetId'] as String?;
       return exercise.copyWith(superSetId: superSetId);
     }).toList();
 
@@ -311,7 +299,7 @@ class FirestoreService {
       String programId = program.id?.trim().isEmpty ?? true
           ? _db.collection('programs').doc().id
           : program.id!;
-      
+
       program = program.copyWith(id: programId);
 
       await _addOrUpdateProgram(batch, program);
@@ -327,17 +315,11 @@ class FirestoreService {
   /// - Prefetching existing workouts for all weeks using whereIn with chunking
   /// - Prefetching existing exercises for all workouts using whereIn with chunking
   /// - Avoiding nested awaits inside loops
-  Future<void> _addOrUpdateWeeksOptimized(
-    BatchCollector batch,
-    TrainingProgram program,
-  ) async {
+  Future<void> _addOrUpdateWeeksOptimized(BatchCollector batch, TrainingProgram program) async {
     // 1) Map existing week IDs by number (reuse IDs when possible)
     final Map<int, String> existingWeekIdByNumber = {};
     if (program.id != null && (program.id?.isNotEmpty ?? false)) {
-      final qs = await _db
-          .collection('weeks')
-          .where('programId', isEqualTo: program.id)
-          .get();
+      final qs = await _db.collection('weeks').where('programId', isEqualTo: program.id).get();
       for (final doc in qs.docs) {
         final data = doc.data();
         final number = (data['number'] as int?) ?? 0;
@@ -373,15 +355,13 @@ class FirestoreService {
         .where((id) => id.isNotEmpty)
         .toList();
 
-    final existingWorkoutsByWeekAndOrder =
-        await _fetchExistingWorkoutsByWeekIds(weekIds);
+    final existingWorkoutsByWeekAndOrder = await _fetchExistingWorkoutsByWeekIds(weekIds);
 
     // 4) Determine/update workouts with IDs and orders, accumulating the final workout IDs
     final List<String> allWorkoutIds = [];
     for (int wi = 0; wi < program.weeks.length; wi++) {
       final week = program.weeks[wi];
-      final Map<int, String> existingByOrder =
-          existingWorkoutsByWeekAndOrder[week.id] ?? {};
+      final Map<int, String> existingByOrder = existingWorkoutsByWeekAndOrder[week.id] ?? {};
 
       for (int idx = 0; idx < week.workouts.length; idx++) {
         final workout = week.workouts[idx];
@@ -398,8 +378,9 @@ class FirestoreService {
     }
 
     // 5) Prefetch existing exercises for all determined workout IDs, grouped by workoutId and order
-    final existingExercisesByWorkoutAndOrder =
-        await _fetchExistingExercisesByWorkoutIds(allWorkoutIds);
+    final existingExercisesByWorkoutAndOrder = await _fetchExistingExercisesByWorkoutIds(
+      allWorkoutIds,
+    );
 
     // 6) Write weeks and workouts to batch (queued into batch collector)
     for (final week in program.weeks) {
@@ -435,10 +416,7 @@ class FirestoreService {
                 ? _db.collection('series').doc().id
                 : series.serieId!;
             final updatedSeries = series.copyWith(serieId: seriesId);
-            program.weeks[wi]
-                .workouts[woi]
-                .exercises[ei]
-                .series[si] = updatedSeries;
+            program.weeks[wi].workouts[woi].exercises[ei].series[si] = updatedSeries;
 
             await _addOrUpdateSingleSeries(
               batch,
@@ -468,11 +446,11 @@ class FirestoreService {
     // Firestore whereIn max 10 values (keep conservative)
     const int chunkSize = 10;
     for (int i = 0; i < weekIds.length; i += chunkSize) {
-      final chunk = weekIds.sublist(i, i + chunkSize > weekIds.length ? weekIds.length : i + chunkSize);
-      final qs = await _db
-          .collection('workouts')
-          .where('weekId', whereIn: chunk)
-          .get();
+      final chunk = weekIds.sublist(
+        i,
+        i + chunkSize > weekIds.length ? weekIds.length : i + chunkSize,
+      );
+      final qs = await _db.collection('workouts').where('weekId', whereIn: chunk).get();
       for (final doc in qs.docs) {
         final data = doc.data();
         final wId = (data['weekId'] as String?) ?? '';
@@ -496,11 +474,11 @@ class FirestoreService {
 
     const int chunkSize = 10;
     for (int i = 0; i < workoutIds.length; i += chunkSize) {
-      final chunk = workoutIds.sublist(i, i + chunkSize > workoutIds.length ? workoutIds.length : i + chunkSize);
-      final qs = await _db
-          .collection('exercisesWorkout')
-          .where('workoutId', whereIn: chunk)
-          .get();
+      final chunk = workoutIds.sublist(
+        i,
+        i + chunkSize > workoutIds.length ? workoutIds.length : i + chunkSize,
+      );
+      final qs = await _db.collection('exercisesWorkout').where('workoutId', whereIn: chunk).get();
       for (final doc in qs.docs) {
         final data = doc.data();
         final wrkId = (data['workoutId'] as String?) ?? '';
@@ -513,10 +491,7 @@ class FirestoreService {
     return result;
   }
 
-  Future<void> _addOrUpdateProgram(
-    BatchCollector batch,
-    TrainingProgram program,
-  ) async {
+  Future<void> _addOrUpdateProgram(BatchCollector batch, TrainingProgram program) async {
     DocumentReference programRef = _db.collection('programs').doc(program.id);
     batch.set(programRef, program.toMap(), SetOptions(merge: true));
   }
@@ -529,10 +504,7 @@ class FirestoreService {
 
   /// Simplified deduplication - only removes weeks that are explicitly marked for deletion
   /// KISS: No complex logic, just preserve all weeks currently in memory
-  Future<void> _dedupWeeksByNumber(
-    BatchCollector batch,
-    TrainingProgram program,
-  ) async {
+  Future<void> _dedupWeeksByNumber(BatchCollector batch, TrainingProgram program) async {
     if (program.id == null || (program.id?.isEmpty ?? true)) return;
 
     // KISS: Create a simple set of all week IDs that should be preserved
@@ -543,15 +515,12 @@ class FirestoreService {
         .toSet();
 
     // Only process orphaned weeks (weeks in DB that are not in current program structure)
-    final qs = await _db
-        .collection('weeks')
-        .where('programId', isEqualTo: program.id)
-        .get();
+    final qs = await _db.collection('weeks').where('programId', isEqualTo: program.id).get();
 
     for (final doc in qs.docs) {
       final data = doc.data();
       final number = (data['number'] as int?) ?? 0;
-      
+
       // Only delete if:
       // 1. Week number is invalid (< 1), OR
       // 2. Week ID is not in our preserve list (orphaned)
@@ -564,17 +533,11 @@ class FirestoreService {
 
   /// Rimuove dal DB le settimane con number > program.weeks.length,
   /// cancellando anche i relativi workout/esercizi/serie nello stesso batch.
-  Future<void> _cleanupExtraWeeks(
-    BatchCollector batch,
-    TrainingProgram program,
-  ) async {
+  Future<void> _cleanupExtraWeeks(BatchCollector batch, TrainingProgram program) async {
     if (program.id == null || (program.id?.isEmpty ?? true)) return;
     final int maxNumber = program.weeks.length;
 
-    final qs = await _db
-        .collection('weeks')
-        .where('programId', isEqualTo: program.id)
-        .get();
+    final qs = await _db.collection('weeks').where('programId', isEqualTo: program.id).get();
 
     for (final doc in qs.docs) {
       final data = doc.data();
@@ -587,30 +550,19 @@ class FirestoreService {
     }
   }
 
-  Future<void> _addOrUpdateWeek(
-    BatchCollector batch,
-    Week week,
-    String programId,
-  ) async {
+  Future<void> _addOrUpdateWeek(BatchCollector batch, Week week, String programId) async {
     DocumentReference weekRef = _db.collection('weeks').doc(week.id);
-    batch.set(weekRef, {
-      'number': week.number,
-      'programId': programId,
-    }, SetOptions(merge: true));
+    batch.set(weekRef, {'number': week.number, 'programId': programId}, SetOptions(merge: true));
   }
 
   // Metodo legacy rimosso (sostituito da _addOrUpdateWorkoutsAndUpdate)
 
-  Future<void> _addOrUpdateWorkout(
-    BatchCollector batch,
-    Workout workout,
-    String weekId,
-  ) async {
+  Future<void> _addOrUpdateWorkout(BatchCollector batch, Workout workout, String weekId) async {
     DocumentReference workoutRef = _db.collection('workouts').doc(workout.id);
     batch.set(workoutRef, {
       'order': workout.order,
       'weekId': weekId,
-  'name': workout.name,
+      'name': workout.name,
     }, SetOptions(merge: true));
   }
 
@@ -621,9 +573,7 @@ class FirestoreService {
     Exercise exercise,
     String workoutId,
   ) async {
-    DocumentReference exerciseRef = _db
-        .collection('exercisesWorkout')
-        .doc(exercise.id);
+    DocumentReference exerciseRef = _db.collection('exercisesWorkout').doc(exercise.id);
     batch.set(exerciseRef, {
       'name': exercise.name,
       'order': exercise.order,
@@ -645,9 +595,7 @@ class FirestoreService {
     int order,
     String? originalExerciseId,
   ) async {
-    DocumentReference seriesRef = _db
-        .collection('series')
-        .doc(series.serieId ?? series.id ?? '');
+    DocumentReference seriesRef = _db.collection('series').doc(series.serieId ?? series.id ?? '');
     batch.set(seriesRef, {
       'reps': series.reps,
       'sets': series.sets,
@@ -691,24 +639,16 @@ class FirestoreService {
     }
   }
 
-  Future<void> _removeWorkouts(
-    BatchCollector batch,
-    List<String> workoutIds,
-  ) async {
+  Future<void> _removeWorkouts(BatchCollector batch, List<String> workoutIds) async {
     for (String workoutId in workoutIds) {
       DocumentReference workoutRef = _db.collection('workouts').doc(workoutId);
       batch.delete(workoutRef);
     }
   }
 
-  Future<void> _removeExercises(
-    BatchCollector batch,
-    List<String> exerciseIds,
-  ) async {
+  Future<void> _removeExercises(BatchCollector batch, List<String> exerciseIds) async {
     for (String exerciseId in exerciseIds) {
-      DocumentReference exerciseRef = _db
-          .collection('exercisesWorkout')
-          .doc(exerciseId);
+      DocumentReference exerciseRef = _db.collection('exercisesWorkout').doc(exerciseId);
       batch.delete(exerciseRef);
     }
   }

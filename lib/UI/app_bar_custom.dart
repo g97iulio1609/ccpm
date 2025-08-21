@@ -26,8 +26,7 @@ import 'package:alphanessone/Main/route_metadata.dart';
 import 'package:alphanessone/UI/components/glass.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 
-class CustomAppBar extends ConsumerStatefulWidget
-    implements PreferredSizeWidget {
+class CustomAppBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const CustomAppBar({
     super.key,
     required this.userRole,
@@ -75,8 +74,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
   bool _isTrainingProgramRoute(String currentRoute) {
     return currentRoute.startsWith('/user_programs/') &&
-        (currentRoute.contains('/training_program/') ||
-            currentRoute.contains('/week/'));
+        (currentRoute.contains('/training_program/') || currentRoute.contains('/week/'));
   }
 
   bool _isDailyFoodTrackerRoute(String currentRoute) {
@@ -101,10 +99,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return AppDialog(
           title: const Text('Add User'),
           actions: [
-            AppDialogHelpers.buildCancelButton(
-              context: dialogContext,
-              label: 'Cancel',
-            ),
+            AppDialogHelpers.buildCancelButton(context: dialogContext, label: 'Cancel'),
             AppDialogHelpers.buildActionButton(
               context: dialogContext,
               label: 'Add',
@@ -194,11 +189,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     if (value == 'save_as_favorite') {
       final favoriteName = await _showFavoriteNameDialog();
       if (favoriteName != null && mounted) {
-        await mealsService.saveDayAsFavorite(
-          userId,
-          selectedDate,
-          favoriteName: favoriteName,
-        );
+        await mealsService.saveDayAsFavorite(userId, selectedDate, favoriteName: favoriteName);
       }
     } else if (value == 'apply_favorite_day') {
       final favoriteDays = await mealsService.getFavoriteDays(userId);
@@ -225,11 +216,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
           ),
         );
         if (selectedFavorite != null && mounted) {
-          await mealsService.applyFavoriteDayToCurrent(
-            userId,
-            selectedFavorite.id!,
-            selectedDate,
-          );
+          await mealsService.applyFavoriteDayToCurrent(userId, selectedFavorite.id!, selectedDate);
         }
       }
     } else if (value == 'add_diet_plan') {
@@ -247,15 +234,11 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
         return AppDialog(
           title: const Text('Save as Favorite', style: TextStyle(fontSize: 16)),
           actions: <Widget>[
-            AppDialogHelpers.buildCancelButton(
-              context: dialogContext,
-              label: 'Cancel',
-            ),
+            AppDialogHelpers.buildCancelButton(context: dialogContext, label: 'Cancel'),
             AppDialogHelpers.buildActionButton(
               context: dialogContext,
               label: 'Save',
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(nameController.text),
+              onPressed: () => Navigator.of(dialogContext).pop(nameController.text),
             ),
           ],
           child: TextField(
@@ -276,9 +259,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       await _inAppPurchaseService.syncProducts();
       _showSnackBar('Prodotti sincronizzati con successo');
     } catch (e) {
-      _showSnackBar(
-        'Errore durante la sincronizzazione dei prodotti: ${e.toString()}',
-      );
+      _showSnackBar('Errore durante la sincronizzazione dei prodotti: ${e.toString()}');
     }
   }
 
@@ -288,41 +269,30 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       await _inAppPurchaseService.initialize();
       _showSnackBar('Store inizializzato con successo');
     } catch (e) {
-      _showSnackBar(
-        'Errore durante l\'inizializzazione dello store: ${e.toString()}',
-      );
+      _showSnackBar('Errore durante l\'inizializzazione dello store: ${e.toString()}');
     }
   }
 
   void _showSnackBar(String message) {
-    AppSnackbar.info(
-      context,
-      message: message,
-      duration: const Duration(seconds: 2),
-    );
+    AppSnackbar.info(context, message: message, duration: const Duration(seconds: 2));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme =
-        theme.colorScheme; // kept for future AppBar icon/text tints
+    final colorScheme = theme.colorScheme; // kept for future AppBar icon/text tints
     final currentRoute = GoRouterState.of(context).uri.toString();
     final isBackButtonVisible = currentRoute.split('/').length > 2;
     final selectedDate = ref.watch(selectedDateProvider);
     final isAdmin = widget.userRole == 'admin';
 
     final applyGlassEverywhere = ref.watch(appBarGlassAllRoutesProvider);
-    final isTopLevel =
-        !_isBreadcrumbRoute(currentRoute) &&
-        !_isDailyFoodTrackerRoute(currentRoute);
+    final isTopLevel = !_isBreadcrumbRoute(currentRoute) && !_isDailyFoodTrackerRoute(currentRoute);
     final useGlass = applyGlassEverywhere || isTopLevel;
 
     final appBar = AppBar(
       centerTitle: true,
-      backgroundColor: useGlass
-          ? Colors.transparent
-          : theme.colorScheme.surface,
+      backgroundColor: useGlass ? Colors.transparent : theme.colorScheme.surface,
       elevation: 0,
       scrolledUnderElevation: 0,
       foregroundColor: colorScheme.onSurface,
@@ -358,11 +328,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
             color: colorScheme.primaryContainer.withAlpha(77),
             borderRadius: BorderRadius.circular(AppTheme.radii.full),
           ),
-          child: Icon(
-            _getIconForRoute(currentRoute),
-            color: colorScheme.primary,
-            size: 20,
-          ),
+          child: Icon(_getIconForRoute(currentRoute), color: colorScheme.primary, size: 20),
         ),
         SizedBox(width: AppTheme.spacing.sm),
         if (currentRoute.contains('/training_viewer/')) ...[
@@ -379,9 +345,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               ),
               Text(
                 ' / ',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
               Text(
                 ref.watch(currentWorkoutNameProvider),
@@ -430,10 +394,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     final List<Widget> crumbs = [];
 
     Widget chip(IconData icon, String text) => Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
@@ -480,11 +441,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
 
   Widget _breadcrumbSeparator(ColorScheme colorScheme) => Padding(
     padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.xs),
-    child: Icon(
-      Icons.chevron_right,
-      size: 18,
-      color: colorScheme.onSurfaceVariant.withAlpha(128),
-    ),
+    child: Icon(Icons.chevron_right, size: 18, color: colorScheme.onSurfaceVariant.withAlpha(128)),
   );
 
   Widget _buildDateSelector(DateTime selectedDate) {
@@ -492,10 +449,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
@@ -693,14 +647,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                       .read(dietPlanServiceProvider)
                       .createDietPlan(newDietPlan);
                   final createdDietPlan = newDietPlan.copyWith(id: dietPlanId);
-                  await ref
-                      .read(dietPlanServiceProvider)
-                      .applyDietPlan(createdDietPlan);
+                  await ref.read(dietPlanServiceProvider).applyDietPlan(createdDietPlan);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Template Applied as New Diet Plan'),
-                      ),
+                      const SnackBar(content: Text('Template Applied as New Diet Plan')),
                     );
                   }
                 }
@@ -737,9 +687,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               builder: (context) => Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -774,10 +722,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                 ? const SizedBox(
                     width: 24,
                     height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : const Icon(Icons.sync),
             onPressed: _syncing ? null : _syncProducts,
@@ -791,10 +736,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               ? const SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               : const Icon(Icons.refresh),
           onPressed: _syncing ? null : _initializeStore,
@@ -834,10 +776,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
             top: 24,
             bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
           ),
-          title: Text(
-            'Select a Template',
-            style: GoogleFonts.roboto(fontWeight: FontWeight.bold),
-          ),
+          title: Text('Select a Template', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -882,31 +821,19 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
       const PopupMenuItem(
         value: 'apply_favorite_day',
         child: Row(
-          children: [
-            Icon(Icons.favorite),
-            SizedBox(width: 8),
-            Text('Applica Giorno Preferito'),
-          ],
+          children: [Icon(Icons.favorite), SizedBox(width: 8), Text('Applica Giorno Preferito')],
         ),
       ),
       const PopupMenuItem(
         value: 'add_diet_plan',
         child: Row(
-          children: [
-            Icon(Icons.add_chart),
-            SizedBox(width: 8),
-            Text('Aggiungi Piano Dietetico'),
-          ],
+          children: [Icon(Icons.add_chart), SizedBox(width: 8), Text('Aggiungi Piano Dietetico')],
         ),
       ),
       const PopupMenuItem(
         value: 'view_diet_plans',
         child: Row(
-          children: [
-            Icon(Icons.list_alt),
-            SizedBox(width: 8),
-            Text('Visualizza Piani Dietetici'),
-          ],
+          children: [Icon(Icons.list_alt), SizedBox(width: 8), Text('Visualizza Piani Dietetici')],
         ),
       ),
     ];

@@ -23,14 +23,8 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
         title: Text(title),
         content: Text(content),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annulla'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Elimina'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Elimina')),
         ],
       ),
     );
@@ -68,11 +62,7 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
   }
 
   /// Creates a standardized card widget
-  Widget buildCard({
-    required Widget child,
-    VoidCallback? onTap,
-    required ColorScheme colorScheme,
-  }) {
+  Widget buildCard({required Widget child, VoidCallback? onTap, required ColorScheme colorScheme}) {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -113,19 +103,13 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
     return ElevatedButton.icon(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isPrimary
-            ? colorScheme.primary
-            : colorScheme.surfaceContainerHighest,
-        foregroundColor: isPrimary
-            ? colorScheme.onPrimary
-            : colorScheme.onSurface,
+        backgroundColor: isPrimary ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+        foregroundColor: isPrimary ? colorScheme.onPrimary : colorScheme.onSurface,
         padding: EdgeInsets.symmetric(
           horizontal: AppTheme.spacing.lg,
           vertical: AppTheme.spacing.md,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.lg)),
       ),
       icon: Icon(icon, size: 20),
       label: Text(label),
@@ -133,20 +117,17 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
   }
 
   /// Gets responsive layout properties
-  @Deprecated(
-    'Use MediaQuery.of(context).size.width directly for responsive checks',
-  )
-  ({bool isSmallScreen, double spacing, EdgeInsets padding})
-  getLayoutProperties(BuildContext context) {
+  @Deprecated('Use MediaQuery.of(context).size.width directly for responsive checks')
+  ({bool isSmallScreen, double spacing, EdgeInsets padding}) getLayoutProperties(
+    BuildContext context,
+  ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
 
     return (
       isSmallScreen: isSmallScreen,
       spacing: isSmallScreen ? AppTheme.spacing.sm : AppTheme.spacing.md,
-      padding: EdgeInsets.all(
-        isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg,
-      ),
+      padding: EdgeInsets.all(isSmallScreen ? AppTheme.spacing.md : AppTheme.spacing.lg),
     );
   }
 
@@ -162,8 +143,6 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
 
   /// Helper method to get responsive padding
   static EdgeInsets getResponsivePadding(BuildContext context) {
-    return EdgeInsets.all(
-      isCompactScreen(context) ? AppTheme.spacing.md : AppTheme.spacing.lg,
-    );
+    return EdgeInsets.all(isCompactScreen(context) ? AppTheme.spacing.md : AppTheme.spacing.lg);
   }
 }

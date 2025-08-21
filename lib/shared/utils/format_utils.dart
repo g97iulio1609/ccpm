@@ -16,9 +16,7 @@ class FormatUtils {
   static final DateFormat _isoFormat = DateFormat('yyyy-MM-dd');
 
   // Number formatters
-  static final NumberFormat _currencyFormat = NumberFormat.currency(
-    symbol: '€',
-  );
+  static final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '€');
 
   /// Format date to string (dd/MM/yyyy)
   static String formatDate(DateTime? date) {
@@ -96,11 +94,7 @@ class FormatUtils {
   }
 
   /// Format weight with appropriate unit
-  static String formatWeight(
-    double? weight, {
-    String unit = 'kg',
-    int decimals = 1,
-  }) {
+  static String formatWeight(double? weight, {String unit = 'kg', int decimals = 1}) {
     if (weight == null) return '-';
     if (decimals == 0) {
       return '${weight.round()}$unit';
@@ -109,11 +103,7 @@ class FormatUtils {
   }
 
   /// Format weight range
-  static String formatWeightRange(
-    double? minWeight,
-    double? maxWeight, {
-    String unit = 'kg',
-  }) {
+  static String formatWeightRange(double? minWeight, double? maxWeight, {String unit = 'kg'}) {
     if (minWeight == null) return '-';
     if (maxWeight == null || minWeight == maxWeight) {
       return formatWeight(minWeight, unit: unit);
@@ -176,14 +166,9 @@ class FormatUtils {
   }
 
   /// Format intensity range
-  static String formatIntensityRange(
-    String? minIntensity,
-    String? maxIntensity,
-  ) {
+  static String formatIntensityRange(String? minIntensity, String? maxIntensity) {
     if (minIntensity == null || minIntensity.isEmpty) return '-';
-    if (maxIntensity == null ||
-        maxIntensity.isEmpty ||
-        minIntensity == maxIntensity) {
+    if (maxIntensity == null || maxIntensity.isEmpty || minIntensity == maxIntensity) {
       return formatIntensity(minIntensity);
     }
     return '${formatIntensity(minIntensity)} - ${formatIntensity(maxIntensity)}';
@@ -262,11 +247,7 @@ class FormatUtils {
     if (type == null || type.isEmpty) return '-';
     return type
         .split('_')
-        .map(
-          (word) => word.isEmpty
-              ? ''
-              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
-        )
+        .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase())
         .join(' ');
   }
 
@@ -289,11 +270,7 @@ class FormatUtils {
   }
 
   /// Format week status
-  static String formatWeekStatus(
-    bool isCompleted,
-    bool isActive,
-    DateTime? startDate,
-  ) {
+  static String formatWeekStatus(bool isCompleted, bool isActive, DateTime? startDate) {
     if (isCompleted) return 'Completed';
     if (isActive) return 'Current';
     if (startDate != null) {
@@ -329,41 +306,21 @@ class FormatUtils {
   }
 
   /// Format exercise summary
-  static String formatExerciseSummary(
-    String name,
-    int seriesCount,
-    bool isCompleted,
-  ) {
+  static String formatExerciseSummary(String name, int seriesCount, bool isCompleted) {
     final statusIcon = isCompleted ? '✓' : '○';
     final seriesText = seriesCount == 1 ? 'series' : 'series';
     return '$statusIcon $name ($seriesCount $seriesText)';
   }
 
   /// Format workout summary
-  static String formatWorkoutSummary(
-    String name,
-    int exerciseCount,
-    int completedExercises,
-  ) {
-    final progressText = formatProgress(
-      completedExercises,
-      exerciseCount,
-      unit: 'exercises',
-    );
+  static String formatWorkoutSummary(String name, int exerciseCount, int completedExercises) {
+    final progressText = formatProgress(completedExercises, exerciseCount, unit: 'exercises');
     return '$name ($progressText)';
   }
 
   /// Format week summary
-  static String formatWeekSummary(
-    int weekNumber,
-    int workoutCount,
-    int completedWorkouts,
-  ) {
-    final progressText = formatProgress(
-      completedWorkouts,
-      workoutCount,
-      unit: 'workouts',
-    );
+  static String formatWeekSummary(int weekNumber, int workoutCount, int completedWorkouts) {
+    final progressText = formatProgress(completedWorkouts, workoutCount, unit: 'workouts');
     return 'Week $weekNumber ($progressText)';
   }
 
@@ -400,21 +357,13 @@ class FormatUtils {
   }
 
   /// Truncate text with ellipsis
-  static String truncate(
-    String? text,
-    int maxLength, {
-    String ellipsis = '...',
-  }) {
+  static String truncate(String? text, int maxLength, {String ellipsis = '...'}) {
     if (text == null || text.length <= maxLength) return text ?? '';
     return '${text.substring(0, maxLength - ellipsis.length)}$ellipsis';
   }
 
   /// Format list to readable string
-  static String formatList(
-    List<String> items, {
-    String separator = ', ',
-    String? lastSeparator,
-  }) {
+  static String formatList(List<String> items, {String separator = ', ', String? lastSeparator}) {
     if (items.isEmpty) return '';
     if (items.length == 1) return items.first;
     if (items.length == 2) {
@@ -447,8 +396,7 @@ extension DateTimeFormatting on DateTime {
 extension DoubleFormatting on double {
   String formatWeight({String unit = 'kg', int decimals = 1}) =>
       FormatUtils.formatWeight(this, unit: unit, decimals: decimals);
-  String formatVolume({String unit = 'kg'}) =>
-      FormatUtils.formatVolume(this, unit: unit);
+  String formatVolume({String unit = 'kg'}) => FormatUtils.formatVolume(this, unit: unit);
   String formatPercentage({int decimals = 1}) =>
       FormatUtils.formatPercentage(this, decimals: decimals);
   String formatCurrency() => FormatUtils.formatCurrency(this);
@@ -474,10 +422,6 @@ extension StringFormatting on String {
 
 extension ListFormatting on List<String> {
   String formatList({String separator = ', ', String? lastSeparator}) =>
-      FormatUtils.formatList(
-        this,
-        separator: separator,
-        lastSeparator: lastSeparator,
-      );
+      FormatUtils.formatList(this, separator: separator, lastSeparator: lastSeparator);
   String formatTags() => FormatUtils.formatTags(this);
 }

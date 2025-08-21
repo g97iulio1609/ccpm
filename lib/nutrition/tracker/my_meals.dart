@@ -59,8 +59,7 @@ class FavouritesMeals extends ConsumerWidget {
             return ListView.separated(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               itemCount: favoriteMeals.length,
-              separatorBuilder: (context, index) =>
-                  SizedBox(height: AppTheme.spacing.md),
+              separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacing.md),
               itemBuilder: (context, index) {
                 final meal = favoriteMeals[index];
                 return _buildFavoriteMealTile(context, ref, meal);
@@ -83,29 +82,21 @@ class FavouritesMeals extends ConsumerWidget {
                   SizedBox(height: AppTheme.spacing.sm),
                   Text(
                     'Si è verificato un errore: ${snapshot.error}',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             );
           } else {
-            return Center(
-              child: CircularProgressIndicator(color: colorScheme.primary),
-            );
+            return Center(child: CircularProgressIndicator(color: colorScheme.primary));
           }
         },
       ),
     );
   }
 
-  Widget _buildFavoriteMealTile(
-    BuildContext context,
-    WidgetRef ref,
-    meals.Meal meal,
-  ) {
+  Widget _buildFavoriteMealTile(BuildContext context, WidgetRef ref, meals.Meal meal) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -144,9 +135,7 @@ class FavouritesMeals extends ConsumerWidget {
                 SizedBox(height: AppTheme.spacing.xs),
                 Text(
                   'Elimina',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -165,11 +154,7 @@ class FavouritesMeals extends ConsumerWidget {
                   color: colorScheme.primary.withAlpha(26),
                   borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 ),
-                child: Icon(
-                  Icons.restaurant,
-                  color: colorScheme.primary,
-                  size: 24,
-                ),
+                child: Icon(Icons.restaurant, color: colorScheme.primary, size: 24),
               ),
               SizedBox(width: AppTheme.spacing.lg),
               Expanded(
@@ -194,8 +179,7 @@ class FavouritesMeals extends ConsumerWidget {
                         ),
                         SizedBox(width: AppTheme.spacing.sm),
                         AppBadge(
-                          label:
-                              '${meal.date.day}/${meal.date.month}/${meal.date.year}',
+                          label: '${meal.date.day}/${meal.date.month}/${meal.date.year}',
                           variant: AppBadgeVariant.gradient,
                           status: AppBadgeStatus.success,
                           icon: Icons.calendar_today,
@@ -220,10 +204,7 @@ class FavouritesMeals extends ConsumerWidget {
   }
 
   void _navigateToMealDetail(BuildContext context, meals.Meal meal) {
-    context.push(
-      '/mymeals/favorite_meal_detail',
-      extra: {'meal': meal.toMap()},
-    );
+    context.push('/mymeals/favorite_meal_detail', extra: {'meal': meal.toMap()});
   }
 }
 
@@ -276,8 +257,7 @@ class FavouriteDays extends ConsumerWidget {
             return ListView.separated(
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               itemCount: favoriteDays.length,
-              separatorBuilder: (context, index) =>
-                  SizedBox(height: AppTheme.spacing.md),
+              separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacing.md),
               itemBuilder: (context, index) {
                 final day = favoriteDays[index];
                 return _buildFavoriteDayTile(context, ref, day);
@@ -300,29 +280,21 @@ class FavouriteDays extends ConsumerWidget {
                   SizedBox(height: AppTheme.spacing.sm),
                   Text(
                     'Si è verificato un errore: ${snapshot.error}',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             );
           } else {
-            return Center(
-              child: CircularProgressIndicator(color: colorScheme.primary),
-            );
+            return Center(child: CircularProgressIndicator(color: colorScheme.primary));
           }
         },
       ),
     );
   }
 
-  Widget _buildFavoriteDayTile(
-    BuildContext context,
-    WidgetRef ref,
-    meals.FavoriteDay day,
-  ) {
+  Widget _buildFavoriteDayTile(BuildContext context, WidgetRef ref, meals.FavoriteDay day) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -361,9 +333,7 @@ class FavouriteDays extends ConsumerWidget {
                 SizedBox(height: AppTheme.spacing.xs),
                 Text(
                   'Elimina',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -382,11 +352,7 @@ class FavouriteDays extends ConsumerWidget {
                   color: colorScheme.secondary.withAlpha(26),
                   borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                 ),
-                child: Icon(
-                  Icons.calendar_today,
-                  color: colorScheme.secondary,
-                  size: 24,
-                ),
+                child: Icon(Icons.calendar_today, color: colorScheme.secondary, size: 24),
               ),
               SizedBox(width: AppTheme.spacing.lg),
               Expanded(
@@ -402,8 +368,7 @@ class FavouriteDays extends ConsumerWidget {
                     ),
                     SizedBox(height: AppTheme.spacing.xs),
                     AppBadge(
-                      label:
-                          '${day.date.day}/${day.date.month}/${day.date.year}',
+                      label: '${day.date.day}/${day.date.month}/${day.date.year}',
                       variant: AppBadgeVariant.gradient,
                       status: AppBadgeStatus.success,
                       icon: Icons.calendar_today,

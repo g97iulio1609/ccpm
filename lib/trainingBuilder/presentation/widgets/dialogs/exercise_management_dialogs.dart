@@ -53,10 +53,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
     if (repetitions > 1) {
       final weight = double.tryParse(maxWeightController.text) ?? 0;
       if (weight > 0) {
-        final calculatedMaxWeight = ExerciseService.calculateMaxRM(
-          weight,
-          repetitions,
-        );
+        final calculatedMaxWeight = ExerciseService.calculateMaxRM(weight, repetitions);
         maxWeightController.text = calculatedMaxWeight.toStringAsFixed(1);
         repetitionsController.text = '1';
       }
@@ -114,11 +111,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
           labelText: 'Peso Massimo (kg)',
           labelStyle: TextStyle(color: widget.colorScheme.onSurfaceVariant),
-          prefixIcon: Icon(
-            Icons.fitness_center,
-            color: widget.colorScheme.primary,
-            size: 20,
-          ),
+          prefixIcon: Icon(Icons.fitness_center, color: widget.colorScheme.primary, size: 20),
         ),
       ),
     );
@@ -141,11 +134,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
           labelText: 'Ripetizioni',
           labelStyle: TextStyle(color: widget.colorScheme.onSurfaceVariant),
-          prefixIcon: Icon(
-            Icons.repeat,
-            color: widget.colorScheme.primary,
-            size: 20,
-          ),
+          prefixIcon: Icon(Icons.repeat, color: widget.colorScheme.primary, size: 20),
         ),
       ),
     );
@@ -165,10 +154,7 @@ class _UpdateMaxRMDialogState extends State<UpdateMaxRMDialog> {
           Expanded(
             child: Text(
               'Se inserisci più di 1 ripetizione, il peso massimo verrà calcolato automaticamente',
-              style: TextStyle(
-                color: widget.colorScheme.onPrimaryContainer,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: widget.colorScheme.onPrimaryContainer, fontSize: 12),
             ),
           ),
         ],
@@ -213,8 +199,7 @@ class SuperSetSelectionDialog extends StatefulWidget {
   });
 
   @override
-  State<SuperSetSelectionDialog> createState() =>
-      _SuperSetSelectionDialogState();
+  State<SuperSetSelectionDialog> createState() => _SuperSetSelectionDialogState();
 }
 
 class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
@@ -275,10 +260,7 @@ class _SuperSetSelectionDialogState extends State<SuperSetSelectionDialog> {
             )
             .toList(),
         onChanged: (value) => setState(() => selectedSuperSetId = value),
-        icon: Icon(
-          Icons.arrow_drop_down,
-          color: widget.colorScheme.onSurfaceVariant,
-        ),
+        icon: Icon(Icons.arrow_drop_down, color: widget.colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -336,10 +318,7 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
     return AppDialog(
       title: const Text('Sposta Esercizio'),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
         FilledButton(
           onPressed: selectedWorkoutIndex != null ? _handleMoveExercise : null,
           child: const Text('Sposta'),
@@ -393,10 +372,7 @@ class _MoveExerciseDialogState extends State<MoveExerciseDialog> {
             )
             .toList(),
         onChanged: (value) => setState(() => selectedWorkoutIndex = value),
-        icon: Icon(
-          Icons.arrow_drop_down,
-          color: widget.colorScheme.onSurfaceVariant,
-        ),
+        icon: Icon(Icons.arrow_drop_down, color: widget.colorScheme.onSurfaceVariant),
       ),
     );
   }

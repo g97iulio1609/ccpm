@@ -47,26 +47,17 @@ class ExerciseHeader extends StatelessWidget {
             itemBuilder: (ctx) => [
               const PopupMenuItem(
                 value: 'change',
-                child: ListTile(
-                  leading: Icon(Icons.swap_horiz),
-                  title: Text('Cambia esercizio'),
-                ),
+                child: ListTile(leading: Icon(Icons.swap_horiz), title: Text('Cambia esercizio')),
               ),
               const PopupMenuItem(
                 value: 'edit_series',
-                child: ListTile(
-                  leading: Icon(Icons.tune),
-                  title: Text('Modifica serie…'),
-                ),
+                child: ListTile(leading: Icon(Icons.tune), title: Text('Modifica serie…')),
               ),
               if (isAdmin) const PopupMenuDivider(),
               if (isAdmin)
                 const PopupMenuItem(
                   value: 'add_series',
-                  child: ListTile(
-                    leading: Icon(Icons.add),
-                    title: Text('Aggiungi serie…'),
-                  ),
+                  child: ListTile(leading: Icon(Icons.add), title: Text('Aggiungi serie…')),
                 ),
               if (isAdmin)
                 const PopupMenuItem(

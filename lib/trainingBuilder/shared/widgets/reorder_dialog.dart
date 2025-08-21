@@ -5,11 +5,7 @@ class ReorderDialog extends StatefulWidget {
   final List<String> items;
   final Function(int, int) onReorder;
 
-  const ReorderDialog({
-    required this.items,
-    required this.onReorder,
-    super.key,
-  });
+  const ReorderDialog({required this.items, required this.onReorder, super.key});
 
   @override
   ReorderDialogState createState() => ReorderDialogState();
@@ -29,10 +25,7 @@ class ReorderDialogState extends State<ReorderDialog> {
     _labels = List<String>.from(widget.items);
     // Genera chiavi univoche e stabili in base alla posizione iniziale
     // Nota: non includiamo l'indice corrente nell'etichetta per evitare chiavi instabili
-    _stableKeys = List<String>.generate(
-      _labels.length,
-      (index) => 'reorder_key_$index',
-    );
+    _stableKeys = List<String>.generate(_labels.length, (index) => 'reorder_key_$index');
   }
 
   @override
@@ -65,9 +58,7 @@ class ReorderDialogState extends State<ReorderDialog> {
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(AppTheme.radii.xl),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
               ),
               child: Row(
                 children: [
@@ -80,11 +71,7 @@ class ReorderDialogState extends State<ReorderDialog> {
                       color: colorScheme.primaryContainer.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.full),
                     ),
-                    child: Icon(
-                      Icons.reorder,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
+                    child: Icon(Icons.reorder, color: colorScheme.primary, size: 20),
                   ),
                   SizedBox(width: AppTheme.spacing.md),
                   Text(
@@ -100,9 +87,7 @@ class ReorderDialogState extends State<ReorderDialog> {
 
             // Content
             Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
               child: ReorderableListView.builder(
                 buildDefaultDragHandles: false,
                 shrinkWrap: false,
@@ -132,17 +117,13 @@ class ReorderDialogState extends State<ReorderDialog> {
                           ? colorScheme.primaryContainer.withAlpha(96)
                           : colorScheme.surfaceContainerHighest.withAlpha(76),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                      border: Border.all(
-                        color: colorScheme.outline.withAlpha(26),
-                      ),
+                      border: Border.all(color: colorScheme.outline.withAlpha(26)),
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: ListTile(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.lg,
-                          ),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                         ),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: AppTheme.spacing.lg,
@@ -158,9 +139,7 @@ class ReorderDialogState extends State<ReorderDialog> {
                           padding: EdgeInsets.all(AppTheme.spacing.xs),
                           decoration: BoxDecoration(
                             color: colorScheme.primaryContainer.withAlpha(76),
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radii.md,
-                            ),
+                            borderRadius: BorderRadius.circular(AppTheme.radii.md),
                           ),
                           child: Text(
                             '${index + 1}',
@@ -179,11 +158,8 @@ class ReorderDialogState extends State<ReorderDialog> {
                             child: Container(
                               padding: EdgeInsets.all(AppTheme.spacing.sm),
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withAlpha(128),
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.radii.md,
-                                ),
+                                color: colorScheme.surfaceContainerHighest.withAlpha(128),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.md),
                               ),
                               child: Icon(
                                 Icons.drag_handle,
@@ -233,9 +209,7 @@ class ReorderDialogState extends State<ReorderDialog> {
               padding: EdgeInsets.all(AppTheme.spacing.lg),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(AppTheme.radii.xl),
-                ),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppTheme.radii.xl)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -243,10 +217,7 @@ class ReorderDialogState extends State<ReorderDialog> {
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primary,
-                          colorScheme.primary.withAlpha(204),
-                        ],
+                        colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
                       ),
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                       boxShadow: [

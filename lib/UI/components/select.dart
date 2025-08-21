@@ -94,9 +94,7 @@ class AppSelect<T> extends StatelessWidget {
                   : colorScheme.onSurfaceVariant.withAlpha(128),
             ),
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: enabled
-                  ? colorScheme.onSurface
-                  : colorScheme.onSurface.withAlpha(128),
+              color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withAlpha(128),
             ),
             decoration: InputDecoration(
               enabled: enabled,
@@ -120,9 +118,7 @@ class AppSelect<T> extends StatelessWidget {
                     ? customItemBuilder!(item)
                     : Text(
                         getLabel(item),
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
+                        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                         overflow: TextOverflow.ellipsis,
                       ),
               );
@@ -216,9 +212,7 @@ class AppSelect<T> extends StatelessWidget {
         children: [
           Icon(getIcon(item), size: 20, color: enabled ? null : Colors.grey),
           SizedBox(width: AppTheme.spacing.sm),
-          Expanded(
-            child: Text(getLabel(item), overflow: TextOverflow.ellipsis),
-          ),
+          Expanded(child: Text(getLabel(item), overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
@@ -250,14 +244,9 @@ class AppSelect<T> extends StatelessWidget {
       validator: validator,
       customItemBuilder: (item) => Row(
         children: [
-          CircleAvatar(
-            radius: 12,
-            backgroundImage: NetworkImage(getAvatarUrl(item)),
-          ),
+          CircleAvatar(radius: 12, backgroundImage: NetworkImage(getAvatarUrl(item))),
           SizedBox(width: AppTheme.spacing.sm),
-          Expanded(
-            child: Text(getLabel(item), overflow: TextOverflow.ellipsis),
-          ),
+          Expanded(child: Text(getLabel(item), overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

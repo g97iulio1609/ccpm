@@ -165,8 +165,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
   }
 
   void _showReorderExercisesDialog(BuildContext context) {
-    final exercises =
-        controller.program.weeks[weekIndex].workouts[workoutIndex].exercises;
+    final exercises = controller.program.weeks[weekIndex].workouts[workoutIndex].exercises;
     if (exercises.isEmpty) return;
 
     final labels = exercises.map((e) => e.name).toList();
@@ -175,12 +174,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
       builder: (context) => ReorderDialog(
         items: labels,
         onReorder: (oldIndex, newIndex) {
-          controller.reorderExercises(
-            weekIndex,
-            workoutIndex,
-            oldIndex,
-            newIndex,
-          );
+          controller.reorderExercises(weekIndex, workoutIndex, oldIndex, newIndex);
         },
       ),
     );
@@ -204,16 +198,11 @@ class ExerciseOptionsDialog extends ConsumerWidget {
         onChanged: (value) {
           Navigator.pop(context, value);
         },
-        decoration: const InputDecoration(
-          labelText: 'Allenamento di Destinazione',
-        ),
+        decoration: const InputDecoration(labelText: 'Allenamento di Destinazione'),
       ),
-      actions: [
-        AppDialogHelpers.buildCancelButton(context: context),
-      ],
+      actions: [AppDialogHelpers.buildCancelButton(context: context)],
     ).then((destinationWorkoutIndex) {
-      if (destinationWorkoutIndex != null &&
-          destinationWorkoutIndex != workoutIndex) {
+      if (destinationWorkoutIndex != null && destinationWorkoutIndex != workoutIndex) {
         try {
           controller.moveExercise(
             weekIndex,
@@ -232,10 +221,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
         } catch (e) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Errore nello spostamento: $e'),
-                backgroundColor: Colors.red,
-              ),
+              SnackBar(content: Text('Errore nello spostamento: $e'), backgroundColor: Colors.red),
             );
           }
         }
@@ -244,27 +230,16 @@ class ExerciseOptionsDialog extends ConsumerWidget {
   }
 
   void _showAddToSuperSetDialog(BuildContext context) {
-    final superSets =
-        controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
+    final superSets = controller.program.weeks[weekIndex].workouts[workoutIndex].superSets;
     String? selectedSuperSetId;
 
     if (superSets?.isEmpty ?? true) {
       controller.createSuperSet(weekIndex, workoutIndex);
       selectedSuperSetId =
-          controller
-                  .program
-                  .weeks[weekIndex]
-                  .workouts[workoutIndex]
-                  .superSets
-                  ?.first['id']
+          controller.program.weeks[weekIndex].workouts[workoutIndex].superSets?.first['id']
               as String?;
       if (selectedSuperSetId != null) {
-        controller.addExerciseToSuperSet(
-          weekIndex,
-          workoutIndex,
-          selectedSuperSetId,
-          exercise.id!,
-        );
+        controller.addExerciseToSuperSet(weekIndex, workoutIndex, selectedSuperSetId, exercise.id!);
       }
     } else {
       showAppDialog<String>(
@@ -277,9 +252,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
                 superSets?.map((ss) {
                   return DropdownMenuItem<String>(
                     value: ss['id'] as String?,
-                    child: Text(
-                      ss['name'] as String? ?? 'Superset ${ss['id']}',
-                    ),
+                    child: Text(ss['name'] as String? ?? 'Superset ${ss['id']}'),
                   );
                 }).toList() ??
                 [],
@@ -288,12 +261,10 @@ class ExerciseOptionsDialog extends ConsumerWidget {
                 selectedSuperSetId = value;
               });
             },
-            decoration: const InputDecoration(
-              hintText: 'Seleziona il Superset',
-            ),
+            decoration: const InputDecoration(hintText: 'Seleziona il Superset'),
           ),
         ),
-      actions: [
+        actions: [
           AppDialogHelpers.buildCancelButton(context: context),
           if (superSets?.isNotEmpty == true)
             AppDialogHelpers.buildActionButton(
@@ -301,11 +272,9 @@ class ExerciseOptionsDialog extends ConsumerWidget {
               label: 'Crea Nuovo Superset',
               onPressed: () {
                 controller.createSuperSet(weekIndex, workoutIndex);
-                Navigator.of(context).pop(
-                  superSets?.isNotEmpty == true
-                      ? superSets!.last['id'] as String?
-                      : null,
-                );
+                Navigator.of(
+                  context,
+                ).pop(superSets?.isNotEmpty == true ? superSets!.last['id'] as String? : null);
               },
               isPrimary: false,
             ),
@@ -317,12 +286,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
         ],
       ).then((result) {
         if (result != null) {
-          controller.addExerciseToSuperSet(
-            weekIndex,
-            workoutIndex,
-            result,
-            exercise.id!,
-          );
+          controller.addExerciseToSuperSet(weekIndex, workoutIndex, result, exercise.id!);
         }
       });
     }
@@ -347,9 +311,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
   }
 
   void _showUpdateMaxRMDialog(BuildContext context, WidgetRef ref) {
-    final maxWeightController = TextEditingController(
-      text: latestMaxWeight.toString(),
-    );
+    final maxWeightController = TextEditingController(text: latestMaxWeight.toString());
     final repetitionsController = TextEditingController(text: '1');
 
     showDialog<bool>(
@@ -369,9 +331,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
             children: [
               TextField(
                 controller: maxWeightController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
                   labelText: 'Peso Massimo (kg)',
                   hintText: 'Inserisci il peso massimo',
@@ -402,12 +362,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
       },
     ).then((result) async {
       if (result == true && context.mounted) {
-        await _saveMaxRM(
-          context,
-          ref,
-          maxWeightController.text,
-          repetitionsController.text,
-        );
+        await _saveMaxRM(context, ref, maxWeightController.text, repetitionsController.text);
       }
     });
   }
@@ -429,10 +384,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
       }
 
       if (repetitions == null || repetitions <= 0) {
-        _showErrorSnackBar(
-          context,
-          'Inserisci un numero di ripetizioni valido',
-        );
+        _showErrorSnackBar(context, 'Inserisci un numero di ripetizioni valido');
         return;
       }
 
@@ -446,10 +398,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
       int adjustedRepetitions = repetitions;
 
       if (repetitions > 1) {
-        adjustedMaxWeight = ExerciseService.calculateMaxRM(
-          maxWeight,
-          repetitions,
-        );
+        adjustedMaxWeight = ExerciseService.calculateMaxRM(maxWeight, repetitions);
         adjustedRepetitions = 1;
       }
 
@@ -522,10 +471,7 @@ class ExerciseOptionsDialog extends ConsumerWidget {
         title: const Text('Elimina Esercizio'),
         content: Text('Sei sicuro di voler eliminare "${exercise.name}"?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
           TextButton(
             onPressed: () {
               Navigator.pop(context);

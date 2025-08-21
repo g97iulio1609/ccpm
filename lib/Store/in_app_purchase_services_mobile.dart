@@ -37,8 +37,9 @@ class InAppPurchaseServiceMobile {
         throw Exception('Store non disponibile');
       }
 
-      final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails(_kProductIds.values.toSet());
+      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(
+        _kProductIds.values.toSet(),
+      );
 
       if (response.error != null) {
         throw Exception('Errore nel recupero dei prodotti: ${response.error}');
@@ -77,8 +78,7 @@ class InAppPurchaseServiceMobile {
         throw Exception('Store non disponibile');
       }
 
-      final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails({productId});
+      final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails({productId});
 
       if (response.notFoundIDs.isNotEmpty) {
         throw Exception('Prodotto non trovato nello store');
@@ -96,9 +96,7 @@ class InAppPurchaseServiceMobile {
         applicationUserName: currentUser?.uid,
       );
 
-      final bool success = await _inAppPurchase.buyNonConsumable(
-        purchaseParam: purchaseParam,
-      );
+      final bool success = await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
 
       if (!success) {
         throw Exception('Errore nell\'avvio dell\'acquisto');

@@ -54,10 +54,7 @@ class GlassContainer extends StatelessWidget {
     );
 
     if (reduceEffects) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: decoratedChild,
-      );
+      return ClipRRect(borderRadius: BorderRadius.circular(borderRadius), child: decoratedChild);
     }
 
     return ClipRRect(
@@ -84,9 +81,5 @@ class GlassLite extends GlassContainer {
     super.margin,
     super.border,
     super.boxShadow,
-  }) : super(
-         borderRadius: radius ?? AppTheme.radii.lg,
-         blurSigma: blur ?? 12,
-         tintColor: tint,
-       );
+  }) : super(borderRadius: radius ?? AppTheme.radii.lg, blurSigma: blur ?? 12, tintColor: tint);
 }

@@ -46,10 +46,7 @@ class ProgressionService {
   }
 
   /// Builds week progressions for an exercise
-  static List<List<WeekProgression>> buildWeekProgressions(
-    List<Week> weeks,
-    Exercise exercise,
-  ) {
+  static List<List<WeekProgression>> buildWeekProgressions(List<Week> weeks, Exercise exercise) {
     return List.generate(weeks.length, (weekIndex) {
       final week = weeks[weekIndex];
       return week.workouts.map((workout) {
@@ -61,8 +58,7 @@ class ProgressionService {
         final existingProgressions = exerciseInWorkout.weekProgressions;
         WeekProgression? sessionProgression;
 
-        if (existingProgressions?.isNotEmpty == true &&
-            existingProgressions!.length > weekIndex) {
+        if (existingProgressions?.isNotEmpty == true && existingProgressions!.length > weekIndex) {
           try {
             sessionProgression = existingProgressions[weekIndex].firstWhere(
               (progression) => progression.sessionNumber == workout.order,
@@ -146,10 +142,7 @@ class ProgressionService {
       latestMaxWeight,
       minIntensityValue,
     );
-    final roundedMinWeight = WeightCalculationService.roundWeight(
-      minWeight,
-      exerciseType,
-    );
+    final roundedMinWeight = WeightCalculationService.roundWeight(minWeight, exerciseType);
 
     String maxWeightValue = '';
     if (maxIntensity.isNotEmpty) {
@@ -158,10 +151,7 @@ class ProgressionService {
         latestMaxWeight,
         maxIntensityValue,
       );
-      final roundedMaxWeight = WeightCalculationService.roundWeight(
-        maxWeight,
-        exerciseType,
-      );
+      final roundedMaxWeight = WeightCalculationService.roundWeight(maxWeight, exerciseType);
       maxWeightValue = roundedMaxWeight.toStringAsFixed(1);
     }
 
@@ -184,11 +174,10 @@ class ProgressionService {
     String maxIntensityValue = '';
     if (maxWeight.isNotEmpty) {
       final maxWeightValue = double.tryParse(maxWeight) ?? 0;
-      final maxIntensity =
-          WeightCalculationService.calculateIntensityFromWeight(
-            maxWeightValue,
-            latestMaxWeight,
-          );
+      final maxIntensity = WeightCalculationService.calculateIntensityFromWeight(
+        maxWeightValue,
+        latestMaxWeight,
+      );
       maxIntensityValue = maxIntensity.toStringAsFixed(1);
     }
 
@@ -221,8 +210,7 @@ class ProgressionService {
     return index1 >= 0 &&
         index1 < list.length &&
         (index2 == null || (index2 >= 0 && index2 < list[index1].length)) &&
-        (index3 == null ||
-            (index3 >= 0 && index3 < list[index1][index2].length));
+        (index3 == null || (index3 >= 0 && index3 < list[index1][index2].length));
   }
 
   /// Creates updated week progressions with new series
@@ -235,11 +223,7 @@ class ProgressionService {
 
     for (int weekIndex = 0; weekIndex < controllers.length; weekIndex++) {
       List<WeekProgression> weekProgressions = [];
-      for (
-        int sessionIndex = 0;
-        sessionIndex < controllers[weekIndex].length;
-        sessionIndex++
-      ) {
+      for (int sessionIndex = 0; sessionIndex < controllers[weekIndex].length; sessionIndex++) {
         List<Series> updatedSeries = [];
 
         // Itera attraverso ogni gruppo
@@ -248,8 +232,7 @@ class ProgressionService {
           groupIndex < controllers[weekIndex][sessionIndex].length;
           groupIndex++
         ) {
-          final groupControllers =
-              controllers[weekIndex][sessionIndex][groupIndex];
+          final groupControllers = controllers[weekIndex][sessionIndex][groupIndex];
           final sets = parseAndDefaultInt(groupControllers.sets.text);
 
           // Crea il numero corretto di serie per questo gruppo
@@ -307,9 +290,7 @@ class ProgressionService {
     // Mostra percentuale e peso calcolato
     if (minIntensity.isNotEmpty) {
       final minIntensityValue = double.tryParse(minIntensity) ?? 0;
-      final maxIntensityValue = maxIntensity.isNotEmpty
-          ? double.tryParse(maxIntensity)
-          : null;
+      final maxIntensityValue = maxIntensity.isNotEmpty ? double.tryParse(maxIntensity) : null;
 
       final minWeight = WeightCalculationService.calculateWeightFromIntensity(
         latestMaxWeight,
@@ -329,8 +310,7 @@ class ProgressionService {
 
       String weightText = minWeight.toStringAsFixed(1);
       if (maxWeight != null && maxWeight > minWeight) {
-        weightText =
-            '${minWeight.toStringAsFixed(1)}-${maxWeight.toStringAsFixed(1)}';
+        weightText = '${minWeight.toStringAsFixed(1)}-${maxWeight.toStringAsFixed(1)}';
       }
 
       values.add('$intensityText% ($weightText kg)');
@@ -342,9 +322,7 @@ class ProgressionService {
       final maxRpeValue = maxRpe.isNotEmpty ? double.tryParse(maxRpe) : null;
 
       String rpeText = minRpeValue.toString();
-      if (maxRpeValue != null &&
-          maxRpeValue > 0 &&
-          maxRpeValue != minRpeValue) {
+      if (maxRpeValue != null && maxRpeValue > 0 && maxRpeValue != minRpeValue) {
         rpeText = '$minRpeValue-$maxRpeValue';
       }
 

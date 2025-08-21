@@ -20,8 +20,7 @@ class CustomInputField extends StatefulWidget {
   State<CustomInputField> createState() => _CustomInputFieldState();
 }
 
-class _CustomInputFieldState extends State<CustomInputField>
-    with SingleTickerProviderStateMixin {
+class _CustomInputFieldState extends State<CustomInputField> with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   late final Animation<double> _scaleAnimation;
   bool _isFocused = false;
@@ -34,9 +33,10 @@ class _CustomInputFieldState extends State<CustomInputField>
       duration: const Duration(milliseconds: 200),
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
   }
 
   @override
@@ -70,9 +70,7 @@ class _CustomInputFieldState extends State<CustomInputField>
                     ]
                   : null,
               border: Border.all(
-                color: _isFocused
-                    ? AppTheme.primaryGold
-                    : colorScheme.outline.withAlpha(40),
+                color: _isFocused ? AppTheme.primaryGold : colorScheme.outline.withAlpha(40),
                 width: _isFocused ? 2 : 1,
               ),
             ),
@@ -89,11 +87,7 @@ class _CustomInputFieldState extends State<CustomInputField>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (widget.icon != null) ...[
-                        Icon(
-                          widget.icon,
-                          size: 16,
-                          color: AppTheme.primaryGold,
-                        ),
+                        Icon(widget.icon, size: 16, color: AppTheme.primaryGold),
                         SizedBox(width: 6),
                       ],
                       Text(
@@ -127,14 +121,8 @@ class _CustomInputFieldState extends State<CustomInputField>
                     },
                     child: TextField(
                       controller: widget.controller,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+\.?\d*'),
-                        ),
-                      ],
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: Colors.white,

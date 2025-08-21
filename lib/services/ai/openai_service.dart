@@ -25,10 +25,7 @@ class OpenAIService implements AIService {
   });
 
   @override
-  Future<String> processNaturalLanguageQuery(
-    String query, {
-    Map<String, dynamic>? context,
-  }) async {
+  Future<String> processNaturalLanguageQuery(String query, {Map<String, dynamic>? context}) async {
     _logger.i('Elaborazione query con OpenAI: "$query"');
     final messages = [
       {
@@ -125,11 +122,7 @@ Se non riesci a interpretare la richiesta, restituisci:
           'role': 'system',
           'content': jsonEncode({
             'context': context,
-            'availableFeatures': {
-              'training': true,
-              'maxrm': true,
-              'profile': true,
-            },
+            'availableFeatures': {'training': true, 'maxrm': true, 'profile': true},
           }),
         },
       ],
@@ -140,15 +133,8 @@ Se non riesci a interpretare la richiesta, restituisci:
 
     final response = await http.post(
       Uri.parse(baseUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
-      },
-      body: jsonEncode({
-        'model': model,
-        'messages': messages,
-        'temperature': 0.7,
-      }),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $apiKey'},
+      body: jsonEncode({'model': model, 'messages': messages, 'temperature': 0.7}),
     );
 
     _logger.d('OpenAI response status code: ${response.statusCode}');
@@ -177,19 +163,11 @@ Se non riesci a interpretare la richiesta, restituisci:
         return content;
       } catch (e) {
         _logger.w('Failed to parse JSON response: $e');
-        return jsonEncode({
-          'featureType': 'other',
-          'actions': [],
-          'responseText': content,
-        });
+        return jsonEncode({'featureType': 'other', 'actions': [], 'responseText': content});
       }
     } else {
-      _logger.e(
-        'Failed to process query with OpenAI: ${response.statusCode} - ${response.body}',
-      );
-      throw Exception(
-        'Failed to process query: ${response.statusCode} - ${response.body}',
-      );
+      _logger.e('Failed to process query with OpenAI: ${response.statusCode} - ${response.body}');
+      throw Exception('Failed to process query: ${response.statusCode} - ${response.body}');
     }
   }
 

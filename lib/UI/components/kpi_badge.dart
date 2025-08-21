@@ -16,10 +16,7 @@ class KpiBadge extends StatelessWidget {
     final foreground = base.computeLuminance() > 0.5 ? Colors.black : base;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
@@ -33,10 +30,9 @@ class KpiBadge extends StatelessWidget {
           ],
           Text(
             text,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: foreground, fontWeight: FontWeight.w600),
           ),
         ],
       ),

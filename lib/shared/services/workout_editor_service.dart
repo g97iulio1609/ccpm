@@ -36,15 +36,11 @@ class WorkoutEditorService {
       'exerciseId': newExercise.exerciseId ?? '',
       'type': newExercise.type,
       'variant': newExercise.variant,
-      if (updatedExerciseMap['series'] != null)
-        'series': updatedExerciseMap['series'],
+      if (updatedExerciseMap['series'] != null) 'series': updatedExerciseMap['series'],
     };
 
     // Aggiorna il documento esercizio (e le serie se passate) con la logica TrainingBuilder
-    await _exerciseService.updateExercise(
-      currentExercise['id'],
-      tbExerciseData,
-    );
+    await _exerciseService.updateExercise(currentExercise['id'], tbExerciseData);
 
     // Ricalcola pesi serie in base al nuovo esercizio originale
     if ((newExercise.exerciseId ?? '').isNotEmpty) {
@@ -65,15 +61,11 @@ class WorkoutEditorService {
   }) async {
     final String exerciseDocId = exercise['id'];
     final String originalExerciseIdForNewSeries =
-        (exercise['exerciseId'] as String?) ??
-        (exercise['originalExerciseId'] as String?) ??
-        '';
+        (exercise['exerciseId'] as String?) ?? (exercise['originalExerciseId'] as String?) ?? '';
 
     // Serie correnti (vecchie)
     final List<Series> oldSeries = List<Series>.from(
-      (exercise['series'] as List).map(
-        (s) => Series.fromMap(s as Map<String, dynamic>),
-      ),
+      (exercise['series'] as List).map((s) => Series.fromMap(s as Map<String, dynamic>)),
     );
 
     final batch = _db.batch();
@@ -101,8 +93,7 @@ class WorkoutEditorService {
           id: seriesRef.id,
           serieId: seriesRef.id,
           exerciseId: exerciseDocId,
-          originalExerciseId:
-              series.originalExerciseId ?? originalExerciseIdForNewSeries,
+          originalExerciseId: series.originalExerciseId ?? originalExerciseIdForNewSeries,
         );
         final data = newSeries.toMap();
         data['exerciseId'] = exerciseDocId;

@@ -34,10 +34,7 @@ class ProgressionTableWidget extends StatelessWidget {
   Widget _buildSessionTable(int sessionNumber, BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSessionHeader(sessionNumber),
-        _buildTableContainer(sessionNumber, context),
-      ],
+      children: [_buildSessionHeader(sessionNumber), _buildTableContainer(sessionNumber, context)],
     );
   }
 
@@ -62,10 +59,7 @@ class ProgressionTableWidget extends StatelessWidget {
         border: Border.all(color: viewModel.colorScheme.outline.withAlpha(26)),
       ),
       child: Column(
-        children: [
-          _buildTableHeader(context),
-          ..._buildWeekRows(sessionNumber, context),
-        ],
+        children: [_buildTableHeader(context), ..._buildWeekRows(sessionNumber, context)],
       ),
     );
   }
@@ -86,10 +80,7 @@ class ProgressionTableWidget extends StatelessWidget {
   }
 
   Widget _buildWeekRow(int weekIndex, int sessionIndex, BuildContext context) {
-    final sessionControllers = viewModel.getSessionControllers(
-      weekIndex,
-      sessionIndex,
-    );
+    final sessionControllers = viewModel.getSessionControllers(weekIndex, sessionIndex);
 
     if (sessionControllers == null) {
       return const SizedBox.shrink();

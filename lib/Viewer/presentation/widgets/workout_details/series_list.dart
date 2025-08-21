@@ -54,7 +54,7 @@ class SeriesList extends StatelessWidget {
           ),
           child: SeriesHeader(
             labels: isCardio
-                ? const ['#', 'Durata', 'Distanza', 'Effettivo']
+                ? _getCardioHeaders()
                 : const ['#', 'Reps', 'Peso', 'Fatti'],
           ),
         ),
@@ -326,27 +326,78 @@ class _SeriesRow extends StatelessWidget {
   }
 
   String _formatCardioTarget(Series series, bool isDuration) {
-    if (isDuration) {
-      final target = series.durationSeconds;
-      if (target != null && target > 0) {
-        return _formatDuration(target);
+    final isHiit = series.cardioType == 'hiit';
+    
+    if (isHiit) {
+      if (isDuration) {
+        // For HIIT duration column, show work/rest format
+        final work = series.workIntervalSeconds;
+        final rest = series.restIntervalSeconds;
+        if (work != null && rest != null) {
+          return '${_formatShortDuration(work)}/${_formatShortDuration(rest)}';
+        } else if (work != null) {
+          return _formatShortDuration(work);
+        }
+        return 'HIIT';
+      } else {
+        // For HIIT distance column, show rounds
+        final rounds = series.rounds;
+        if (rounds != null && rounds > 0) {
+          return '${rounds}x';
+        }
+        return 'Round';
       }
-      return 'Libera';
     } else {
-      final target = series.distanceMeters;
-      if (target != null && target > 0) {
-        return _formatDistance(target);
+      // Standard cardio
+      if (isDuration) {
+        final target = series.durationSeconds;
+        if (target != null && target > 0) {
+          return _formatDuration(target);
+        }
+        return 'Libera';
+      } else {
+        final target = series.distanceMeters;
+        if (target != null && target > 0) {
+          return _formatDistance(target);
+        }
+        return 'Libera';
       }
-      return 'Libera';
     }
   }
 
   String _formatExecutedCardio(Series s) {
-    final d = _formatDuration(s.executedDurationSeconds ?? 0);
-    final dist = _formatDistance(s.executedDistanceMeters ?? 0);
-    if (d == '-' && dist == '-') return '-';
-    if (d != '-' && dist != '-') return '$d • $dist';
-    return d != '-' ? d : dist;
+    final isHiit = s.cardioType == 'hiit';
+    
+    if (isHiit) {
+      final d = _formatDuration(s.executedDurationSeconds ?? 0);
+      final rounds = s.rounds;
+      if (d != '-' && rounds != null && rounds > 0) {
+        return '$d (${rounds}x)';
+      } else if (d != '-') {
+        return d;
+      } else if (rounds != null && rounds > 0) {
+        return '${rounds}x';
+      }
+      return '-';
+    } else {
+      final d = _formatDuration(s.executedDurationSeconds ?? 0);
+      final dist = _formatDistance(s.executedDistanceMeters ?? 0);
+      if (d == '-' && dist == '-') return '-';
+      if (d != '-' && dist != '-') return '$d • $dist';
+      return d != '-' ? d : dist;
+    }
+  }
+  
+  String _formatShortDuration(int seconds) {
+    if (seconds < 60) {
+      return '${seconds}s';
+    }
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    if (s == 0) {
+      return '${m}min';
+    }
+    return '${m}:${s.toString().padLeft(2, '0')}';
   }
 }
 

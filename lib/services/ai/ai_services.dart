@@ -15,21 +15,12 @@ class AIServiceManager {
   final AIService primaryAIService;
   final AIService fallbackAIService;
   final UsersService usersService;
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(methodCount: 2, errorMethodCount: 8),
-  );
+  final Logger _logger = Logger(printer: PrettyPrinter(methodCount: 2, errorMethodCount: 8));
   final ExtensionsManager _extensionsManager = ExtensionsManager();
 
-  AIServiceManager(
-    this.primaryAIService,
-    this.fallbackAIService,
-    this.usersService,
-  );
+  AIServiceManager(this.primaryAIService, this.fallbackAIService, this.usersService);
 
-  Future<String> handleUserQuery(
-    String message, {
-    Map<String, dynamic>? context,
-  }) async {
+  Future<String> handleUserQuery(String message, {Map<String, dynamic>? context}) async {
     _logger.i('Handling user query: "$message"');
 
     try {
@@ -109,10 +100,7 @@ class AIServiceManager {
     }
   }
 
-  Future<String> _handleTrainingAction(
-    Map<String, dynamic> interpretation,
-    UserModel user,
-  ) async {
+  Future<String> _handleTrainingAction(Map<String, dynamic> interpretation, UserModel user) async {
     _logger.i('Handling training action: ${interpretation['action']}');
 
     final result = await _extensionsManager.executeAction(interpretation, user);
@@ -137,10 +125,7 @@ class AIServiceManager {
     }
   }
 
-  Future<String> _handleMaxRMAction(
-    Map<String, dynamic> interpretation,
-    UserModel user,
-  ) async {
+  Future<String> _handleMaxRMAction(Map<String, dynamic> interpretation, UserModel user) async {
     _logger.i('Handling maxRM action: ${interpretation['action']}');
 
     final result = await _extensionsManager.executeAction(interpretation, user);
@@ -160,10 +145,7 @@ class AIServiceManager {
     }
   }
 
-  Future<String> _handleProfileAction(
-    Map<String, dynamic> interpretation,
-    UserModel user,
-  ) async {
+  Future<String> _handleProfileAction(Map<String, dynamic> interpretation, UserModel user) async {
     _logger.i('Handling profile action: ${interpretation['action']}');
 
     final result = await _extensionsManager.executeAction(interpretation, user);
@@ -181,10 +163,7 @@ class AIServiceManager {
     }
   }
 
-  Map<String, dynamic> _prepareContext(
-    Map<String, dynamic> context,
-    UserModel user,
-  ) {
+  Map<String, dynamic> _prepareContext(Map<String, dynamic> context, UserModel user) {
     final userProfile = user.toMap();
 
     // Converti i Timestamp in stringhe ISO
@@ -212,17 +191,13 @@ final aiServiceManagerProvider = Provider<AIServiceManager>((ref) {
 
   switch (aiSettings.selectedProvider) {
     case AIProvider.openAI:
-      primaryAIService = ref.watch(
-        ai_providers.openaiServiceProvider(selectedModel.modelId),
-      );
+      primaryAIService = ref.watch(ai_providers.openaiServiceProvider(selectedModel.modelId));
       fallbackAIService = aiSettings.hasKeyForProvider(AIProvider.gemini)
           ? ref.watch(ai_providers.geminiServiceProvider(selectedModel.modelId))
           : primaryAIService;
       break;
     case AIProvider.gemini:
-      primaryAIService = ref.watch(
-        ai_providers.geminiServiceProvider(selectedModel.modelId),
-      );
+      primaryAIService = ref.watch(ai_providers.geminiServiceProvider(selectedModel.modelId));
       fallbackAIService = aiSettings.hasKeyForProvider(AIProvider.openAI)
           ? ref.watch(ai_providers.openaiServiceProvider(selectedModel.modelId))
           : primaryAIService;

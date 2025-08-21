@@ -8,18 +8,8 @@ Future<void> updateProgramAfterMaxRM(
   bool keepWeight,
 ) async {
   if (keepWeight) {
-    await exerciseRecordService.updateIntensityForProgram(
-      userId,
-      exerciseId,
-      newMaxWeight,
-    );
+    await exerciseRecordService.updateIntensityForProgram(userId, exerciseId, newMaxWeight);
   } else {
-    await exerciseRecordService.updateWeightsForProgram(
-      userId,
-      exerciseId,
-      newMaxWeight,
-    );
+    await exerciseRecordService.updateWeightsForProgram(userId, exerciseId, newMaxWeight);
   }
 }
-
-

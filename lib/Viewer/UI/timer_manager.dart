@@ -84,11 +84,7 @@ class TimerManager {
         ? 'È ora di iniziare il prossimo round di $exerciseName!'
         : 'Il recupero per $exerciseName è terminato!';
 
-    await showTimerNotification(
-      title: title,
-      body: body,
-      notificationId: exerciseName.hashCode,
-    );
+    await showTimerNotification(title: title, body: body, notificationId: exerciseName.hashCode);
   }
 
   void stopTimer() {

@@ -109,8 +109,7 @@ class Workout {
       updatedAt: updatedAt ?? this.updatedAt,
       metadata: metadata ?? this.metadata,
       notes: notes ?? this.notes,
-      estimatedDurationMinutes:
-          estimatedDurationMinutes ?? this.estimatedDurationMinutes,
+      estimatedDurationMinutes: estimatedDurationMinutes ?? this.estimatedDurationMinutes,
       tags: tags ?? this.tags,
     );
   }
@@ -125,15 +124,13 @@ class Workout {
       if (description != null) 'description': description,
       'exercises': exercises.map((e) => e.toMap()).toList(),
       if (superSets != null) 'superSets': superSets,
-      if (lastPerformed != null)
-        'lastPerformed': Timestamp.fromDate(lastPerformed!),
+      if (lastPerformed != null) 'lastPerformed': Timestamp.fromDate(lastPerformed!),
       'isCompleted': isCompleted,
       if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
       if (metadata != null) 'metadata': metadata,
       if (notes != null) 'notes': notes,
-      if (estimatedDurationMinutes != null)
-        'estimatedDurationMinutes': estimatedDurationMinutes,
+      if (estimatedDurationMinutes != null) 'estimatedDurationMinutes': estimatedDurationMinutes,
       if (tags != null) 'tags': tags,
     };
   }
@@ -188,8 +185,7 @@ class Workout {
   int get totalExercises => exercises.length;
 
   /// Get total number of series across all exercises
-  int get totalSeries =>
-      exercises.fold(0, (total, exercise) => total + exercise.series.length);
+  int get totalSeries => exercises.fold(0, (total, exercise) => total + exercise.series.length);
 
   /// Get completed exercises count
   int get completedExercises => exercises.where((e) => e.isCompleted).length;
@@ -204,8 +200,7 @@ class Workout {
   bool get hasExercises => exercises.isNotEmpty;
 
   /// Check if workout is fully completed
-  bool get isFullyCompleted =>
-      exercises.isNotEmpty && exercises.every((e) => e.isCompleted);
+  bool get isFullyCompleted => exercises.isNotEmpty && exercises.every((e) => e.isCompleted);
 
   /// Get estimated duration in minutes
   int get estimatedDuration {
@@ -309,11 +304,7 @@ extension WorkoutCompatibility on Workout {
 
   /// Create a copy with updated completion status
   Workout markAsCompleted() {
-    return copyWith(
-      isCompleted: true,
-      lastPerformed: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    return copyWith(isCompleted: true, lastPerformed: DateTime.now(), updatedAt: DateTime.now());
   }
 
   /// Create a copy with reset completion status
@@ -330,9 +321,7 @@ extension WorkoutCompatibility on Workout {
 
   /// Remove exercise from workout
   Workout removeExercise(String exerciseId) {
-    final updatedExercises = exercises
-        .where((e) => e.id != exerciseId)
-        .toList();
+    final updatedExercises = exercises.where((e) => e.id != exerciseId).toList();
     return copyWith(exercises: updatedExercises, updatedAt: DateTime.now());
   }
 

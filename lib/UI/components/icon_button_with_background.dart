@@ -38,11 +38,7 @@ class IconButtonWithBackground extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
             padding: padding,
-            child: Icon(
-              icon,
-              color: isGradient ? colorScheme.surface : color,
-              size: size,
-            ),
+            child: Icon(icon, color: isGradient ? colorScheme.surface : color, size: size),
           ),
         ),
       ),
@@ -54,11 +50,7 @@ class IconButtonWithBackground extends StatelessWidget {
           gradient: LinearGradient(colors: [color, color.withAlpha(204)]),
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           boxShadow: [
-            BoxShadow(
-              color: color.withAlpha(51),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
+            BoxShadow(color: color.withAlpha(51), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
         child: content,
@@ -69,9 +61,7 @@ class IconButtonWithBackground extends StatelessWidget {
       padding: EdgeInsets.zero,
       radius: AppTheme.radii.lg,
       tint: color.withAlpha(32),
-      border: isOutlined
-          ? Border.all(color: color.withAlpha(76), width: 1.5)
-          : null,
+      border: isOutlined ? Border.all(color: color.withAlpha(76), width: 1.5) : null,
       child: content,
     );
   }

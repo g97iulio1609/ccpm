@@ -47,13 +47,13 @@ class TrainingProgram {
       mesocycleNumber: mesocycleNumber ?? this.mesocycleNumber,
       weeks: weeks ?? this.weeks.map((week) => week.copyWith()).toList(),
     );
-    
+
     // Preserve tracking lists
     newProgram.trackToDeleteWeeks = List.from(trackToDeleteWeeks);
     newProgram.trackToDeleteWorkouts = List.from(trackToDeleteWorkouts);
     newProgram.trackToDeleteExercises = List.from(trackToDeleteExercises);
     newProgram.trackToDeleteSeries = List.from(trackToDeleteSeries);
-    
+
     return newProgram;
   }
 

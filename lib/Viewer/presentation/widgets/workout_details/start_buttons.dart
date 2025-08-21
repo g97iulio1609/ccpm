@@ -29,13 +29,10 @@ class StartExerciseButton extends StatelessWidget {
         color: colorScheme.onPrimary,
       ),
       label: Text(
-        isContinue
-            ? 'Continua (Serie ${startIndex + 1})'
-            : 'Inizia Allenamento',
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
-        ),
+        isContinue ? 'Continua (Serie ${startIndex + 1})' : 'Inizia Allenamento',
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -44,11 +41,7 @@ class StartExerciseButton extends StatelessWidget {
 class StartSuperSetButton extends StatelessWidget {
   final List<Exercise> exercises;
   final void Function(Series series, Exercise exercise) onStart;
-  const StartSuperSetButton({
-    super.key,
-    required this.exercises,
-    required this.onStart,
-  });
+  const StartSuperSetButton({super.key, required this.exercises, required this.onStart});
 
   @override
   Widget build(BuildContext context) {
@@ -68,13 +61,10 @@ class StartSuperSetButton extends StatelessWidget {
     }
     if (firstExercise == null) return const SizedBox.shrink();
 
-    final isContinueMode = exercises.any(
-      (e) => e.series.any((s) => s.isCompleted),
-    );
+    final isContinueMode = exercises.any((e) => e.series.any((s) => s.isCompleted));
 
     return FilledButton.icon(
-      onPressed: () =>
-          onStart(firstExercise!.series[startSeriesIndex], firstExercise),
+      onPressed: () => onStart(firstExercise!.series[startSeriesIndex], firstExercise),
       style: FilledButton.styleFrom(
         backgroundColor: colorScheme.primary,
         padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
@@ -84,13 +74,10 @@ class StartSuperSetButton extends StatelessWidget {
         color: colorScheme.onPrimary,
       ),
       label: Text(
-        isContinueMode
-            ? 'Continua Super Set (Serie ${startSeriesIndex + 1})'
-            : 'Inizia Super Set',
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
-        ),
+        isContinueMode ? 'Continua Super Set (Serie ${startSeriesIndex + 1})' : 'Inizia Super Set',
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
       ),
     );
   }

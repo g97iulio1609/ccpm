@@ -35,8 +35,7 @@ class AppAccordion extends StatefulWidget {
   State<AppAccordion> createState() => _AppAccordionState();
 }
 
-class _AppAccordionState extends State<AppAccordion>
-    with SingleTickerProviderStateMixin {
+class _AppAccordionState extends State<AppAccordion> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _iconTurns;
   late Animation<double> _heightFactor;
@@ -45,20 +44,12 @@ class _AppAccordionState extends State<AppAccordion>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 200), vsync: this);
     _iconTurns = _controller.drive(
-      Tween<double>(
-        begin: 0.0,
-        end: 0.5,
-      ).chain(CurveTween(curve: Curves.easeIn)),
+      Tween<double>(begin: 0.0, end: 0.5).chain(CurveTween(curve: Curves.easeIn)),
     );
     _heightFactor = _controller.drive(CurveTween(curve: Curves.easeIn));
-    _isExpanded =
-        PageStorage.of(context).readState(context) as bool? ??
-        widget.initiallyExpanded;
+    _isExpanded = PageStorage.of(context).readState(context) as bool? ?? widget.initiallyExpanded;
     if (_isExpanded) {
       _controller.value = 1.0;
     }
@@ -90,11 +81,8 @@ class _AppAccordionState extends State<AppAccordion>
 
     return Container(
       decoration: BoxDecoration(
-        color:
-            widget.backgroundColor ??
-            colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius:
-            widget.borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
+        color: widget.backgroundColor ?? colorScheme.surfaceContainerHighest.withAlpha(76),
+        borderRadius: widget.borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: AppTheme.elevations.small,
       ),
@@ -106,13 +94,9 @@ class _AppAccordionState extends State<AppAccordion>
             color: Colors.transparent,
             child: InkWell(
               onTap: widget.enabled ? _handleTap : null,
-              borderRadius:
-                  widget.borderRadius ??
-                  BorderRadius.circular(AppTheme.radii.lg),
+              borderRadius: widget.borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
               child: Padding(
-                padding:
-                    widget.contentPadding ??
-                    EdgeInsets.all(AppTheme.spacing.lg),
+                padding: widget.contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),
                 child: Row(
                   children: [
                     if (widget.leading != null) ...[
@@ -139,9 +123,7 @@ class _AppAccordionState extends State<AppAccordion>
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: widget.enabled
                                     ? colorScheme.onSurfaceVariant
-                                    : colorScheme.onSurfaceVariant.withAlpha(
-                                        179,
-                                      ),
+                                    : colorScheme.onSurfaceVariant.withAlpha(179),
                               ),
                             ),
                           ],
@@ -174,14 +156,9 @@ class _AppAccordionState extends State<AppAccordion>
               child: Column(
                 children: [
                   if (widget.showDivider)
-                    Divider(
-                      height: 1,
-                      color: colorScheme.outline.withAlpha(26),
-                    ),
+                    Divider(height: 1, color: colorScheme.outline.withAlpha(26)),
                   Padding(
-                    padding:
-                        widget.contentPadding ??
-                        EdgeInsets.all(AppTheme.spacing.lg),
+                    padding: widget.contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: widget.children,

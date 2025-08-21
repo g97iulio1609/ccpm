@@ -36,20 +36,13 @@ class AppSnackbar extends StatelessWidget {
     final snackbarIcon = icon ?? _getSnackbarIcon();
 
     return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.xl,
-        vertical: AppTheme.spacing.lg,
-      ),
+      margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing.xl, vertical: AppTheme.spacing.lg),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(color: colorScheme.outline.withAlpha(26)),
         boxShadow: [
-          BoxShadow(
-            color: snackbarColor.withAlpha(26),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: snackbarColor.withAlpha(26), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -80,33 +73,21 @@ class AppSnackbar extends StatelessWidget {
                         padding: EdgeInsets.all(AppTheme.spacing.sm),
                         decoration: BoxDecoration(
                           color: snackbarColor.withAlpha(26),
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.md,
-                          ),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.md),
                         ),
-                        child: Icon(
-                          snackbarIcon,
-                          color: snackbarColor,
-                          size: 20,
-                        ),
+                        child: Icon(snackbarIcon, color: snackbarColor, size: 20),
                       ),
                       SizedBox(width: AppTheme.spacing.md),
                       Expanded(
                         child: Text(
                           message,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
+                          style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                         ),
                       ),
                       if (onDismiss != null) ...[
                         SizedBox(width: AppTheme.spacing.sm),
                         IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            color: colorScheme.onSurfaceVariant,
-                            size: 20,
-                          ),
+                          icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant, size: 20),
                           onPressed: onDismiss,
                         ),
                       ],
@@ -118,11 +99,7 @@ class AppSnackbar extends StatelessWidget {
                 if (onAction != null && actionLabel != null) ...[
                   Container(
                     decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(
-                          color: colorScheme.outline.withAlpha(26),
-                        ),
-                      ),
+                      border: Border(top: BorderSide(color: colorScheme.outline.withAlpha(26))),
                     ),
                     child: Material(
                       color: Colors.transparent,

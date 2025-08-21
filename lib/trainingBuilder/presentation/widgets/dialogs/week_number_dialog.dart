@@ -25,9 +25,7 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
   @override
   void initState() {
     super.initState();
-    _weekNumberController = TextEditingController(
-      text: widget.currentWeekNumber.toString(),
-    );
+    _weekNumberController = TextEditingController(text: widget.currentWeekNumber.toString());
   }
 
   @override
@@ -38,7 +36,7 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
 
   void _validateAndSubmit() {
     final text = _weekNumberController.text.trim();
-    
+
     if (text.isEmpty) {
       setState(() {
         _errorMessage = 'Il numero della settimana è richiesto';
@@ -106,241 +104,220 @@ class _WeekNumberDialogState extends State<WeekNumberDialog> {
             return ConstrainedBox(
               constraints: BoxConstraints(maxHeight: maxDialogHeight),
               child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(AppTheme.radii.xl),
-                ),
-              ),
-              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Header
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacing.sm,
-                      vertical: AppTheme.spacing.xs,
-                    ),
+                    padding: EdgeInsets.all(AppTheme.spacing.lg),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withAlpha(76),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.full),
-                    ),
-                    child: Icon(
-                      Icons.edit,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  SizedBox(width: AppTheme.spacing.md),
-                  Text(
-                    'Modifica Numero Settimana',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Content
-            Flexible(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(AppTheme.spacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  Text(
-                    'Numero Settimana',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: AppTheme.spacing.sm),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest.withAlpha(76),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                      border: Border.all(
-                        color: _errorMessage != null
-                            ? colorScheme.error
-                            : colorScheme.outline.withAlpha(26),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _weekNumberController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Es. 1, 2, 3...',
-                        hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(AppTheme.spacing.lg),
-                        prefixIcon: Icon(
-                          Icons.numbers,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        if (_errorMessage != null) {
-                          setState(() {
-                            _errorMessage = null;
-                          });
-                        }
-                      },
-                      onSubmitted: (_) => _validateAndSubmit(),
-                    ),
-                  ),
-                  if (_errorMessage != null) ...[
-                    SizedBox(height: AppTheme.spacing.sm),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: colorScheme.error,
-                          size: 16,
-                        ),
-                        SizedBox(width: AppTheme.spacing.xs),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.error,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  SizedBox(height: AppTheme.spacing.md),
-                  Container(
-                    padding: EdgeInsets.all(AppTheme.spacing.md),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withAlpha(51),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.md),
-                      border: Border.all(
-                        color: colorScheme.primary.withAlpha(51),
-                      ),
+                      color: colorScheme.surfaceContainerHighest.withAlpha(77),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: colorScheme.primary,
-                          size: 16,
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacing.sm,
+                            vertical: AppTheme.spacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer.withAlpha(76),
+                            borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                          ),
+                          child: Icon(Icons.edit, color: colorScheme.primary, size: 20),
                         ),
-                        SizedBox(width: AppTheme.spacing.sm),
-                        Expanded(
-                          child: Text(
-                            'Il numero deve essere compreso tra 1 e ${widget.maxWeekNumber}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.primary,
-                            ),
+                        SizedBox(width: AppTheme.spacing.md),
+                        Text(
+                          'Modifica Numero Settimana',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  ],
-                ),
-              ),
-            ),
 
-            // Actions
-            Container(
-              padding: EdgeInsets.all(AppTheme.spacing.lg),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withAlpha(77),
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(AppTheme.radii.xl),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // Cancel button
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: colorScheme.outline.withAlpha(51)),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => Navigator.of(context).pop(),
-                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacing.lg,
-                            vertical: AppTheme.spacing.md,
-                          ),
-                          child: Text(
-                            'Annulla',
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(AppTheme.spacing.lg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Numero Settimana',
                             style: theme.textTheme.labelLarge?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: AppTheme.spacing.md),
-                  // Save button
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primary,
-                          colorScheme.primary.withAlpha(204),
+                          SizedBox(height: AppTheme.spacing.sm),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest.withAlpha(76),
+                              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                              border: Border.all(
+                                color: _errorMessage != null
+                                    ? colorScheme.error
+                                    : colorScheme.outline.withAlpha(26),
+                              ),
+                            ),
+                            child: TextField(
+                              controller: _weekNumberController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Es. 1, 2, 3...',
+                                hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.all(AppTheme.spacing.lg),
+                                prefixIcon: Icon(
+                                  Icons.numbers,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              onChanged: (value) {
+                                if (_errorMessage != null) {
+                                  setState(() {
+                                    _errorMessage = null;
+                                  });
+                                }
+                              },
+                              onSubmitted: (_) => _validateAndSubmit(),
+                            ),
+                          ),
+                          if (_errorMessage != null) ...[
+                            SizedBox(height: AppTheme.spacing.sm),
+                            Row(
+                              children: [
+                                Icon(Icons.error_outline, color: colorScheme.error, size: 16),
+                                SizedBox(width: AppTheme.spacing.xs),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.error,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          SizedBox(height: AppTheme.spacing.md),
+                          Container(
+                            padding: EdgeInsets.all(AppTheme.spacing.md),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer.withAlpha(51),
+                              borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                              border: Border.all(color: colorScheme.primary.withAlpha(51)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline, color: colorScheme.primary, size: 16),
+                                SizedBox(width: AppTheme.spacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    'Il numero deve essere compreso tra 1 e ${widget.maxWeekNumber}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withAlpha(51),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _validateAndSubmit,
-                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacing.lg,
-                            vertical: AppTheme.spacing.md,
+                  ),
+
+                  // Actions
+                  Container(
+                    padding: EdgeInsets.all(AppTheme.spacing.lg),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withAlpha(77),
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(AppTheme.radii.xl),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Cancel button
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: colorScheme.outline.withAlpha(51)),
+                            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                           ),
-                          child: Text(
-                            'Salva',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: colorScheme.onPrimary,
-                              fontWeight: FontWeight.w600,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.of(context).pop(),
+                              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spacing.lg,
+                                  vertical: AppTheme.spacing.md,
+                                ),
+                                child: Text(
+                                  'Annulla',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                        SizedBox(width: AppTheme.spacing.md),
+                        // Save button
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
+                            ),
+                            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.primary.withAlpha(51),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _validateAndSubmit,
+                              borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spacing.lg,
+                                  vertical: AppTheme.spacing.md,
+                                ),
+                                child: Text(
+                                  'Salva',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: colorScheme.onPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
               ),
             );
           },

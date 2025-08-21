@@ -31,17 +31,10 @@ class TrainingGalleryScreen extends HookConsumerWidget {
     final usersService = ref.read(usersServiceProvider);
 
     await controller
-        .duplicateProgram(
-          programId,
-          programName,
-          context,
-          currentUserId: currentUserId,
-        )
+        .duplicateProgram(programId, programName, context, currentUserId: currentUserId)
         .then((newProgramId) async {
           if (newProgramId != null && currentUserId != null) {
-            await usersService.updateUser(currentUserId, {
-              'currentProgram': newProgramId,
-            });
+            await usersService.updateUser(currentUserId, {'currentProgram': newProgramId});
           }
         });
   }
@@ -74,10 +67,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
+            colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
             stops: const [0.0, 1.0],
           ),
         ),
@@ -95,11 +85,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: colorScheme.error,
-                              ),
+                              Icon(Icons.error_outline, size: 64, color: colorScheme.error),
                               SizedBox(height: AppTheme.spacing.md),
                               Text(
                                 'Si è verificato un errore',
@@ -131,9 +117,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                               Icon(
                                 Icons.fitness_center_outlined,
                                 size: 64,
-                                color: colorScheme.onSurfaceVariant.withAlpha(
-                                  128,
-                                ),
+                                color: colorScheme.onSurfaceVariant.withAlpha(128),
                               ),
                               SizedBox(height: AppTheme.spacing.md),
                               Text(
@@ -189,14 +173,10 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                                     Expanded(
                                       child: Padding(
                                         padding: EdgeInsets.only(
-                                          right: i < crossAxisCount - 1
-                                              ? AppTheme.spacing.xl
-                                              : 0,
+                                          right: i < crossAxisCount - 1 ? AppTheme.spacing.xl : 0,
                                         ),
                                         child: FutureBuilder<String>(
-                                          future: getAuthorName(
-                                            rowPrograms[i]['athleteId'] ?? '',
-                                          ),
+                                          future: getAuthorName(rowPrograms[i]['athleteId'] ?? ''),
                                           builder: (context, snapshot) {
                                             final athleteName = snapshot.hasData
                                                 ? snapshot.data!
@@ -291,10 +271,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                     const Spacer(),
                     if (userRole == 'client_premium' || userRole == 'admin')
                       IconButton(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                        icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
                         onPressed: () => _showProgramOptions(
                           context,
                           doc,
@@ -330,9 +307,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
                 // Autore
                 Text(
                   'Creato da $athleteName',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -394,11 +369,7 @@ class TrainingGalleryScreen extends HookConsumerWidget {
             color: colorScheme.primaryContainer.withAlpha(76),
             borderRadius: BorderRadius.circular(AppTheme.radii.md),
           ),
-          child: Icon(
-            Icons.fitness_center,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(Icons.fitness_center, color: colorScheme.primary, size: 24),
         ),
         items: [
           BottomMenuItem(
@@ -451,9 +422,7 @@ class SetCurrentProgramDialog extends StatelessWidget {
         bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
       ),
       backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
       title: Text(
         'Imposta come Programma Corrente',
         style: theme.textTheme.titleLarge?.copyWith(
@@ -463,9 +432,7 @@ class SetCurrentProgramDialog extends StatelessWidget {
       ),
       content: Text(
         'Sei sicuro di voler impostare questo programma come programma corrente? Questo sostituirà il tuo programma corrente.',
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
       ),
       actions: [
         AppButton(
@@ -473,10 +440,7 @@ class SetCurrentProgramDialog extends StatelessWidget {
           variant: AppButtonVariant.outline,
           onPressed: () => Navigator.of(context).pop(false),
         ),
-        AppButton(
-          label: 'Conferma',
-          onPressed: () => Navigator.of(context).pop(true),
-        ),
+        AppButton(label: 'Conferma', onPressed: () => Navigator.of(context).pop(true)),
       ],
     );
   }

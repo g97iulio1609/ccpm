@@ -47,7 +47,47 @@ String _buildCsvIsolate(Map<String, dynamic> exportMap) {
   String q(String v) => '"${v.replaceAll('"', '""')}"';
 
   final headers = [
-    'formatVersion','programId','programName','programDescription','athleteId','mesocycleNumber','hide','status','weekNumber','workoutOrder','workoutName','exerciseOrder','exerciseName','exerciseId','type','variant','superSetId','seriesOrder','sets','reps','maxReps','weight','maxWeight','intensity','maxIntensity','rpe','maxRpe','restTimeSeconds'
+    'formatVersion',
+    'programId',
+    'programName',
+    'programDescription',
+    'athleteId',
+    'mesocycleNumber',
+    'hide',
+    'status',
+    'weekNumber',
+    'workoutOrder',
+    'workoutName',
+    'exerciseOrder',
+    'exerciseName',
+    'exerciseId',
+    'type',
+    'variant',
+    'superSetId',
+    'seriesOrder',
+    'sets',
+    'reps',
+    'maxReps',
+    'weight',
+    'maxWeight',
+    'intensity',
+    'maxIntensity',
+    'rpe',
+    'maxRpe',
+    'restTimeSeconds',
+    // cardio extensions
+    'durationSeconds',
+    'distanceMeters',
+    'speedKmh',
+    'paceSecPerKm',
+    'inclinePercent',
+    'hrPercent',
+    'hrBpm',
+    'avgHr',
+    'kcal',
+    'executedDurationSeconds',
+    'executedDistanceMeters',
+    'executedAvgHr',
   ];
 
   final buf = StringBuffer();
@@ -63,10 +103,33 @@ String _buildCsvIsolate(Map<String, dynamic> exportMap) {
       final exercises = (workout['exercises'] as List? ?? []);
       if (exercises.isEmpty) {
         final row = [
-          '1', program['id'] ?? '', program['name'] ?? '', program['description'] ?? '', program['athleteId'] ?? '',
-          '${program['mesocycleNumber'] ?? 0}', '${program['hide'] ?? false}', program['status'] ?? 'private',
-          '${week['number'] ?? 1}', '${workout['order'] ?? 1}', workout['name'] ?? '',
-          '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+          '1',
+          program['id'] ?? '',
+          program['name'] ?? '',
+          program['description'] ?? '',
+          program['athleteId'] ?? '',
+          '${program['mesocycleNumber'] ?? 0}',
+          '${program['hide'] ?? false}',
+          program['status'] ?? 'private',
+          '${week['number'] ?? 1}',
+          '${workout['order'] ?? 1}',
+          workout['name'] ?? '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
         ];
         buf.writeln(row.map((e) => q(e.toString())).join(','));
         continue;
@@ -76,12 +139,20 @@ String _buildCsvIsolate(Map<String, dynamic> exportMap) {
         final series = (exercise['series'] as List? ?? []);
         if (series.isEmpty) {
           final row = [
-            '1', program['id'] ?? '', program['name'] ?? '', program['description'] ?? '', program['athleteId'] ?? '',
-            '${program['mesocycleNumber'] ?? 0}', '${program['hide'] ?? false}', program['status'] ?? 'private',
+            '1',
+            program['id'] ?? '',
+            program['name'] ?? '',
+            program['description'] ?? '',
+            program['athleteId'] ?? '',
+            '${program['mesocycleNumber'] ?? 0}',
+            '${program['hide'] ?? false}',
+            program['status'] ?? 'private',
             '${week['number'] ?? 1}', '${workout['order'] ?? 1}', workout['name'] ?? '',
             '${exercise['order'] ?? 1}', exercise['name'] ?? '', exercise['exerciseId'] ?? '',
             exercise['type'] ?? 'weight', exercise['variant'] ?? '', exercise['superSetId'] ?? '',
             '', '0', '', '', '', '', '', '', '', '',
+            // cardio blanks
+            '', '', '', '', '', '', '', '', '', '', '',
           ];
           buf.writeln(row.map((e) => q(e.toString())).join(','));
           continue;
@@ -89,13 +160,41 @@ String _buildCsvIsolate(Map<String, dynamic> exportMap) {
         for (int i = 0; i < series.length; i++) {
           final s = Map<String, dynamic>.from(series[i] as Map);
           final row = [
-            '1', program['id'] ?? '', program['name'] ?? '', program['description'] ?? '', program['athleteId'] ?? '',
-            '${program['mesocycleNumber'] ?? 0}', '${program['hide'] ?? false}', program['status'] ?? 'private',
+            '1',
+            program['id'] ?? '',
+            program['name'] ?? '',
+            program['description'] ?? '',
+            program['athleteId'] ?? '',
+            '${program['mesocycleNumber'] ?? 0}',
+            '${program['hide'] ?? false}',
+            program['status'] ?? 'private',
             '${week['number'] ?? 1}', '${workout['order'] ?? 1}', workout['name'] ?? '',
             '${exercise['order'] ?? 1}', exercise['name'] ?? '', exercise['exerciseId'] ?? '',
             exercise['type'] ?? 'weight', exercise['variant'] ?? '', exercise['superSetId'] ?? '',
-            '${i + 1}', '${s['sets'] ?? 1}', '${s['reps'] ?? 0}', '${s['maxReps'] ?? ''}', '${s['weight'] ?? 0.0}', '${s['maxWeight'] ?? ''}',
-            '${s['intensity'] ?? ''}', '${s['maxIntensity'] ?? ''}', '${s['rpe'] ?? ''}', '${s['maxRpe'] ?? ''}', '${s['restTimeSeconds'] ?? ''}',
+            '${i + 1}',
+            '${s['sets'] ?? 1}',
+            '${s['reps'] ?? 0}',
+            '${s['maxReps'] ?? ''}',
+            '${s['weight'] ?? 0.0}',
+            '${s['maxWeight'] ?? ''}',
+            '${s['intensity'] ?? ''}',
+            '${s['maxIntensity'] ?? ''}',
+            '${s['rpe'] ?? ''}',
+            '${s['maxRpe'] ?? ''}',
+            '${s['restTimeSeconds'] ?? ''}',
+            // cardio
+            '${s['durationSeconds'] ?? ''}',
+            '${s['distanceMeters'] ?? ''}',
+            '${s['speedKmh'] ?? ''}',
+            '${s['paceSecPerKm'] ?? ''}',
+            '${s['inclinePercent'] ?? ''}',
+            '${s['hrPercent'] ?? ''}',
+            '${s['hrBpm'] ?? ''}',
+            '${s['avgHr'] ?? ''}',
+            '${s['kcal'] ?? ''}',
+            '${s['executedDurationSeconds'] ?? ''}',
+            '${s['executedDistanceMeters'] ?? ''}',
+            '${s['executedAvgHr'] ?? ''}',
           ];
           buf.writeln(row.map((e) => q(e.toString())).join(','));
         }
@@ -122,11 +221,17 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
       final char = line[i];
       if (char == '"') {
         if (inQuotes && i + 1 < line.length && line[i + 1] == '"') {
-          sb.write('"'); i++;
-        } else { inQuotes = !inQuotes; }
+          sb.write('"');
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
       } else if (char == ',' && !inQuotes) {
-        result.add(sb.toString()); sb.clear();
-      } else { sb.write(char); }
+        result.add(sb.toString());
+        sb.clear();
+      } else {
+        sb.write(char);
+      }
     }
     result.add(sb.toString());
     return result;
@@ -155,10 +260,16 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
   final iMaxRpe = idx('maxRpe');
   final iRest = idx('restTimeSeconds');
 
-  String? g(List<String> row, int index) => (index >= 0 && index < row.length) ? (row[index].isEmpty ? null : row[index]) : null;
+  String? g(List<String> row, int index) =>
+      (index >= 0 && index < row.length) ? (row[index].isEmpty ? null : row[index]) : null;
 
   final Map<int, Map<int, Map<int, Map<String, dynamic>>>> weeks = {};
-  String programName = ''; String programDescription = ''; String athleteId = ''; int meso = 0; bool hide = false; String status = 'private';
+  String programName = '';
+  String programDescription = '';
+  String athleteId = '';
+  int meso = 0;
+  bool hide = false;
+  String status = 'private';
 
   // pick program-level fields from first content row
   for (final line in lines.skip(1)) {
@@ -196,15 +307,18 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
     weeks.putIfAbsent(wk, () => <int, Map<int, Map<String, dynamic>>>{});
     weeks[wk]!.putIfAbsent(wod, () => <int, Map<String, dynamic>>{});
     final exLevel = weeks[wk]![wod]!;
-    exLevel.putIfAbsent(eOrder, () => {
-      'order': eOrder,
-      'name': eName,
-      'exerciseId': eId,
-      'type': eType,
-      'variant': eVariant,
-      'superSetId': ss,
-      'series': <Map<String, dynamic>>[],
-    });
+    exLevel.putIfAbsent(
+      eOrder,
+      () => {
+        'order': eOrder,
+        'name': eName,
+        'exerciseId': eId,
+        'type': eType,
+        'variant': eVariant,
+        'superSetId': ss,
+        'series': <Map<String, dynamic>>[],
+      },
+    );
 
     if (sOrder > 0 || sets > 0 || reps > 0 || weight > 0) {
       (exLevel[eOrder]!['series'] as List).add({
@@ -263,6 +377,6 @@ Map<String, dynamic> _parseCsvIsolate(String csv) {
       'hide': hide,
       'status': status,
       'weeks': weeksOut,
-    }
+    },
   };
 }

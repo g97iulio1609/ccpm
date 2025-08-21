@@ -106,9 +106,7 @@ class AppInput extends StatelessWidget {
           focusNode: focusNode,
           enabled: enabled,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: enabled
-                ? colorScheme.onSurface
-                : colorScheme.onSurface.withAlpha(128),
+            color: enabled ? colorScheme.onSurface : colorScheme.onSurface.withAlpha(128),
           ),
           decoration: InputDecoration(
             hintText: hintText,
@@ -126,9 +124,7 @@ class AppInput extends StatelessWidget {
                 : null,
             suffix: suffix,
             suffixText: suffixText,
-            suffixStyle: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            suffixStyle: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             filled: true,
             fillColor: enabled
                 ? colorScheme.surfaceContainerHighest.withAlpha(76)

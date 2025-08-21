@@ -9,11 +9,7 @@ class ExerciseCardHeader extends StatelessWidget {
   final Exercise exercise;
   final VoidCallback onOptionsPressed;
 
-  const ExerciseCardHeader({
-    super.key,
-    required this.exercise,
-    required this.onOptionsPressed,
-  });
+  const ExerciseCardHeader({super.key, required this.exercise, required this.onOptionsPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +27,7 @@ class ExerciseCardHeader extends StatelessWidget {
 
   Widget _buildTypeBadge(ThemeData theme, ColorScheme colorScheme) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withAlpha(76),
         borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
@@ -85,9 +78,7 @@ class ExerciseTitleSection extends StatelessWidget {
           SizedBox(height: AppTheme.spacing.xs),
           Text(
             exercise.variant!,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -111,10 +102,7 @@ class SupersetBadge extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.secondaryContainer.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
@@ -162,8 +150,7 @@ class ExerciseCard extends StatefulWidget {
   State<ExerciseCard> createState() => _ExerciseCardState();
 }
 
-class _ExerciseCardState extends State<ExerciseCard>
-    with TickerProviderStateMixin {
+class _ExerciseCardState extends State<ExerciseCard> with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -178,10 +165,7 @@ class _ExerciseCardState extends State<ExerciseCard>
       child: InkWell(
         onTap: widget.onTap,
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        child: Padding(
-          padding: EdgeInsets.all(AppTheme.spacing.lg),
-          child: _buildCardContent(),
-        ),
+        child: Padding(padding: EdgeInsets.all(AppTheme.spacing.lg), child: _buildCardContent()),
       ),
     );
   }
@@ -191,10 +175,7 @@ class _ExerciseCardState extends State<ExerciseCard>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        ExerciseCardHeader(
-          exercise: widget.exercise,
-          onOptionsPressed: widget.onOptionsPressed,
-        ),
+        ExerciseCardHeader(exercise: widget.exercise, onOptionsPressed: widget.onOptionsPressed),
         SizedBox(height: AppTheme.spacing.md),
         ExerciseTitleSection(exercise: widget.exercise),
         SizedBox(height: AppTheme.spacing.md),
@@ -213,13 +194,9 @@ class _ExerciseCardState extends State<ExerciseCard>
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest.withAlpha(26),
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(26),
                         border: Border.all(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.outline.withAlpha(26),
+                          color: Theme.of(context).colorScheme.outline.withAlpha(26),
                         ),
                       ),
                     ),
@@ -251,9 +228,7 @@ class _ExerciseCardState extends State<ExerciseCard>
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Theme.of(
-                                  context,
-                                ).colorScheme.surface.withAlpha(180),
+                                Theme.of(context).colorScheme.surface.withAlpha(180),
                                 Colors.transparent,
                               ],
                             ),
@@ -274,9 +249,7 @@ class _ExerciseCardState extends State<ExerciseCard>
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                               colors: [
-                                Theme.of(
-                                  context,
-                                ).colorScheme.surface.withAlpha(180),
+                                Theme.of(context).colorScheme.surface.withAlpha(180),
                                 Colors.transparent,
                               ],
                             ),

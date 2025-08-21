@@ -36,14 +36,8 @@ class FoodListState extends ConsumerState<FoodList> {
     if (!mounted) return;
     if (widget.userId != null) {
       final mealsService = ref.read(mealsServiceProvider);
-      await mealsService.createDailyStatsIfNotExist(
-        widget.userId!,
-        widget.selectedDate,
-      );
-      await mealsService.createMealsIfNotExist(
-        widget.userId!,
-        widget.selectedDate,
-      );
+      await mealsService.createDailyStatsIfNotExist(widget.userId!, widget.selectedDate);
+      await mealsService.createMealsIfNotExist(widget.userId!, widget.selectedDate);
     }
   }
 
@@ -66,10 +60,7 @@ class FoodListState extends ConsumerState<FoodList> {
     }
 
     return StreamBuilder<List<meals.Meal>>(
-      stream: mealsService.getUserMealsByDate(
-        userId: userId,
-        date: widget.selectedDate,
-      ),
+      stream: mealsService.getUserMealsByDate(userId: userId, date: widget.selectedDate),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final mealsList = snapshot.data!;
@@ -87,10 +78,7 @@ class FoodListState extends ConsumerState<FoodList> {
         } else {
           // Skeleton loading for meals
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             itemCount: 5,
             itemBuilder: (context, index) => const SkeletonCard(),
           );
@@ -153,11 +141,7 @@ class FoodListState extends ConsumerState<FoodList> {
     return mealSections;
   }
 
-  meals.Meal getMealByType(
-    List<meals.Meal> mealsList,
-    String mealType,
-    String userId,
-  ) {
+  meals.Meal getMealByType(List<meals.Meal> mealsList, String mealType, String userId) {
     return mealsList.firstWhere(
       (meal) => meal.mealType == mealType,
       orElse: () => meals.Meal.emptyMeal(
@@ -170,9 +154,7 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   List<meals.Meal> getSnackMeals(List<meals.Meal> mealsList) {
-    return mealsList
-        .where((meal) => meal.mealType.startsWith('Snack'))
-        .toList();
+    return mealsList.where((meal) => meal.mealType.startsWith('Snack')).toList();
   }
 
   Widget buildMealSection(
@@ -225,9 +207,7 @@ class FoodListState extends ConsumerState<FoodList> {
             childrenPadding: EdgeInsets.zero,
             backgroundColor: Colors.transparent,
             collapsedBackgroundColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -267,8 +247,7 @@ class FoodListState extends ConsumerState<FoodList> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () =>
-                      showFoodSelectorBottomSheet(context, ref, meal),
+                  onPressed: () => showFoodSelectorBottomSheet(context, ref, meal),
                   tooltip: 'Aggiungi Alimento',
                 ),
                 MenuAnchor(
@@ -294,14 +273,12 @@ class FoodListState extends ConsumerState<FoodList> {
                       child: const Text('Elimina Tutti gli Alimenti'),
                     ),
                     MenuItemButton(
-                      onPressed: () =>
-                          onMealMenuSelected('save_as_favorite', meal),
+                      onPressed: () => onMealMenuSelected('save_as_favorite', meal),
                       leadingIcon: const Icon(Icons.favorite_outline),
                       child: const Text('Salva come Preferito'),
                     ),
                     MenuItemButton(
-                      onPressed: () =>
-                          onMealMenuSelected('apply_favorite', meal),
+                      onPressed: () => onMealMenuSelected('apply_favorite', meal),
                       leadingIcon: const Icon(Icons.favorite),
                       child: const Text('Applica Preferito'),
                     ),
@@ -327,9 +304,7 @@ class FoodListState extends ConsumerState<FoodList> {
             return ListTile(
               title: Text(
                 'No foods added.',
-                style: GoogleFonts.roboto(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+                style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
               ),
             );
           }
@@ -347,12 +322,7 @@ class FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  Widget buildFoodItem(
-    BuildContext context,
-    WidgetRef ref,
-    meals.Meal meal,
-    macros.Food food,
-  ) {
+  Widget buildFoodItem(BuildContext context, WidgetRef ref, meals.Meal meal, macros.Food food) {
     final theme = Theme.of(context);
     final isSelected = selectedFoods.contains(food.id);
 
@@ -384,13 +354,7 @@ class FoodListState extends ConsumerState<FoodList> {
                 width: 1.2,
               ),
               boxShadow: isHovered
-                  ? [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
+                  ? [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 2))]
                   : null,
             ),
             child: Slidable(
@@ -404,10 +368,7 @@ class FoodListState extends ConsumerState<FoodList> {
                 children: buildSlidableEndActions(ref, meal, food),
               ),
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -426,15 +387,11 @@ class FoodListState extends ConsumerState<FoodList> {
                 ),
                 subtitle: Text(
                   'C:${food.carbs.toStringAsFixed(0)}g P:${food.protein.toStringAsFixed(0)}g F:${food.fat.toStringAsFixed(0)}g\n${food.kcal.toStringAsFixed(0)} Kcal',
-                  style: GoogleFonts.roboto(
-                    fontSize: 14,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: GoogleFonts.roboto(fontSize: 14, color: colorScheme.onSurfaceVariant),
                 ),
                 trailing: IconButton(
                   icon: const Icon(Icons.more_vert),
-                  onPressed: () =>
-                      showFoodOptionsBottomSheet(context, ref, meal, food),
+                  onPressed: () => showFoodOptionsBottomSheet(context, ref, meal, food),
                 ),
               ),
             ),
@@ -452,8 +409,7 @@ class FoodListState extends ConsumerState<FoodList> {
   ) {
     return [
       SlidableAction(
-        onPressed: (_) =>
-            showFoodSelectorBottomSheet(context, ref, meal, myFoodId: food.id),
+        onPressed: (_) => showFoodSelectorBottomSheet(context, ref, meal, myFoodId: food.id),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         icon: Icons.edit,
@@ -469,11 +425,7 @@ class FoodListState extends ConsumerState<FoodList> {
     ];
   }
 
-  List<SlidableAction> buildSlidableEndActions(
-    WidgetRef ref,
-    meals.Meal meal,
-    macros.Food food,
-  ) {
+  List<SlidableAction> buildSlidableEndActions(WidgetRef ref, meals.Meal meal, macros.Food food) {
     final mealsService = ref.read(mealsServiceProvider.notifier);
 
     return [
@@ -509,10 +461,7 @@ class FoodListState extends ConsumerState<FoodList> {
 
   Widget buildError(BuildContext context, String error) {
     return Center(
-      child: Text(
-        'Error: $error',
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-      ),
+      child: Text('Error: $error', style: TextStyle(color: Theme.of(context).colorScheme.error)),
     );
   }
 
@@ -525,9 +474,7 @@ class FoodListState extends ConsumerState<FoodList> {
         child: ExpansionTile(
           title: Text(
             mealName,
-            style: GoogleFonts.roboto(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+            style: GoogleFonts.roboto(color: Theme.of(context).colorScheme.onSurface),
           ),
           children: [
             ListTile(
@@ -543,18 +490,12 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Widget buildLoadingCard(BuildContext context, String mealName) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: const SkeletonCard(),
-    );
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: const SkeletonCard());
   }
 
   Widget buildErrorTile(BuildContext context, String error) {
     return ListTile(
-      title: Text(
-        'Error: $error',
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-      ),
+      title: Text('Error: $error', style: TextStyle(color: Theme.of(context).colorScheme.error)),
     );
   }
 
@@ -577,9 +518,9 @@ class FoodListState extends ConsumerState<FoodList> {
         );
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Favorite name cannot be empty')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Favorite name cannot be empty')));
         }
       }
     } else if (value == 'apply_favorite') {
@@ -595,9 +536,9 @@ class FoodListState extends ConsumerState<FoodList> {
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No favorite meals available')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('No favorite meals available')));
         }
       }
     }
@@ -605,10 +546,7 @@ class FoodListState extends ConsumerState<FoodList> {
 
   Future<void> showDuplicateDialog(WidgetRef ref, meals.Meal sourceMeal) async {
     final mealsList = await getAllMeals(sourceMeal.userId);
-    final selectedMeal = await showSelectMealDialog(
-      mealsList,
-      'Select Target Meal',
-    );
+    final selectedMeal = await showSelectMealDialog(mealsList, 'Select Target Meal');
     if (selectedMeal != null) {
       final overwriteExisting = await showOverwriteDialog();
       if (overwriteExisting != null) {
@@ -623,10 +561,7 @@ class FoodListState extends ConsumerState<FoodList> {
     }
   }
 
-  Future<meals.Meal?> showSelectMealDialog(
-    List<meals.Meal> mealsList,
-    String title,
-  ) {
+  Future<meals.Meal?> showSelectMealDialog(List<meals.Meal> mealsList, String title) {
     return showDialog<meals.Meal>(
       context: context,
       builder: (BuildContext context) {
@@ -714,10 +649,7 @@ class FoodListState extends ConsumerState<FoodList> {
     );
     if (confirm == true) {
       final mealsService = ref.read(mealsServiceProvider.notifier);
-      final foods = await mealsService.getFoodsForMeals(
-        userId: meal.userId,
-        mealId: meal.id!,
-      );
+      final foods = await mealsService.getFoodsForMeals(userId: meal.userId, mealId: meal.id!);
       for (final food in foods) {
         await mealsService.removeFoodFromMeal(
           userId: meal.userId,
@@ -729,10 +661,7 @@ class FoodListState extends ConsumerState<FoodList> {
   }
 
   Future<void> showMoveDialog(WidgetRef ref, List<meals.Meal> mealsList) async {
-    final selectedMeal = await showSelectMealDialog(
-      mealsList,
-      'Select Destination Meal',
-    );
+    final selectedMeal = await showSelectMealDialog(mealsList, 'Select Destination Meal');
     if (selectedMeal != null) {
       await ref
           .read(mealsServiceProvider.notifier)
@@ -746,9 +675,9 @@ class FoodListState extends ConsumerState<FoodList> {
           selectedFoods.clear();
           isSelectionMode = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foods moved successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Foods moved successfully')));
       }
     }
   }
@@ -802,12 +731,7 @@ class FoodListState extends ConsumerState<FoodList> {
     );
   }
 
-  void onFoodMenuSelected(
-    WidgetRef ref,
-    String value,
-    String foodId,
-    meals.Meal meal,
-  ) async {
+  void onFoodMenuSelected(WidgetRef ref, String value, String foodId, meals.Meal meal) async {
     final mealsService = ref.read(mealsServiceProvider);
     if (value == 'edit') {
       showFoodSelectorBottomSheet(context, ref, meal, myFoodId: foodId);
@@ -823,9 +747,9 @@ class FoodListState extends ConsumerState<FoodList> {
           myFoodId: foodId,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Food deleted successfully')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Food deleted successfully')));
         }
       }
     } else if (value == 'move') {
@@ -864,12 +788,7 @@ class FoodListState extends ConsumerState<FoodList> {
     }
   }
 
-  void onFoodTap(
-    BuildContext context,
-    WidgetRef ref,
-    meals.Meal meal,
-    String foodId,
-  ) {
+  void onFoodTap(BuildContext context, WidgetRef ref, meals.Meal meal, String foodId) {
     if (isSelectionMode) {
       setState(() {
         if (selectedFoods.contains(foodId)) {
@@ -911,9 +830,7 @@ class FoodListState extends ConsumerState<FoodList> {
         builder: (context, scrollController) => Container(
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(25.0),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25.0)),
           ),
           child: FoodSelector(
             meal: meal,
@@ -964,12 +881,7 @@ class FoodListState extends ConsumerState<FoodList> {
                 title: Text('Modifica', style: GoogleFonts.roboto()),
                 onTap: () {
                   Navigator.pop(context);
-                  showFoodSelectorBottomSheet(
-                    context,
-                    ref,
-                    meal,
-                    myFoodId: food.id,
-                  );
+                  showFoodSelectorBottomSheet(context, ref, meal, myFoodId: food.id);
                 },
               ),
               ListTile(
@@ -1017,18 +929,9 @@ class FoodListState extends ConsumerState<FoodList> {
   List<PopupMenuEntry<String>> buildMealPopupMenuItems() {
     return [
       const PopupMenuItem(value: 'duplicate', child: Text('Duplica Pasto')),
-      const PopupMenuItem(
-        value: 'delete_all',
-        child: Text('Elimina Tutti gli Alimenti'),
-      ),
-      const PopupMenuItem(
-        value: 'save_as_favorite',
-        child: Text('Salva come Preferito'),
-      ),
-      const PopupMenuItem(
-        value: 'apply_favorite',
-        child: Text('Applica Preferito'),
-      ),
+      const PopupMenuItem(value: 'delete_all', child: Text('Elimina Tutti gli Alimenti')),
+      const PopupMenuItem(value: 'save_as_favorite', child: Text('Salva come Preferito')),
+      const PopupMenuItem(value: 'apply_favorite', child: Text('Applica Preferito')),
     ];
   }
 
@@ -1048,11 +951,7 @@ class FoodListState extends ConsumerState<FoodList> {
         onPressed: () async {
           if (dailyStatsId.isNotEmpty) {
             final mealsService = ref.read(mealsServiceProvider);
-            await mealsService.createSnack(
-              userId: userId,
-              dailyStatsId: dailyStatsId,
-              date: date,
-            );
+            await mealsService.createSnack(userId: userId, dailyStatsId: dailyStatsId, date: date);
           }
         },
         variant: AppButtonVariant.primary,

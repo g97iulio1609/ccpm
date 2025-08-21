@@ -58,11 +58,7 @@ class AuthScreen extends HookConsumerWidget {
               ),
             ],
           ),
-          child: Icon(
-            Icons.fitness_center,
-            size: 56,
-            color: theme.colorScheme.primary,
-          ),
+          child: Icon(Icons.fitness_center, size: 56, color: theme.colorScheme.primary),
         ),
         const SizedBox(height: 24),
         // App Name with Gradient
@@ -137,11 +133,7 @@ class _AuthBackground extends ConsumerWidget {
         Positioned(
           bottom: -100,
           right: -80,
-          child: _RadialAccent(
-            color: cs.secondary,
-            diameter: 340,
-            opacity: 0.14,
-          ),
+          child: _RadialAccent(color: cs.secondary, diameter: 340, opacity: 0.14),
         ),
         // Velo glass "lite" che ammorbidisce gli accenti se abilitato
         if (glassEnabled && !reduceMotion)
@@ -172,11 +164,7 @@ class _RadialAccent extends StatelessWidget {
   final double diameter;
   final double opacity;
 
-  const _RadialAccent({
-    required this.color,
-    required this.diameter,
-    this.opacity = 0.15,
-  });
+  const _RadialAccent({required this.color, required this.diameter, this.opacity = 0.15});
 
   @override
   Widget build(BuildContext context) {
@@ -213,10 +201,7 @@ class _AnimatedGridPatternState extends State<AnimatedGridPattern>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 20),
-      vsync: this,
-    )..repeat();
+    _controller = AnimationController(duration: const Duration(seconds: 20), vsync: this)..repeat();
     _animation = Tween<double>(begin: 0, end: 30).animate(_controller);
   }
 

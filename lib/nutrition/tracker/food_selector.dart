@@ -31,16 +31,13 @@ class FoodSelector extends ConsumerStatefulWidget {
   FoodSelectorState createState() => FoodSelectorState();
 }
 
-class FoodSelectorState extends ConsumerState<FoodSelector>
-    with SingleTickerProviderStateMixin {
+class FoodSelectorState extends ConsumerState<FoodSelector> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _quantityController = TextEditingController(
-    text: '100',
-  );
+  final TextEditingController _quantityController = TextEditingController(text: '100');
   String _selectedFoodId = '';
   double _quantity = 100.0;
   String _unit = 'g';
@@ -57,15 +54,9 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
@@ -187,10 +178,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
     );
   }
 
-  Future<void> _addFood(
-    MealsService mealsService,
-    macros.Food adjustedFood,
-  ) async {
+  Future<void> _addFood(MealsService mealsService, macros.Food adjustedFood) async {
     if (widget.isFavoriteMeal) {
       await mealsService.addFoodToFavoriteMeal(
         userId: widget.meal.userId,
@@ -207,10 +195,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
     }
   }
 
-  Future<void> _updateFood(
-    MealsService mealsService,
-    macros.Food adjustedFood,
-  ) async {
+  Future<void> _updateFood(MealsService mealsService, macros.Food adjustedFood) async {
     await mealsService.updateMyFood(
       userId: widget.meal.userId,
       myFoodId: widget.myFoodId!,
@@ -302,9 +287,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
       future: _foodFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: colorScheme.primary),
-          );
+          return Center(child: CircularProgressIndicator(color: colorScheme.primary));
         } else if (snapshot.hasData) {
           final food = snapshot.data!;
           _loadedFood = food;
@@ -320,9 +303,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
                       Expanded(
                         child: Text(
                           food.name,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                       AppBadge(
@@ -337,31 +318,14 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
                   SizedBox(height: AppTheme.spacing.lg),
                   Text(
                     'Macronutrienti',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   SizedBox(height: AppTheme.spacing.md),
-                  _buildMacroItem(
-                    'Proteine',
-                    _proteinValue,
-                    colorScheme.tertiary,
-                    theme,
-                  ),
+                  _buildMacroItem('Proteine', _proteinValue, colorScheme.tertiary, theme),
                   SizedBox(height: AppTheme.spacing.sm),
-                  _buildMacroItem(
-                    'Carboidrati',
-                    _carbsValue,
-                    colorScheme.secondary,
-                    theme,
-                  ),
+                  _buildMacroItem('Carboidrati', _carbsValue, colorScheme.secondary, theme),
                   SizedBox(height: AppTheme.spacing.sm),
-                  _buildMacroItem(
-                    'Grassi',
-                    _fatValue,
-                    colorScheme.error,
-                    theme,
-                  ),
+                  _buildMacroItem('Grassi', _fatValue, colorScheme.error, theme),
                 ],
               ),
             ),
@@ -377,9 +341,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
                   SizedBox(height: AppTheme.spacing.md),
                   Text(
                     'Errore nel caricamento',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.error,
-                    ),
+                    style: theme.textTheme.titleLarge?.copyWith(color: colorScheme.error),
                   ),
                   SizedBox(height: AppTheme.spacing.sm),
                   Text(
@@ -437,9 +399,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
                 value: value,
                 child: Text(
                   value,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
                 ),
               );
             }).toList(),
@@ -450,22 +410,14 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
               });
             },
             underline: const SizedBox.shrink(),
-            icon: Icon(
-              Icons.arrow_drop_down,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            icon: Icon(Icons.arrow_drop_down, color: colorScheme.onSurfaceVariant),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMacroItem(
-    String label,
-    double value,
-    Color color,
-    ThemeData theme,
-  ) {
+  Widget _buildMacroItem(String label, double value, Color color, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -483,9 +435,7 @@ class FoodSelectorState extends ConsumerState<FoodSelector>
             SizedBox(width: AppTheme.spacing.sm),
             Text(
               label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
             ),
           ],
         ),

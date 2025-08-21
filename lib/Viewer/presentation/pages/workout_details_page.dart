@@ -16,6 +16,7 @@ import 'package:alphanessone/Viewer/presentation/widgets/workout_details/meta_ch
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/progress_bar.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/exercise_header.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/series_list.dart';
+import 'package:alphanessone/Viewer/presentation/widgets/workout_details/cardio_summary.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/start_buttons.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/superset_components.dart';
 import 'package:alphanessone/Viewer/presentation/widgets/workout_details/superset_series_matrix.dart';
@@ -26,8 +27,7 @@ import 'package:alphanessone/Viewer/presentation/widgets/workout_details/series_
     as series_dialog;
 import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
-import 'package:alphanessone/Viewer/UI/workout_provider.dart'
-    as workout_provider;
+import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
 import 'package:alphanessone/trainingBuilder/presentation/widgets/dialogs/series_dialog.dart';
 
 class WorkoutDetailsPage extends ConsumerStatefulWidget {
@@ -53,9 +53,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   Widget build(BuildContext context) {
     // Osserviamo lo stato dal WorkoutDetailsNotifier
     final state = ref.watch(workoutDetailsNotifierProvider(widget.workoutId));
-    final notifier = ref.read(
-      workoutDetailsNotifierProvider(widget.workoutId).notifier,
-    );
+    final notifier = ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
 
     final colorScheme = Theme.of(context).colorScheme;
     // Stabilizziamo il rendering: per ora usiamo sempre la LISTA in tutte le larghezze
@@ -107,10 +105,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         slivers: const [
           SliverFillRemaining(
             hasScrollBody: false,
-            child: EmptyState(
-              icon: Icons.fitness_center,
-              title: 'Nessun esercizio trovato',
-            ),
+            child: EmptyState(icon: Icons.fitness_center, title: 'Nessun esercizio trovato'),
           ),
         ],
       );
@@ -135,11 +130,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
             return Padding(
               padding: EdgeInsets.only(bottom: spacing),
               child: exercises.length == 1
-                  ? _buildSingleExerciseCard(
-                      exercises.first,
-                      context,
-                      isListMode: true,
-                    )
+                  ? _buildSingleExerciseCard(exercises.first, context, isListMode: true)
                   : _buildSuperSetCard(
                       superSetExercises: exercises,
                       context: context,
@@ -165,9 +156,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           // Griglia a colonne con altezza variabile (masonry): le card non vengono mai tagliate
           final bool ultraWide = width >= 1800;
           final bool veryWide = width >= 1600 && width < 1800;
-          final double gridSpacing = (veryWide || ultraWide)
-              ? AppTheme.spacing.sm
-              : spacing;
+          final double gridSpacing = (veryWide || ultraWide) ? AppTheme.spacing.sm : spacing;
           final int columns = ultraWide
               ? 5
               : veryWide
@@ -198,11 +187,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                         // Usa layout completo anche in griglia per evitare tagli
                         isListMode: true,
                       );
-                return Semantics(
-                  container: true,
-                  label: 'Scheda esercizio',
-                  child: child,
-                );
+                return Semantics(container: true, label: 'Scheda esercizio', child: child);
               },
             ),
           );
@@ -265,9 +250,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
           }
         },
       ),
-      background: Theme.of(
-        context,
-      ).colorScheme.surfaceContainerHighest.withAlpha(38),
+      background: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(38),
       child: Column(
         children: [
           if (isListMode)
@@ -277,6 +260,10 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   MetaChips(exercise: exercise),
+                  if ((exercise.type).toLowerCase() == 'cardio') ...[
+                    SizedBox(height: AppTheme.spacing.sm),
+                    CardioSummary(exercise: exercise),
+                  ],
                   SizedBox(height: AppTheme.spacing.sm),
                   ProgressBar(
                     done: series.where((s) => s.isCompleted).length,
@@ -296,9 +283,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                   ],
                   SeriesList(
                     series: series,
-                    onSeriesTap: (s) => _showSeriesExecutionDialog(context, s),
-                    onToggleComplete: (s) =>
-                        _toggleSeriesCompletion(context, s),
+                    exerciseType: exercise.type,
+                    onSeriesTap: (s) => _showSeriesExecutionDialog(context, s, exercise.type),
+                    onToggleComplete: (s) => _toggleSeriesCompletion(context, s),
                   ),
                 ],
               ),
@@ -312,6 +299,10 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       MetaChips(exercise: exercise),
+                      if ((exercise.type).toLowerCase() == 'cardio') ...[
+                        SizedBox(height: AppTheme.spacing.sm),
+                        CardioSummary(exercise: exercise),
+                      ],
                       SizedBox(height: AppTheme.spacing.sm),
                       ProgressBar(
                         done: series.where((s) => s.isCompleted).length,
@@ -331,10 +322,9 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                       ],
                       SeriesList(
                         series: series,
-                        onSeriesTap: (s) =>
-                            _showSeriesExecutionDialog(context, s),
-                        onToggleComplete: (s) =>
-                            _toggleSeriesCompletion(context, s),
+                        exerciseType: exercise.type,
+                        onSeriesTap: (s) => _showSeriesExecutionDialog(context, s, exercise.type),
+                        onToggleComplete: (s) => _toggleSeriesCompletion(context, s),
                       ),
                     ],
                   ),
@@ -356,23 +346,15 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final result = await showDialog<List<Series>>(
       context: context,
       builder: (context) => SeriesDialog(
-        exerciseRecordService: ref.read(
-          app_providers.exerciseRecordServiceProvider,
-        ),
+        exerciseRecordService: ref.read(app_providers.exerciseRecordServiceProvider),
         athleteId: widget.userId,
-        exerciseId:
-            exercise.exerciseId ??
-            exercise.originalExerciseId ??
-            exercise.id ??
-            '',
+        exerciseId: exercise.exerciseId ?? exercise.originalExerciseId ?? exercise.id ?? '',
         exerciseType: exercise.type,
         weekIndex: 0,
         exercise: exercise,
         currentSeriesGroup: null,
         latestMaxWeight: (exercise.latestMaxWeight ?? 0).toDouble(),
-        weightNotifier: ValueNotifier<double>(
-          exercise.latestMaxWeight?.toDouble() ?? 0.0,
-        ),
+        weightNotifier: ValueNotifier<double>(exercise.latestMaxWeight?.toDouble() ?? 0.0),
       ),
     );
     if (result == null || result.isEmpty) return;
@@ -380,55 +362,38 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     await ref
         .read(workout_provider.workoutServiceProvider)
         .applySeriesChanges(exercise.toMap(), result);
-    await ref
-        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
-        .refreshWorkout();
+    await ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier).refreshWorkout();
   }
 
-  Future<void> _handleAddSeriesGroup(
-    BuildContext context,
-    Exercise exercise,
-  ) async {
+  Future<void> _handleAddSeriesGroup(BuildContext context, Exercise exercise) async {
     if (!context.mounted) return;
     // Usa SeriesDialog con currentSeriesGroup = [] e sets impostabili
     final result = await showDialog<List<Series>>(
       context: context,
       builder: (context) => SeriesDialog(
-        exerciseRecordService: ref.read(
-          app_providers.exerciseRecordServiceProvider,
-        ),
+        exerciseRecordService: ref.read(app_providers.exerciseRecordServiceProvider),
         athleteId: widget.userId,
-        exerciseId:
-            exercise.exerciseId ??
-            exercise.originalExerciseId ??
-            exercise.id ??
-            '',
+        exerciseId: exercise.exerciseId ?? exercise.originalExerciseId ?? exercise.id ?? '',
         exerciseType: exercise.type,
         weekIndex: 0,
         exercise: exercise,
         currentSeriesGroup: const <Series>[],
         latestMaxWeight: (exercise.latestMaxWeight ?? 0).toDouble(),
-        weightNotifier: ValueNotifier<double>(
-          exercise.latestMaxWeight?.toDouble() ?? 0.0,
-        ),
+        weightNotifier: ValueNotifier<double>(exercise.latestMaxWeight?.toDouble() ?? 0.0),
       ),
     );
     if (result == null || result.isEmpty) return;
     await ref
         .read(workout_provider.workoutServiceProvider)
         .applySeriesChanges(exercise.toMap(), result);
-    await ref
-        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
-        .refreshWorkout();
+    await ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier).refreshWorkout();
   }
 
   Future<void> _handleRemoveLastSeries(Exercise exercise) async {
     if (exercise.series.isEmpty) return;
     final last = exercise.series.last;
     await FirebaseFirestore.instance.collection('series').doc(last.id).delete();
-    await ref
-        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
-        .refreshWorkout();
+    await ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier).refreshWorkout();
   }
 
   Future<void> _handleRemoveAllSeries(Exercise exercise) async {
@@ -439,19 +404,12 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       }
     }
     await batch.commit();
-    await ref
-        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
-        .refreshWorkout();
+    await ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier).refreshWorkout();
   }
 
   Future<void> _handleRemoveExercise(Exercise exercise) async {
-    await ref
-        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
-        .refreshWorkout();
-    await FirebaseFirestore.instance
-        .collection('exercisesWorkout')
-        .doc(exercise.id)
-        .delete();
+    await ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier).refreshWorkout();
+    await FirebaseFirestore.instance.collection('exercisesWorkout').doc(exercise.id).delete();
     // Le serie verranno eliminate via regole oppure potremmo forzare la cancellazione
     final seriesSnap = await FirebaseFirestore.instance
         .collection('series')
@@ -462,9 +420,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
       batch.delete(doc.reference);
     }
     await batch.commit();
-    await ref
-        .read(workoutDetailsNotifierProvider(widget.workoutId).notifier)
-        .refreshWorkout();
+    await ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier).refreshWorkout();
   }
 
   // Header estratto in ExerciseHeader
@@ -477,19 +433,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
     final allSeriesCompleted = superSetExercises.every((exercise) {
       return exercise.series.every((series) => series.isCompleted);
     });
-    final totalSeries = superSetExercises
-        .map((e) => e.series.length)
-        .fold<int>(0, (p, c) => p + c);
+    final totalSeries = superSetExercises.map((e) => e.series.length).fold<int>(0, (p, c) => p + c);
     final doneSeries = superSetExercises
         .map((e) => e.series.where((s) => s.isCompleted).length)
         .fold<int>(0, (p, c) => p + c);
 
     return AppCard(
       glass: true,
-      header: SectionHeader(
-        title: 'Super Set',
-        subtitle: '${superSetExercises.length} esercizi',
-      ),
+      header: SectionHeader(title: 'Super Set', subtitle: '${superSetExercises.length} esercizi'),
       child: Column(
         children: [
           Padding(
@@ -506,11 +457,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                       exercise.id ?? '',
                       exercise.name,
                       exercise.note,
-                      ref.read(
-                        workoutDetailsNotifierProvider(
-                          widget.workoutId,
-                        ).notifier,
-                      ),
+                      ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier),
                     ),
                     onMenuSelected: (value) {
                       if (value == 'change') {
@@ -553,18 +500,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!allSeriesCompleted) ...[
-                    StartSuperSetButton(
-                      exercises: superSetExercises,
-                      onStart: _handleStartSeries,
-                    ),
+                    StartSuperSetButton(exercises: superSetExercises, onStart: _handleStartSeries),
                     const SizedBox(height: 24),
                   ],
                   SuperSetHeaderRow(exercises: superSetExercises),
                   SuperSetSeriesMatrix(
                     exercises: superSetExercises,
-                    onSeriesTap: (s) => _showSeriesExecutionDialog(context, s),
-                    onToggleComplete: (s) =>
-                        _toggleSeriesCompletion(context, s),
+                    onSeriesTap: (s, type) => _showSeriesExecutionDialog(context, s, type),
+                    onToggleComplete: (s) => _toggleSeriesCompletion(context, s),
                   ),
                 ],
               ),
@@ -587,10 +530,8 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
                       SuperSetHeaderRow(exercises: superSetExercises),
                       SuperSetSeriesMatrix(
                         exercises: superSetExercises,
-                        onSeriesTap: (s) =>
-                            _showSeriesExecutionDialog(context, s),
-                        onToggleComplete: (s) =>
-                            _toggleSeriesCompletion(context, s),
+                        onSeriesTap: (s, type) => _showSeriesExecutionDialog(context, s, type),
+                        onToggleComplete: (s) => _toggleSeriesCompletion(context, s),
                       ),
                     ],
                   ),
@@ -628,19 +569,14 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   // Series row estratto in SeriesList
 
   void _toggleSeriesCompletion(BuildContext context, Series series) {
-    final notifier = ref.read(
-      workoutDetailsNotifierProvider(widget.workoutId).notifier,
-    );
+    final notifier = ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
     if (series.isCompleted) {
       showDialog(
         context: context,
         builder: (context) => AppDialog(
           title: const Text('Conferma'),
           actions: [
-            AppDialogHelpers.buildCancelButton(
-              context: context,
-              label: 'Annulla',
-            ),
+            AppDialogHelpers.buildCancelButton(context: context, label: 'Annulla'),
             AppDialogHelpers.buildActionButton(
               context: context,
               label: 'Conferma',
@@ -654,12 +590,7 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
         ),
       );
     } else {
-      notifier.completeSeries(
-        series.id ?? '',
-        true,
-        series.reps,
-        series.weight,
-      );
+      notifier.completeSeries(series.id ?? '', true, series.reps, series.weight);
     }
   }
 
@@ -681,30 +612,68 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
 
   // Superset header extracted in SuperSetHeaderRow
 
-  Future<void> _showSeriesExecutionDialog(BuildContext context, Series series) {
-    return series_dialog.showSeriesExecutionDialog(
-      context: context,
-      initialReps: series.repsDone > 0 ? series.repsDone : series.reps,
-      initialWeight: series.weightDone > 0 ? series.weightDone : series.weight,
-      onSave: (repsDone, weightDone) async {
-        final notifier = ref.read(
-          workoutDetailsNotifierProvider(widget.workoutId).notifier,
-        );
+  Future<void> _showSeriesExecutionDialog(BuildContext context, Series series, String? exerciseType) {
+    final isCardio = (exerciseType ?? '').toLowerCase() == 'cardio';
+    if (!isCardio) {
+      return series_dialog.showSeriesExecutionDialog(
+        context: context,
+        initialReps: series.repsDone > 0 ? series.repsDone : series.reps,
+        initialWeight: series.weightDone > 0 ? series.weightDone : series.weight,
+        onSave: (repsDone, weightDone) async {
+          final notifier = ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
 
+          try {
+            await notifier.completeSeries(series.id ?? '', true, repsDone, weightDone);
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Serie completata: ${repsDone}R × ${weightDone}kg'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Errore: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          }
+        },
+      );
+    }
+
+    return series_dialog.showCardioSeriesExecutionDialog(
+      context: context,
+      initialExecutedDurationSeconds: series.executedDurationSeconds,
+      initialExecutedDistanceMeters: series.executedDistanceMeters,
+      initialAvgHr: series.executedAvgHr,
+      onSave: ({int? executedDurationSeconds, int? executedDistanceMeters, int? executedAvgHr}) async {
+        final notifier = ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
         try {
-          await notifier.completeSeries(
-            series.id ?? '',
-            true,
-            repsDone,
-            weightDone,
+          await notifier.completeCardioSeries(
+            series,
+            executedDurationSeconds: executedDurationSeconds,
+            executedDistanceMeters: executedDistanceMeters,
+            executedAvgHr: executedAvgHr,
           );
 
           if (context.mounted) {
+            final d = executedDurationSeconds ?? 0;
+            final dist = executedDistanceMeters ?? 0;
+            final msg = 'Serie cardio salvata: '
+                '${d > 0 ? 'durata ${d}s' : ''}'
+                '${d > 0 && dist > 0 ? ' • ' : ''}'
+                '${dist > 0 ? 'distanza ${(dist / 1000).toStringAsFixed(2)}km' : ''}';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  'Serie completata: ${repsDone}R × ${weightDone}kg',
-                ),
+                content: Text(msg.isEmpty ? 'Serie cardio aggiornata' : msg),
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 2),
               ),
@@ -726,20 +695,32 @@ class _WorkoutDetailsPageState extends ConsumerState<WorkoutDetailsPage> {
   }
 
   void _handleStartSeries(Series series, Exercise exercise) {
+    final isCardio = (exercise.type).toLowerCase() == 'cardio';
     ExerciseTimerBottomSheet.show(
       context: context,
       userId: widget.userId,
       exerciseId: exercise.id ?? '',
       workoutId: widget.workoutId,
       exerciseName: exercise.name,
+      exerciseType: exercise.type,
       onSeriesComplete: (repsDone, weightDone) {
-        final notifier = ref.read(
-          workoutDetailsNotifierProvider(widget.workoutId).notifier,
-        );
+        final notifier = ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
         notifier.completeSeries(series.id ?? '', true, repsDone, weightDone);
         Navigator.of(context).pop();
       },
-      initialTimerSeconds: series.restTimeSeconds ?? 60,
+      onCardioComplete: ({int? executedDurationSeconds, int? executedDistanceMeters, int? executedAvgHr}) async {
+        final notifier = ref.read(workoutDetailsNotifierProvider(widget.workoutId).notifier);
+        await notifier.completeCardioSeries(
+          series,
+          executedDurationSeconds: executedDurationSeconds,
+          executedDistanceMeters: executedDistanceMeters,
+          executedAvgHr: executedAvgHr,
+        );
+        if (context.mounted) Navigator.of(context).pop();
+      },
+      initialTimerSeconds: isCardio
+          ? (series.durationSeconds ?? 60)
+          : (series.restTimeSeconds ?? 60),
       reps: series.reps,
       weight: series.weight,
     );

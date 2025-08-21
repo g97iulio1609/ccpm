@@ -21,11 +21,7 @@ class CustomInputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
 
-  const CustomInputField({
-    super.key,
-    required this.controller,
-    required this.label,
-  });
+  const CustomInputField({super.key, required this.controller, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +33,7 @@ class CustomInputField extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-        ],
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
         textAlign: TextAlign.center,
         style: theme.textTheme.headlineSmall?.copyWith(
           color: colorScheme.onSurface,
@@ -66,6 +60,9 @@ class ExerciseTimerBottomSheet extends ConsumerStatefulWidget {
   final String workoutId;
   final String exerciseName;
   final Function(int repsDone, double weightDone) onSeriesComplete;
+  final String? exerciseType; // to enable cardio mode
+  final Future<void> Function({int? executedDurationSeconds, int? executedDistanceMeters, int? executedAvgHr})?
+      onCardioComplete;
   final int initialTimerSeconds;
   final int reps;
   final double weight;
@@ -77,6 +74,8 @@ class ExerciseTimerBottomSheet extends ConsumerStatefulWidget {
     required this.workoutId,
     required this.exerciseName,
     required this.onSeriesComplete,
+    this.exerciseType,
+    this.onCardioComplete,
     this.initialTimerSeconds = 60, // Default a 1 minuto
     required this.reps,
     required this.weight,
@@ -89,6 +88,9 @@ class ExerciseTimerBottomSheet extends ConsumerStatefulWidget {
     required String workoutId,
     required String exerciseName,
     required Function(int repsDone, double weightDone) onSeriesComplete,
+    String? exerciseType,
+    Future<void> Function({int? executedDurationSeconds, int? executedDistanceMeters, int? executedAvgHr})?
+        onCardioComplete,
     int initialTimerSeconds = 60,
     required int reps,
     required double weight,
@@ -103,6 +105,8 @@ class ExerciseTimerBottomSheet extends ConsumerStatefulWidget {
         workoutId: workoutId,
         exerciseName: exerciseName,
         onSeriesComplete: onSeriesComplete,
+        exerciseType: exerciseType,
+        onCardioComplete: onCardioComplete,
         initialTimerSeconds: initialTimerSeconds,
         reps: reps,
         weight: weight,
@@ -111,12 +115,10 @@ class ExerciseTimerBottomSheet extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<ExerciseTimerBottomSheet> createState() =>
-      _ExerciseTimerBottomSheetState();
+  ConsumerState<ExerciseTimerBottomSheet> createState() => _ExerciseTimerBottomSheetState();
 }
 
-class _ExerciseTimerBottomSheetState
-    extends ConsumerState<ExerciseTimerBottomSheet>
+class _ExerciseTimerBottomSheetState extends ConsumerState<ExerciseTimerBottomSheet>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   late final Animation<double> _animation;
@@ -124,6 +126,9 @@ class _ExerciseTimerBottomSheetState
   // Controllers per i campi di input
   late final TextEditingController _repsController;
   late final TextEditingController _weightController;
+  // Cardio optional inputs (distance meters, avg HR bpm)
+  late final TextEditingController _distanceController;
+  late final TextEditingController _hrController;
 
   // Variabili locali per lo stato dell'UI
   bool _isEmomMode = false;
@@ -135,31 +140,51 @@ class _ExerciseTimerBottomSheetState
     // Inizializza i controller con i valori iniziali
     _repsController = TextEditingController(text: widget.reps.toString());
     _weightController = TextEditingController(text: widget.weight.toString());
+    _distanceController = TextEditingController();
+    _hrController = TextEditingController();
 
     // Inizializza l'animazione
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(seconds: widget.initialTimerSeconds),
     );
-    _animation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(_animationController);
+    _animation = Tween<double>(begin: 1.0, end: 0.0).animate(_animationController);
   }
 
   @override
   void dispose() {
     _repsController.dispose();
     _weightController.dispose();
+    _distanceController.dispose();
+    _hrController.dispose();
     _animationController.dispose();
     super.dispose();
   }
 
   void _handleTimerComplete() {
-    // Quando il timer è completato, chiama la callback per completare la serie
-    final int repsDone = int.tryParse(_repsController.text) ?? 0;
-    final double weightDone = double.tryParse(_weightController.text) ?? 0.0;
-    widget.onSeriesComplete(repsDone, weightDone);
+    final isCardio = (widget.exerciseType ?? '').toLowerCase() == 'cardio';
+    if (isCardio && widget.onCardioComplete != null) {
+      // Calcola i secondi trascorsi dal timer corrente
+      final timerState = ref.read(
+        exerciseTimerStateProvider((
+          userId: widget.userId,
+          initialDuration: widget.initialTimerSeconds,
+        )),
+      );
+      final elapsed = (timerState.initialDuration - timerState.remainingDuration).clamp(0, 86400);
+      final dist = int.tryParse(_distanceController.text);
+      final hr = int.tryParse(_hrController.text);
+      widget.onCardioComplete!(
+        executedDurationSeconds: elapsed,
+        executedDistanceMeters: dist,
+        executedAvgHr: hr,
+      );
+    } else {
+      // Quando il timer è completato, chiama la callback per completare la serie strength
+      final int repsDone = int.tryParse(_repsController.text) ?? 0;
+      final double weightDone = double.tryParse(_weightController.text) ?? 0.0;
+      widget.onSeriesComplete(repsDone, weightDone);
+    }
   }
 
   Future<void> _showAddPresetDialog() async {
@@ -237,12 +262,8 @@ class _ExerciseTimerBottomSheetState
   }
 
   Future<void> _showEditPresetDialog(TimerPreset preset) async {
-    final minutesController = TextEditingController(
-      text: ((preset.seconds) ~/ 60).toString(),
-    );
-    final secondsController = TextEditingController(
-      text: ((preset.seconds) % 60).toString(),
-    );
+    final minutesController = TextEditingController(text: ((preset.seconds) ~/ 60).toString());
+    final secondsController = TextEditingController(text: ((preset.seconds) % 60).toString());
     final labelController = TextEditingController(text: preset.label);
 
     return showDialog(
@@ -335,8 +356,7 @@ class _ExerciseTimerBottomSheetState
 
     // Sincronizza l'animazione con lo stato del timer
     if (timerState.status == TimerStatus.running) {
-      _animationController.value =
-          timerState.remainingDuration / timerState.initialDuration;
+      _animationController.value = timerState.remainingDuration / timerState.initialDuration;
     }
 
     return Material(
@@ -359,9 +379,7 @@ class _ExerciseTimerBottomSheetState
               return Container(
                 decoration: BoxDecoration(
                   color: theme.scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: Column(
                   children: [
@@ -371,31 +389,24 @@ class _ExerciseTimerBottomSheetState
                       onVerticalDragUpdate: (details) {
                         if (details.primaryDelta! > 0) {
                           // Trascinamento verso il basso
-                          scrollController.jumpTo(
-                            scrollController.offset + details.primaryDelta!,
-                          );
+                          scrollController.jumpTo(scrollController.offset + details.primaryDelta!);
                           if (scrollController.offset >=
                               scrollController.position.maxScrollExtent) {
                             Navigator.of(context).pop();
                           }
                         } else {
                           // Trascinamento verso l'alto
-                          scrollController.jumpTo(
-                            scrollController.offset + details.primaryDelta!,
-                          );
+                          scrollController.jumpTo(scrollController.offset + details.primaryDelta!);
                         }
                       },
                       onVerticalDragEnd: (details) {
-                        if (details.primaryVelocity! > 0 &&
-                            scrollController.offset == 0) {
+                        if (details.primaryVelocity! > 0 && scrollController.offset == 0) {
                           Navigator.of(context).pop();
                         }
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppTheme.spacing.sm,
-                        ),
+                        padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.sm),
                         child: Center(
                           child: Container(
                             width: 40,
@@ -439,39 +450,48 @@ class _ExerciseTimerBottomSheetState
                               if (timerState.status == TimerStatus.running ||
                                   timerState.status == TimerStatus.paused ||
                                   timerState.status == TimerStatus.finished)
-                                _buildTimerDisplay(
-                                  timerState,
-                                  theme,
-                                  colorScheme,
-                                )
+                                _buildTimerDisplay(timerState, theme, colorScheme)
                               else
                                 Column(
                                   children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        CustomInputField(
-                                          controller: _repsController,
-                                          label: 'REPS',
-                                        ),
-                                        SizedBox(width: AppTheme.spacing.md),
-                                        CustomInputField(
-                                          controller: _weightController,
-                                          label: 'WEIGHT',
-                                        ),
-                                      ],
-                                    ),
+                                    if ((widget.exerciseType ?? '').toLowerCase() != 'cardio')
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          CustomInputField(
+                                            controller: _repsController,
+                                            label: 'REPS',
+                                          ),
+                                          SizedBox(width: AppTheme.spacing.md),
+                                          CustomInputField(
+                                            controller: _weightController,
+                                            label: 'WEIGHT',
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          CustomInputField(
+                                            controller: _distanceController,
+                                            label: 'DIST (m)',
+                                          ),
+                                          SizedBox(width: AppTheme.spacing.md),
+                                          CustomInputField(
+                                            controller: _hrController,
+                                            label: 'AVG HR',
+                                          ),
+                                        ],
+                                      ),
                                     const SizedBox(height: 16),
                                     ListTile(
                                       title: const Text('Modalità EMOM'),
                                       trailing: Switch(
                                         value: _isEmomMode,
-                                        onChanged: (value) =>
-                                            setState(() => _isEmomMode = value),
+                                        onChanged: (value) => setState(() => _isEmomMode = value),
                                         activeColor: colorScheme.primary,
-                                        activeTrackColor:
-                                            colorScheme.primaryContainer,
+                                        activeTrackColor: colorScheme.primaryContainer,
                                       ),
                                     ),
                                   ],
@@ -576,28 +596,18 @@ class _ExerciseTimerBottomSheetState
     );
   }
 
-  Widget _buildTimerCircle(
-    ExerciseTimerState timerState,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildTimerCircle(ExerciseTimerState timerState, ColorScheme colorScheme) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.black,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(26),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(26), blurRadius: 10, spreadRadius: 2)],
       ),
       child: AnimatedBuilder(
         animation: _animation,
         builder: (context, child) {
           // Calcola il valore del progresso con range 0-1
-          final progress =
-              timerState.remainingDuration / timerState.initialDuration;
+          final progress = timerState.remainingDuration / timerState.initialDuration;
           return CircularProgressIndicator(
             value: progress,
             strokeWidth: TimerConstants.progressStrokeWidth,
@@ -652,10 +662,7 @@ class _ExerciseTimerBottomSheetState
   Widget _buildEmomLabel(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       margin: EdgeInsets.only(bottom: AppTheme.spacing.md),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
@@ -712,9 +719,7 @@ class _ExerciseTimerBottomSheetState
                       },
                       onLongPress: () => _showEditPresetDialog(preset),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: isSelected
-                            ? colorScheme.primaryContainer
-                            : null,
+                        backgroundColor: isSelected ? colorScheme.primaryContainer : null,
                         side: BorderSide(color: colorScheme.primary),
                         padding: EdgeInsets.only(
                           left: AppTheme.spacing.sm,
@@ -723,9 +728,7 @@ class _ExerciseTimerBottomSheetState
                           bottom: AppTheme.spacing.sm,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.md,
-                          ),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.md),
                         ),
                       ),
                       child: Row(
@@ -740,11 +743,7 @@ class _ExerciseTimerBottomSheetState
                           ),
                           SizedBox(width: AppTheme.spacing.xs),
                           IconButton(
-                            icon: Icon(
-                              Icons.close,
-                              size: 18,
-                              color: colorScheme.error,
-                            ),
+                            icon: Icon(Icons.close, size: 18, color: colorScheme.error),
                             onPressed: () {
                               timerNotifier.deleteSelectedPreset();
                             },
@@ -792,19 +791,12 @@ class _ExerciseTimerBottomSheetState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildNumberPicker(theme, colorScheme, 'Minuti', minutes, 59, (
-            value,
-          ) {
+          _buildNumberPicker(theme, colorScheme, 'Minuti', minutes, 59, (value) {
             final newSeconds = value * 60 + seconds;
             timerNotifier.setCustomTime(newSeconds);
           }),
-          VerticalDivider(
-            color: colorScheme.outline.withAlpha(26),
-            width: AppTheme.spacing.lg,
-          ),
-          _buildNumberPicker(theme, colorScheme, 'Secondi', seconds, 59, (
-            value,
-          ) {
+          VerticalDivider(color: colorScheme.outline.withAlpha(26), width: AppTheme.spacing.lg),
+          _buildNumberPicker(theme, colorScheme, 'Secondi', seconds, 59, (value) {
             final newSeconds = minutes * 60 + value;
             timerNotifier.setCustomTime(newSeconds);
           }),
@@ -838,9 +830,7 @@ class _ExerciseTimerBottomSheetState
           maxValue: maxValue,
           onChanged: onChanged,
           itemHeight: TimerConstants.numberPickerItemHeight,
-          textStyle: theme.textTheme.titleLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          textStyle: theme.textTheme.titleLarge?.copyWith(color: colorScheme.onSurfaceVariant),
           selectedTextStyle: theme.textTheme.headlineSmall?.copyWith(
             color: colorScheme.primary,
             fontWeight: FontWeight.w600,
@@ -893,9 +883,7 @@ class _ExerciseTimerBottomSheetState
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     if (minutes > 0) {
-      return remainingSeconds > 0
-          ? '${minutes}m ${remainingSeconds}s'
-          : '${minutes}m';
+      return remainingSeconds > 0 ? '${minutes}m ${remainingSeconds}s' : '${minutes}m';
     }
     return '${remainingSeconds}s';
   }

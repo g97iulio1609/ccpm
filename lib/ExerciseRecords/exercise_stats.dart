@@ -20,11 +20,7 @@ class ExerciseStats extends HookConsumerWidget {
   final ExerciseModel exercise;
   final String userId;
 
-  const ExerciseStats({
-    super.key,
-    required this.exercise,
-    required this.userId,
-  });
+  const ExerciseStats({super.key, required this.exercise, required this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,8 +34,7 @@ class ExerciseStats extends HookConsumerWidget {
 
     useEffect(() {
       Future.microtask(() {
-        ref.read(currentMaxRMExerciseNameProvider.notifier).state =
-            exercise.name;
+        ref.read(currentMaxRMExerciseNameProvider.notifier).state = exercise.name;
       });
       return () {
         Future.microtask(() {
@@ -55,10 +50,7 @@ class ExerciseStats extends HookConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              colorScheme.surface,
-              colorScheme.surfaceContainerHighest.withAlpha(128),
-            ],
+            colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
           ),
         ),
         child: SafeArea(
@@ -66,9 +58,7 @@ class ExerciseStats extends HookConsumerWidget {
             stream: recordsStream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(color: colorScheme.primary),
-                );
+                return Center(child: CircularProgressIndicator(color: colorScheme.primary));
               }
 
               if (snapshot.hasError) {
@@ -76,17 +66,11 @@ class ExerciseStats extends HookConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: colorScheme.error,
-                      ),
+                      Icon(Icons.error_outline, size: 48, color: colorScheme.error),
                       SizedBox(height: AppTheme.spacing.md),
                       Text(
                         'Error: ${snapshot.error}',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: colorScheme.error,
-                        ),
+                        style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.error),
                       ),
                     ],
                   ),
@@ -149,12 +133,8 @@ class ExerciseStats extends HookConsumerWidget {
                               padding: EdgeInsets.all(AppTheme.spacing.lg),
                               decoration: BoxDecoration(
                                 color: colorScheme.surface,
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.radii.lg,
-                                ),
-                                border: Border.all(
-                                  color: colorScheme.outline.withAlpha(26),
-                                ),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                                border: Border.all(color: colorScheme.outline.withAlpha(26)),
                                 boxShadow: AppTheme.elevations.small,
                               ),
                               child: _buildPerformanceChart(records, context),
@@ -184,10 +164,7 @@ class ExerciseStats extends HookConsumerWidget {
     );
   }
 
-  Widget _buildPerformanceSummary(
-    List<ExerciseRecord> records,
-    BuildContext context,
-  ) {
+  Widget _buildPerformanceSummary(List<ExerciseRecord> records, BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -216,9 +193,7 @@ class ExerciseStats extends HookConsumerWidget {
               records.isEmpty
                   ? 'No records available to display.'
                   : 'Not enough records to show performance summary.',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -267,21 +242,15 @@ class ExerciseStats extends HookConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      improvement >= 0
-                          ? Icons.trending_up
-                          : Icons.trending_down,
+                      improvement >= 0 ? Icons.trending_up : Icons.trending_down,
                       size: 16,
-                      color: improvement >= 0
-                          ? colorScheme.tertiary
-                          : colorScheme.error,
+                      color: improvement >= 0 ? colorScheme.tertiary : colorScheme.error,
                     ),
                     SizedBox(width: AppTheme.spacing.xs),
                     Text(
                       '${improvementPercentage.abs().toStringAsFixed(1)}%',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        color: improvement >= 0
-                            ? colorScheme.tertiary
-                            : colorScheme.error,
+                        color: improvement >= 0 ? colorScheme.tertiary : colorScheme.error,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -325,11 +294,7 @@ class ExerciseStats extends HookConsumerWidget {
                   : colorScheme.errorContainer.withAlpha(26),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
               border: Border.all(
-                color:
-                    (improvement >= 0
-                            ? colorScheme.tertiary
-                            : colorScheme.error)
-                        .withAlpha(51),
+                color: (improvement >= 0 ? colorScheme.tertiary : colorScheme.error).withAlpha(51),
               ),
             ),
             child: Row(
@@ -346,9 +311,7 @@ class ExerciseStats extends HookConsumerWidget {
                   ),
                   child: Icon(
                     improvement >= 0 ? Icons.trending_up : Icons.trending_down,
-                    color: improvement >= 0
-                        ? colorScheme.tertiary
-                        : colorScheme.error,
+                    color: improvement >= 0 ? colorScheme.tertiary : colorScheme.error,
                     size: 24,
                   ),
                 ),
@@ -360,9 +323,7 @@ class ExerciseStats extends HookConsumerWidget {
                       Text(
                         'Total Improvement',
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: improvement >= 0
-                              ? colorScheme.tertiary
-                              : colorScheme.error,
+                          color: improvement >= 0 ? colorScheme.tertiary : colorScheme.error,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -370,9 +331,7 @@ class ExerciseStats extends HookConsumerWidget {
                       Text(
                         '${improvement.abs().toStringAsFixed(1)} kg',
                         style: theme.textTheme.titleLarge?.copyWith(
-                          color: improvement >= 0
-                              ? colorScheme.tertiary
-                              : colorScheme.error,
+                          color: improvement >= 0 ? colorScheme.tertiary : colorScheme.error,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -424,19 +383,14 @@ class ExerciseStats extends HookConsumerWidget {
           SizedBox(height: AppTheme.spacing.xs),
           Text(
             subtitle,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: textColor.withAlpha(179),
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: textColor.withAlpha(179)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPerformanceChart(
-    List<ExerciseRecord> records,
-    BuildContext context,
-  ) {
+  Widget _buildPerformanceChart(List<ExerciseRecord> records, BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final sortedRecords = records.reversed.toList();
@@ -459,10 +413,7 @@ class ExerciseStats extends HookConsumerWidget {
             show: true,
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) {
-              return FlLine(
-                color: colorScheme.onSurface.withAlpha(26),
-                strokeWidth: 1,
-              );
+              return FlLine(color: colorScheme.onSurface.withAlpha(26), strokeWidth: 1);
             },
           ),
           titlesData: FlTitlesData(
@@ -489,9 +440,7 @@ class ExerciseStats extends HookConsumerWidget {
                 getTitlesWidget: (value, meta) {
                   if (value.toInt() < sortedRecords.length) {
                     return Text(
-                      DateFormat(
-                        'MMM d',
-                      ).format(sortedRecords[value.toInt()].date),
+                      DateFormat('MMM d').format(sortedRecords[value.toInt()].date),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -501,12 +450,8 @@ class ExerciseStats extends HookConsumerWidget {
                 },
               ),
             ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
           borderData: FlBorderData(show: false),
           minX: 0,
@@ -516,10 +461,7 @@ class ExerciseStats extends HookConsumerWidget {
           lineBarsData: [
             LineChartBarData(
               spots: sortedRecords.asMap().entries.map((entry) {
-                return FlSpot(
-                  entry.key.toDouble(),
-                  entry.value.maxWeight.toDouble(),
-                );
+                return FlSpot(entry.key.toDouble(), entry.value.maxWeight.toDouble());
               }).toList(),
               isCurved: true,
               color: colorScheme.primary,
@@ -536,10 +478,7 @@ class ExerciseStats extends HookConsumerWidget {
                   );
                 },
               ),
-              belowBarData: BarAreaData(
-                show: true,
-                color: colorScheme.primary.withAlpha(26),
-              ),
+              belowBarData: BarAreaData(show: true, color: colorScheme.primary.withAlpha(26)),
             ),
           ],
           extraLinesData: ExtraLinesData(
@@ -563,11 +502,7 @@ class ExerciseStats extends HookConsumerWidget {
     );
   }
 
-  Widget _buildRecordList(
-    List<ExerciseRecord> records,
-    BuildContext context,
-    WidgetRef ref,
-  ) {
+  Widget _buildRecordList(List<ExerciseRecord> records, BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -575,8 +510,7 @@ class ExerciseStats extends HookConsumerWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: records.length,
-      separatorBuilder: (context, index) =>
-          SizedBox(height: AppTheme.spacing.sm),
+      separatorBuilder: (context, index) => SizedBox(height: AppTheme.spacing.sm),
       itemBuilder: (context, index) {
         final record = records[index];
         return Container(
@@ -614,28 +548,18 @@ class ExerciseStats extends HookConsumerWidget {
                 padding: EdgeInsets.only(top: AppTheme.spacing.sm),
                 child: Text(
                   DateFormat('MMMM d, yyyy').format(record.date),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(
-                      Icons.edit_outlined,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
+                    icon: Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
                     onPressed: () => _showEditDialog(context, ref, record),
                   ),
                   IconButton(
-                    icon: Icon(
-                      Icons.delete_outline,
-                      color: colorScheme.error,
-                      size: 20,
-                    ),
+                    icon: Icon(Icons.delete_outline, color: colorScheme.error, size: 20),
                     onPressed: () => _showDeleteDialog(context, ref, record),
                   ),
                 ],
@@ -647,11 +571,7 @@ class ExerciseStats extends HookConsumerWidget {
     );
   }
 
-  void _showEditDialog(
-    BuildContext context,
-    WidgetRef ref,
-    ExerciseRecord record,
-  ) {
+  void _showEditDialog(BuildContext context, WidgetRef ref, ExerciseRecord record) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -665,20 +585,13 @@ class ExerciseStats extends HookConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(
-    BuildContext context,
-    WidgetRef ref,
-    ExerciseRecord record,
-  ) {
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, ExerciseRecord record) {
     showDialog(
       context: context,
       builder: (dialogContext) => AppDialog(
         title: const Text('Elimina Record'),
         actions: [
-          AppDialogHelpers.buildCancelButton(
-            context: dialogContext,
-            label: 'Annulla',
-          ),
+          AppDialogHelpers.buildCancelButton(context: dialogContext, label: 'Annulla'),
           AppDialogHelpers.buildActionButton(
             context: dialogContext,
             label: 'Elimina',
@@ -692,31 +605,21 @@ class ExerciseStats extends HookConsumerWidget {
         ],
         child: Text(
           'Sei sicuro di voler eliminare questo record?',
-          style: TextStyle(
-            color: Theme.of(dialogContext).colorScheme.onSurface,
-          ),
+          style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface),
         ),
       ),
     );
   }
 
-  void _performDelete(
-    BuildContext context,
-    WidgetRef ref,
-    ExerciseRecord record,
-  ) async {
+  void _performDelete(BuildContext context, WidgetRef ref, ExerciseRecord record) async {
     try {
       await ref
           .read(exerciseRecordServiceProvider)
-          .deleteExerciseRecord(
-            userId: userId,
-            exerciseId: exercise.id,
-            recordId: record.id,
-          );
+          .deleteExerciseRecord(userId: userId, exerciseId: exercise.id, recordId: record.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record deleted successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Record deleted successfully')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -758,12 +661,8 @@ class EditRecordDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController = useTextEditingController(
-      text: record.maxWeight.toString(),
-    );
-    final repetitionsController = useTextEditingController(
-      text: record.repetitions.toString(),
-    );
+    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
+    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
@@ -791,24 +690,14 @@ class EditRecordDialog extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDialogTextFormField(
-              maxWeightController,
-              'Max weight',
-              context,
-            ),
-            _buildDialogTextFormField(
-              repetitionsController,
-              'Repetitions',
-              context,
-            ),
+            _buildDialogTextFormField(maxWeightController, 'Max weight', context),
+            _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
             _buildDatePicker(context, selectedDate),
             Row(
               children: [
                 Text(
                   'Keep current weight',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 Switch(
                   value: keepWeight.value,
@@ -835,10 +724,7 @@ class EditRecordDialog extends HookConsumerWidget {
     );
   }
 
-  Widget _buildDatePicker(
-    BuildContext context,
-    ValueNotifier<DateTime> selectedDate,
-  ) {
+  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DatePickerField(
@@ -863,10 +749,7 @@ class EditRecordDialog extends HookConsumerWidget {
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight = ExerciseService.calculateMaxRM(
-        newMaxWeight,
-        newRepetitions,
-      ).roundToDouble();
+      newMaxWeight = ExerciseService.calculateMaxRM(newMaxWeight, newRepetitions).roundToDouble();
       newRepetitions = 1;
     }
 
@@ -880,23 +763,15 @@ class EditRecordDialog extends HookConsumerWidget {
       );
 
       if (keepWeight) {
-        await exerciseRecordService.updateIntensityForProgram(
-          userId,
-          exercise.id,
-          newMaxWeight,
-        );
+        await exerciseRecordService.updateIntensityForProgram(userId, exercise.id, newMaxWeight);
       } else {
-        await exerciseRecordService.updateWeightsForProgram(
-          userId,
-          exercise.id,
-          newMaxWeight,
-        );
+        await exerciseRecordService.updateWeightsForProgram(userId, exercise.id, newMaxWeight);
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record updated successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Record updated successfully')));
       }
     } catch (e) {
       if (context.mounted) {

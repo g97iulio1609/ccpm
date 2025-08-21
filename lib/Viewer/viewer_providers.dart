@@ -17,9 +17,7 @@ import 'package:alphanessone/Viewer/domain/usecases/delete_timer_preset_use_case
 import 'package:alphanessone/Viewer/domain/usecases/save_default_timer_presets_use_case.dart';
 
 // Firestore Instance Provider
-final firestoreProvider = Provider<FirebaseFirestore>(
-  (ref) => FirebaseFirestore.instance,
-);
+final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
 // SharedPreferences Instance Provider
 // Questo provider è asincrono, quindi tipicamente lo si usa con FutureProvider o
@@ -31,9 +29,7 @@ final firestoreProvider = Provider<FirebaseFirestore>(
 // o dovremmo usare un approccio diverso per l'iniezione.
 
 // Alternativa più robusta per SharedPreferences:
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
-  ref,
-) async {
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
   return await SharedPreferences.getInstance();
 });
 
@@ -45,18 +41,14 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
 });
 
 // Implementazione corretta e asincrona del TimerPresetRepository
-final timerPresetRepositoryProvider = FutureProvider<TimerPresetRepository>((
-  ref,
-) async {
+final timerPresetRepositoryProvider = FutureProvider<TimerPresetRepository>((ref) async {
   final firestore = ref.watch(firestoreProvider);
   final sharedPrefs = await ref.watch(sharedPreferencesProvider.future);
   return TimerPresetRepositoryImpl(firestore, sharedPrefs);
 });
 
 // Provider sincrono di fallback per quando SharedPreferences non è disponibile
-final timerPresetRepositoryFallbackProvider = Provider<TimerPresetRepository?>((
-  ref,
-) {
+final timerPresetRepositoryFallbackProvider = Provider<TimerPresetRepository?>((ref) {
   final firestore = ref.watch(firestoreProvider);
   final sharedPrefsAsync = ref.watch(sharedPreferencesProvider);
 
@@ -81,56 +73,41 @@ final getExerciseNoteUseCaseProvider = Provider<GetExerciseNoteUseCase>((ref) {
   return GetExerciseNoteUseCaseImpl(workoutRepository);
 });
 
-final saveExerciseNoteUseCaseProvider = Provider<SaveExerciseNoteUseCase>((
-  ref,
-) {
+final saveExerciseNoteUseCaseProvider = Provider<SaveExerciseNoteUseCase>((ref) {
   final workoutRepository = ref.watch(workoutRepositoryProvider);
   return SaveExerciseNoteUseCaseImpl(workoutRepository);
 });
 
-final deleteExerciseNoteUseCaseProvider = Provider<DeleteExerciseNoteUseCase>((
-  ref,
-) {
+final deleteExerciseNoteUseCaseProvider = Provider<DeleteExerciseNoteUseCase>((ref) {
   final workoutRepository = ref.watch(workoutRepositoryProvider);
   return DeleteExerciseNoteUseCaseImpl(workoutRepository);
 });
 
-final getTimerPresetsUseCaseProvider = FutureProvider<GetTimerPresetsUseCase>((
-  ref,
-) async {
+final getTimerPresetsUseCaseProvider = FutureProvider<GetTimerPresetsUseCase>((ref) async {
   final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
   return GetTimerPresetsUseCaseImpl(timerRepository);
 });
 
-final saveTimerPresetUseCaseProvider = FutureProvider<SaveTimerPresetUseCase>((
-  ref,
-) async {
+final saveTimerPresetUseCaseProvider = FutureProvider<SaveTimerPresetUseCase>((ref) async {
   final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
   return SaveTimerPresetUseCaseImpl(timerRepository);
 });
 
-final updateTimerPresetUseCaseProvider =
-    FutureProvider<UpdateTimerPresetUseCase>((ref) async {
-      final timerRepository = await ref.watch(
-        timerPresetRepositoryProvider.future,
-      );
-      return UpdateTimerPresetUseCaseImpl(timerRepository);
-    });
+final updateTimerPresetUseCaseProvider = FutureProvider<UpdateTimerPresetUseCase>((ref) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
+  return UpdateTimerPresetUseCaseImpl(timerRepository);
+});
 
-final deleteTimerPresetUseCaseProvider =
-    FutureProvider<DeleteTimerPresetUseCase>((ref) async {
-      final timerRepository = await ref.watch(
-        timerPresetRepositoryProvider.future,
-      );
-      return DeleteTimerPresetUseCaseImpl(timerRepository);
-    });
+final deleteTimerPresetUseCaseProvider = FutureProvider<DeleteTimerPresetUseCase>((ref) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
+  return DeleteTimerPresetUseCaseImpl(timerRepository);
+});
 
-final saveDefaultTimerPresetsUseCaseProvider =
-    FutureProvider<SaveDefaultTimerPresetsUseCase>((ref) async {
-      final timerRepository = await ref.watch(
-        timerPresetRepositoryProvider.future,
-      );
-      return SaveDefaultTimerPresetsUseCaseImpl(timerRepository);
-    });
+final saveDefaultTimerPresetsUseCaseProvider = FutureProvider<SaveDefaultTimerPresetsUseCase>((
+  ref,
+) async {
+  final timerRepository = await ref.watch(timerPresetRepositoryProvider.future);
+  return SaveDefaultTimerPresetsUseCaseImpl(timerRepository);
+});
 
 // Altri provider per UseCases e StateNotifiers verranno aggiunti qui progressivamente.

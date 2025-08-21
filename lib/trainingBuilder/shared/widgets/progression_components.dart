@@ -22,9 +22,7 @@ class ProgressionTableHeader extends StatelessWidget {
       padding: EdgeInsets.all(AppTheme.spacing.md),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radii.lg),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.lg)),
       ),
       child: Row(
         children: [
@@ -88,9 +86,7 @@ class ProgressionFieldContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
         child: Container(
           padding: EdgeInsets.all(AppTheme.spacing.sm),
-          constraints: isLoadField && isSmallScreen
-              ? const BoxConstraints(minHeight: 80)
-              : null,
+          constraints: isLoadField && isSmallScreen ? const BoxConstraints(minHeight: 80) : null,
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppTheme.radii.sm),
@@ -103,9 +99,7 @@ class ProgressionFieldContainer extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppTheme.spacing.sm),
@@ -160,9 +154,7 @@ class ProgressionTextField extends StatelessWidget {
         children: [
           Text(
             labelText,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppTheme.spacing.xs),
@@ -170,9 +162,7 @@ class ProgressionTextField extends StatelessWidget {
             controller: controller,
             keyboardType: keyboardType,
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
             decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.zero,
@@ -204,12 +194,10 @@ class ProgressionRangeEditDialog extends StatefulWidget {
   });
 
   @override
-  State<ProgressionRangeEditDialog> createState() =>
-      _ProgressionRangeEditDialogState();
+  State<ProgressionRangeEditDialog> createState() => _ProgressionRangeEditDialogState();
 }
 
-class _ProgressionRangeEditDialogState
-    extends State<ProgressionRangeEditDialog> {
+class _ProgressionRangeEditDialogState extends State<ProgressionRangeEditDialog> {
   late TextEditingController _minController;
   late TextEditingController _maxController;
 
@@ -234,17 +222,12 @@ class _ProgressionRangeEditDialogState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Edit ${widget.title}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Edit ${widget.title}', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             TextField(
               controller: _minController,
               decoration: InputDecoration(labelText: 'Minimum ${widget.title}'),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (value) {
                 widget.onChanged(value, _maxController.text);
               },
@@ -253,9 +236,7 @@ class _ProgressionRangeEditDialogState
             TextField(
               controller: _maxController,
               decoration: InputDecoration(labelText: 'Maximum ${widget.title}'),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onChanged: (value) {
                 widget.onChanged(_minController.text, value);
               },
@@ -268,10 +249,7 @@ class _ProgressionRangeEditDialogState
                 onPressed: () {
                   final min = _minController.text.trim();
                   final max = _maxController.text.trim();
-                  widget.onSave(
-                    min.isNotEmpty ? min : null,
-                    max.isNotEmpty ? max : null,
-                  );
+                  widget.onSave(min.isNotEmpty ? min : null, max.isNotEmpty ? max : null);
                 },
                 variant: AppButtonVariant.primary,
                 block: true,
@@ -311,20 +289,16 @@ class ProgressionCombinedLoadDialog extends StatefulWidget {
   });
 
   @override
-  State<ProgressionCombinedLoadDialog> createState() =>
-      _ProgressionCombinedLoadDialogState();
+  State<ProgressionCombinedLoadDialog> createState() => _ProgressionCombinedLoadDialogState();
 }
 
-class _ProgressionCombinedLoadDialogState
-    extends State<ProgressionCombinedLoadDialog> {
+class _ProgressionCombinedLoadDialogState extends State<ProgressionCombinedLoadDialog> {
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: widget.colorScheme.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radii.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.xl)),
       ),
       padding: EdgeInsets.all(AppTheme.spacing.xl),
       child: Column(
@@ -333,11 +307,7 @@ class _ProgressionCombinedLoadDialogState
         children: [
           Row(
             children: [
-              Icon(
-                Icons.fitness_center,
-                color: widget.colorScheme.primary,
-                size: 24,
-              ),
+              Icon(Icons.fitness_center, color: widget.colorScheme.primary, size: 24),
               SizedBox(width: AppTheme.spacing.md),
               Text(
                 'Gestione Carico',
@@ -391,12 +361,9 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor: widget.colorScheme.surfaceContainerHighest
-                      .withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (value) => _updateWithDelay('Intensity'),
               ),
             ),
@@ -410,12 +377,9 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor: widget.colorScheme.surfaceContainerHighest
-                      .withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (value) => _updateWithDelay('Intensity'),
               ),
             ),
@@ -431,11 +395,7 @@ class _ProgressionCombinedLoadDialogState
       children: [
         Row(
           children: [
-            Icon(
-              Icons.fitness_center,
-              color: widget.colorScheme.primary,
-              size: 20,
-            ),
+            Icon(Icons.fitness_center, color: widget.colorScheme.primary, size: 20),
             SizedBox(width: AppTheme.spacing.sm),
             Text(
               'Peso (kg)',
@@ -458,12 +418,9 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor: widget.colorScheme.surfaceContainerHighest
-                      .withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (value) => _updateWithDelay('Weight'),
               ),
             ),
@@ -477,12 +434,9 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor: widget.colorScheme.surfaceContainerHighest
-                      .withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (value) => _updateWithDelay('Weight'),
               ),
             ),
@@ -498,11 +452,7 @@ class _ProgressionCombinedLoadDialogState
       children: [
         Row(
           children: [
-            Icon(
-              Icons.trending_up,
-              color: widget.colorScheme.primary,
-              size: 20,
-            ),
+            Icon(Icons.trending_up, color: widget.colorScheme.primary, size: 20),
             SizedBox(width: AppTheme.spacing.sm),
             Text(
               'RPE (Rate of Perceived Exertion)',
@@ -525,12 +475,9 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor: widget.colorScheme.surfaceContainerHighest
-                      .withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (value) => _updateWithDelay('RPE'),
               ),
             ),
@@ -544,12 +491,9 @@ class _ProgressionCombinedLoadDialogState
                     borderRadius: BorderRadius.circular(AppTheme.radii.md),
                   ),
                   filled: true,
-                  fillColor: widget.colorScheme.surfaceContainerHighest
-                      .withAlpha(77),
+                  fillColor: widget.colorScheme.surfaceContainerHighest.withAlpha(77),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 onChanged: (value) => _updateWithDelay('RPE'),
               ),
             ),

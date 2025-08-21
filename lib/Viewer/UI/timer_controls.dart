@@ -56,11 +56,7 @@ class TimerControls extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm),
           child: Row(
             children: [
-              Icon(
-                Icons.access_time_rounded,
-                size: 20,
-                color: AppTheme.primaryGold,
-              ),
+              Icon(Icons.access_time_rounded, size: 20, color: AppTheme.primaryGold),
               SizedBox(width: AppTheme.spacing.xs),
               Text(
                 'Preset Rapidi',
@@ -93,8 +89,7 @@ class TimerControls extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm),
         itemCount: sortedPresets.length,
-        separatorBuilder: (context, index) =>
-            SizedBox(width: AppTheme.spacing.sm),
+        separatorBuilder: (context, index) => SizedBox(width: AppTheme.spacing.sm),
         itemBuilder: (context, index) {
           final preset = sortedPresets[index];
           return _buildModernPresetCard(preset, theme, colorScheme, index);
@@ -147,16 +142,10 @@ class TimerControls extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  categoryColor.withAlpha(20),
-                  categoryColor.withAlpha(5),
-                ],
+                colors: [categoryColor.withAlpha(20), categoryColor.withAlpha(5)],
               ),
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              border: Border.all(
-                color: categoryColor.withAlpha(80),
-                width: 1.5,
-              ),
+              border: Border.all(color: categoryColor.withAlpha(80), width: 1.5),
             ),
             child: Stack(
               children: [
@@ -192,16 +181,9 @@ class TimerControls extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppTheme.error.withAlpha(20),
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppTheme.error.withAlpha(80),
-                          width: 1,
-                        ),
+                        border: Border.all(color: AppTheme.error.withAlpha(80), width: 1),
                       ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 12,
-                        color: AppTheme.error,
-                      ),
+                      child: Icon(Icons.close_rounded, size: 12, color: AppTheme.error),
                     ),
                   ),
                 ),
@@ -218,10 +200,7 @@ class TimerControls extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-        border: Border.all(
-          color: AppTheme.primaryGold.withAlpha(60),
-          width: 1.5,
-        ),
+        border: Border.all(color: AppTheme.primaryGold.withAlpha(60), width: 1.5),
       ),
       child: TextButton.icon(
         onPressed: onAddPresetPressed,
@@ -235,9 +214,7 @@ class TimerControls extends StatelessWidget {
         ),
         style: TextButton.styleFrom(
           padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.lg),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.lg)),
         ),
       ),
     );
@@ -315,10 +292,7 @@ class TimerControls extends StatelessWidget {
             decoration: BoxDecoration(
               color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-              border: Border.all(
-                color: AppTheme.primaryGold.withAlpha(30),
-                width: 1,
-              ),
+              border: Border.all(color: AppTheme.primaryGold.withAlpha(30), width: 1),
               boxShadow: [
                 BoxShadow(
                   color: colorScheme.shadow.withAlpha(5),
@@ -417,23 +391,12 @@ class TimerControls extends StatelessWidget {
             selectedTextStyle: theme.textTheme.headlineMedium?.copyWith(
               color: AppTheme.primaryGold,
               fontWeight: FontWeight.w800,
-              shadows: [
-                Shadow(
-                  color: AppTheme.primaryGold.withAlpha(30),
-                  blurRadius: 4,
-                ),
-              ],
+              shadows: [Shadow(color: AppTheme.primaryGold.withAlpha(30), blurRadius: 4)],
             ),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: AppTheme.primaryGold.withAlpha(60),
-                  width: 2,
-                ),
-                bottom: BorderSide(
-                  color: AppTheme.primaryGold.withAlpha(60),
-                  width: 2,
-                ),
+                top: BorderSide(color: AppTheme.primaryGold.withAlpha(60), width: 2),
+                bottom: BorderSide(color: AppTheme.primaryGold.withAlpha(60), width: 2),
               ),
             ),
           ),
@@ -458,9 +421,7 @@ class TimerControls extends StatelessWidget {
                 colors: [AppTheme.primaryGold, AppTheme.primaryGoldDark],
               )
             : null,
-        color: !isEnabled
-            ? colorScheme.surfaceContainerHighest.withAlpha(60)
-            : null,
+        color: !isEnabled ? colorScheme.surfaceContainerHighest.withAlpha(60) : null,
         boxShadow: isEnabled
             ? [
                 BoxShadow(
@@ -484,31 +445,23 @@ class TimerControls extends StatelessWidget {
           shadowColor: Colors.transparent,
           elevation: 0,
           padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
         ),
         child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radii.xl),
-          ),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.play_arrow_rounded,
                 size: 28,
-                color: isEnabled
-                    ? Colors.black
-                    : colorScheme.onSurfaceVariant.withAlpha(80),
+                color: isEnabled ? Colors.black : colorScheme.onSurfaceVariant.withAlpha(80),
               ),
               SizedBox(width: AppTheme.spacing.sm),
               Text(
                 'AVVIA TIMER',
                 style: theme.textTheme.titleLarge?.copyWith(
-                  color: isEnabled
-                      ? Colors.black
-                      : colorScheme.onSurfaceVariant.withAlpha(80),
+                  color: isEnabled ? Colors.black : colorScheme.onSurfaceVariant.withAlpha(80),
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                 ),

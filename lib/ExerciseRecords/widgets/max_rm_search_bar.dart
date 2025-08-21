@@ -10,11 +10,7 @@ class MaxRMSearchBar extends ConsumerWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
 
-  const MaxRMSearchBar({
-    super.key,
-    required this.controller,
-    required this.focusNode,
-  });
+  const MaxRMSearchBar({super.key, required this.controller, required this.focusNode});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,9 +26,8 @@ class MaxRMSearchBar extends ConsumerWidget {
           final allUsers = ref.read(userListProvider);
           final filteredUsers = allUsers
               .where(
-                (user) => user.name
-                        .toLowerCase()
-                        .contains(value.toLowerCase()) ||
+                (user) =>
+                    user.name.toLowerCase().contains(value.toLowerCase()) ||
                     user.email.toLowerCase().contains(value.toLowerCase()),
               )
               .toList();
@@ -42,4 +37,3 @@ class MaxRMSearchBar extends ConsumerWidget {
     );
   }
 }
-

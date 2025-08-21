@@ -106,10 +106,8 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
 
     final selectedMealIds = await showDialog<List<String>>(
       context: context,
-      builder: (context) => MealSelectionDialog(
-        userId: userId,
-        initialSelectedMealIds: _days[dayIndex].mealIds,
-      ),
+      builder: (context) =>
+          MealSelectionDialog(userId: userId, initialSelectedMealIds: _days[dayIndex].mealIds),
     );
 
     if (selectedMealIds != null) {
@@ -147,16 +145,13 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
           final templateDietPlan = updatedDietPlan.copyWith(
             id: null, // Firestore genererà un nuovo ID
           );
-          await dietPlanService.createDietPlanTemplate(
-            currentUserId,
-            templateDietPlan,
-          );
+          await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Diet Plan Updated and Applied')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Diet Plan Updated and Applied')));
         }
       } else {
         // Modalità creazione
@@ -178,16 +173,13 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
           final templateDietPlan = createdDietPlan.copyWith(
             id: null, // Firestore genererà un nuovo ID
           );
-          await dietPlanService.createDietPlanTemplate(
-            currentUserId,
-            templateDietPlan,
-          );
+          await dietPlanService.createDietPlanTemplate(currentUserId, templateDietPlan);
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Diet Plan Saved and Applied')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Diet Plan Saved and Applied')));
         }
       }
 
@@ -306,10 +298,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                         childrenPadding: EdgeInsets.zero,
                         title: Text(
                           '${day.dayOfWeek} (${day.mealIds.length} Meals Selected)',
-                          style: GoogleFonts.roboto(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         children: [
                           // Lista dei pasti per il giorno
@@ -325,24 +314,15 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                                   mealId,
                                 ), // Usa l'userId corretto
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
                                     return const Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 8.0,
-                                        vertical: 4.0,
-                                      ),
+                                      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                                       child: SkeletonCard(height: 72),
                                     );
                                   } else if (snapshot.hasError) {
-                                    return const ListTile(
-                                      title: Text('Error loading meal'),
-                                    );
-                                  } else if (!snapshot.hasData ||
-                                      snapshot.data == null) {
-                                    return const ListTile(
-                                      title: Text('Meal not found'),
-                                    );
+                                    return const ListTile(title: Text('Error loading meal'));
+                                  } else if (!snapshot.hasData || snapshot.data == null) {
+                                    return const ListTile(title: Text('Meal not found'));
                                   } else {
                                     final meal = snapshot.data!;
                                     return ListTile(
@@ -355,18 +335,13 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
                                         style: GoogleFonts.roboto(),
                                       ),
                                       trailing: IconButton(
-                                        icon: const Icon(
-                                          Icons.remove_circle,
-                                          color: Colors.red,
-                                        ),
+                                        icon: const Icon(Icons.remove_circle, color: Colors.red),
                                         onPressed: () {
                                           setState(() {
-                                            _days[dayIndex] = _days[dayIndex]
-                                                .copyWith(
-                                                  mealIds: List.from(
-                                                    _days[dayIndex].mealIds,
-                                                  )..removeAt(mealIndex),
-                                                );
+                                            _days[dayIndex] = _days[dayIndex].copyWith(
+                                              mealIds: List.from(_days[dayIndex].mealIds)
+                                                ..removeAt(mealIndex),
+                                            );
                                           });
                                         },
                                       ),
@@ -397,9 +372,7 @@ class _DietPlanScreenState extends ConsumerState<DietPlanScreen> {
 
               // Bottone di salvataggio
               AppButton(
-                label: isEditing
-                    ? 'Update & Apply Diet Plan'
-                    : 'Save & Apply Diet Plan',
+                label: isEditing ? 'Update & Apply Diet Plan' : 'Save & Apply Diet Plan',
                 onPressed: _saveDietPlan,
                 variant: AppButtonVariant.primary,
                 size: AppButtonSize.lg,

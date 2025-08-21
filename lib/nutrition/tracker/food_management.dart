@@ -141,16 +141,14 @@ class FoodManagement extends HookConsumerWidget {
 
     void stopImport() {
       foodService.stopImport();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Import stopped')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Import stopped')));
     }
 
     void updateTranslations() {
       foodService.updateFoodTranslations();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Translations update started')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Translations update started')));
     }
 
     void normalizeNames() async {
@@ -183,10 +181,7 @@ class FoodManagement extends HookConsumerWidget {
                   style: theme.textTheme.bodyMedium?.copyWith(color: cs.error),
                 );
               } else {
-                return Text(
-                  'Total foods: ${snapshot.data}',
-                  style: theme.textTheme.titleLarge,
-                );
+                return Text('Total foods: ${snapshot.data}', style: theme.textTheme.titleLarge);
               }
             },
           ),
@@ -195,30 +190,21 @@ class FoodManagement extends HookConsumerWidget {
             child: ListView(
               children: [
                 MultiSelectDialogField(
-                  items: categories
-                      .map((e) => MultiSelectItem<String>(e, e))
-                      .toList(),
+                  items: categories.map((e) => MultiSelectItem<String>(e, e)).toList(),
                   title: Text(
                     'Categories',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: cs.onSurface,
-                    ),
+                    style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurface),
                   ),
                   selectedColor: cs.primary,
                   decoration: BoxDecoration(
                     color: cs.surface,
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    border: Border.all(
-                      color: cs.outline.withAlpha(51),
-                      width: 1,
-                    ),
+                    border: Border.all(color: cs.outline.withAlpha(51), width: 1),
                   ),
                   buttonIcon: Icon(Icons.arrow_drop_down, color: cs.onSurface),
                   buttonText: Text(
                     'Select Categories',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurface,
-                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurface),
                   ),
                   onConfirm: (results) {
                     selectedCategories.value = results.cast<String>();
@@ -227,9 +213,7 @@ class FoodManagement extends HookConsumerWidget {
                   chipDisplay: MultiSelectChipDisplay(
                     textStyle: TextStyle(color: cs.onPrimary),
                     chipColor: cs.primary,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: cs.primary),
-                    ),
+                    decoration: BoxDecoration(border: Border.all(color: cs.primary)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -248,13 +232,8 @@ class FoodManagement extends HookConsumerWidget {
                   onChanged: (String? newValue) {
                     selectedLanguage.value = newValue!;
                   },
-                  items: languages.map<DropdownMenuItem<String>>((
-                    String value,
-                  ) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
+                  items: languages.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(value: value, child: Text(value));
                   }).toList(),
                 ),
                 const SizedBox(height: 16),
@@ -273,13 +252,8 @@ class FoodManagement extends HookConsumerWidget {
                   onChanged: (String? newValue) {
                     selectedCountry.value = newValue!;
                   },
-                  items: countries.map<DropdownMenuItem<String>>((
-                    String value,
-                  ) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
+                  items: countries.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(value: value, child: Text(value));
                   }).toList(),
                 ),
                 const SizedBox(height: 16),
@@ -293,9 +267,7 @@ class FoodManagement extends HookConsumerWidget {
                           labelStyle: TextStyle(color: cs.onSurfaceVariant),
                           border: const OutlineInputBorder(),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: cs.outline.withAlpha(51),
-                            ),
+                            borderSide: BorderSide(color: cs.outline.withAlpha(51)),
                           ),
                         ),
                         keyboardType: TextInputType.number,
@@ -311,9 +283,7 @@ class FoodManagement extends HookConsumerWidget {
                           labelStyle: TextStyle(color: cs.onSurfaceVariant),
                           border: const OutlineInputBorder(),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: cs.outline.withAlpha(51),
-                            ),
+                            borderSide: BorderSide(color: cs.outline.withAlpha(51)),
                           ),
                         ),
                         keyboardType: TextInputType.number,
@@ -360,9 +330,7 @@ class FoodManagement extends HookConsumerWidget {
                     if (!snapshot.hasData) {
                       return Text(
                         'No import progress',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                       );
                     }
                     final progress = snapshot.data!;
@@ -371,9 +339,7 @@ class FoodManagement extends HookConsumerWidget {
                       children: progress.entries.map((entry) {
                         return Text(
                           '${entry.key}: ${entry.value} products imported',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: cs.onSurface,
-                          ),
+                          style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurface),
                         );
                       }).toList(),
                     );
@@ -395,10 +361,7 @@ class FoodManagement extends HookConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    cs.surface,
-                    cs.surfaceContainerHighest.withAlpha(128),
-                  ],
+                  colors: [cs.surface, cs.surfaceContainerHighest.withAlpha(128)],
                 ),
               ),
               child: childContent,

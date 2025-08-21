@@ -16,8 +16,7 @@ class SeriesService {
 
     // Use the toFirestore method from the Series class
     Map<String, dynamic> seriesData = series.toFirestore();
-    seriesData['exerciseId'] =
-        exerciseId; // Add the exerciseId for the relationship
+    seriesData['exerciseId'] = exerciseId; // Add the exerciseId for the relationship
 
     DocumentReference ref = await _db.collection('series').add(seriesData);
     return ref.id;
@@ -38,9 +37,7 @@ class SeriesService {
         .where('exerciseId', isEqualTo: exerciseId)
         .orderBy('order')
         .get();
-    var seriesList = snapshot.docs
-        .map((doc) => Series.fromFirestore(doc))
-        .toList();
+    var seriesList = snapshot.docs.map((doc) => Series.fromFirestore(doc)).toList();
     return seriesList;
   }
 }

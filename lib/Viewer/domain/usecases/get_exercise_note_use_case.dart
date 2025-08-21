@@ -18,9 +18,6 @@ class GetExerciseNoteUseCaseImpl implements GetExerciseNoteUseCase {
 
   @override
   Future<String?> call(GetExerciseNoteParams params) async {
-    return await _workoutRepository.getNoteForExercise(
-      params.workoutId,
-      params.exerciseId,
-    );
+    return await _workoutRepository.getNoteForExercise(params.workoutId, params.exerciseId);
   }
 }

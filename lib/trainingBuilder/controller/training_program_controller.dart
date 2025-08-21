@@ -17,9 +17,7 @@ import 'super_set_controller.dart';
 import 'package:alphanessone/providers/providers.dart';
 import '../services/training_share_service.dart';
 
-final firestoreServiceProvider = Provider<FirestoreService>(
-  (ref) => FirestoreService(),
-);
+final firestoreServiceProvider = Provider<FirestoreService>((ref) => FirestoreService());
 
 // Provider spostato in training_providers.dart come StateNotifierProvider
 
@@ -85,19 +83,12 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     _nameController = TextEditingController(text: state.name);
     _descriptionController = TextEditingController(text: state.description);
     _athleteIdController = TextEditingController(text: state.athleteId);
-    _mesocycleNumberController = TextEditingController(
-      text: state.mesocycleNumber.toString(),
-    );
+    _mesocycleNumberController = TextEditingController(text: state.mesocycleNumber.toString());
 
     final weightNotifier = ValueNotifier<double>(0.0);
-    _seriesController = SeriesController(
-      _exerciseRecordService,
-      weightNotifier,
-    );
+    _seriesController = SeriesController(_exerciseRecordService, weightNotifier);
     _exerciseController = ExerciseControllerRefactored(
-      businessService: ExerciseBusinessService(
-        exerciseRecordService: _exerciseRecordService,
-      ),
+      businessService: ExerciseBusinessService(exerciseRecordService: _exerciseRecordService),
     );
   }
 
@@ -106,8 +97,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   TextEditingController get nameController => _nameController;
   TextEditingController get descriptionController => _descriptionController;
   TextEditingController get athleteIdController => _athleteIdController;
-  TextEditingController get mesocycleNumberController =>
-      _mesocycleNumberController;
+  TextEditingController get mesocycleNumberController => _mesocycleNumberController;
   SeriesController get seriesController => _seriesController;
 
   set athleteId(String value) {
@@ -147,27 +137,20 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     _mesocycleNumberController.text = state.mesocycleNumber.toString();
   }
 
-  void updateWeekProgressions(
-    List<List<WeekProgression>> updatedProgressions,
-    String exerciseId,
-  ) {
+  void updateWeekProgressions(List<List<WeekProgression>> updatedProgressions, String exerciseId) {
     for (
       int weekIndex = 0;
-      weekIndex < program.weeks.length &&
-          weekIndex < updatedProgressions.length;
+      weekIndex < program.weeks.length && weekIndex < updatedProgressions.length;
       weekIndex++
     ) {
       final week = program.weeks[weekIndex];
       for (
         int workoutIndex = 0;
-        workoutIndex < week.workouts.length &&
-            workoutIndex < updatedProgressions[weekIndex].length;
+        workoutIndex < week.workouts.length && workoutIndex < updatedProgressions[weekIndex].length;
         workoutIndex++
       ) {
         final workout = week.workouts[workoutIndex];
-        final exerciseIndex = workout.exercises.indexWhere(
-          (e) => e.exerciseId == exerciseId,
-        );
+        final exerciseIndex = workout.exercises.indexWhere((e) => e.exerciseId == exerciseId);
 
         if (exerciseIndex != -1) {
           final exercise = workout.exercises[exerciseIndex];
@@ -179,8 +162,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
           }
 
           // Create updated series with the new progressions
-          final updatedSeries = updatedProgressions[weekIndex][workoutIndex]
-              .series
+          final updatedSeries = updatedProgressions[weekIndex][workoutIndex].series
               .map(
                 (s) => Series(
                   serieId: s.serieId,
@@ -189,11 +171,9 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
                   maxReps: s.maxReps, // This will be null if it was cleared
                   sets: s.sets,
                   intensity: s.intensity,
-                  maxIntensity: s
-                      .maxIntensity, // This will be null or empty if it was cleared
+                  maxIntensity: s.maxIntensity, // This will be null or empty if it was cleared
                   rpe: s.rpe,
-                  maxRpe:
-                      s.maxRpe, // This will be null or empty if it was cleared
+                  maxRpe: s.maxRpe, // This will be null or empty if it was cleared
                   weight: s.weight,
                   maxWeight: s.maxWeight, // This will be null if it was cleared
                   order: s.order,
@@ -205,8 +185,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
               .toList();
 
           // Initialize weekProgressions if null
-          var currentProgressions =
-              exercise.weekProgressions ?? <List<WeekProgression>>[];
+          var currentProgressions = exercise.weekProgressions ?? <List<WeekProgression>>[];
 
           // Ensure we have enough weeks
           while (currentProgressions.length <= weekIndex) {
@@ -225,8 +204,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
           }
 
           // Update the progression
-          currentProgressions[weekIndex][0] =
-              updatedProgressions[weekIndex][workoutIndex];
+          currentProgressions[weekIndex][0] = updatedProgressions[weekIndex][workoutIndex];
 
           // Create new exercise instance with updated progressions and series
           final updatedExercise = exercise.copyWith(
@@ -259,25 +237,13 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
 
       for (int weekIndex = 0; weekIndex < program.weeks.length; weekIndex++) {
         final week = program.weeks[weekIndex];
-        for (
-          int workoutIndex = 0;
-          workoutIndex < week.workouts.length;
-          workoutIndex++
-        ) {
+        for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
           final workout = week.workouts[workoutIndex];
-          for (
-            int exerciseIndex = 0;
-            exerciseIndex < workout.exercises.length;
-            exerciseIndex++
-          ) {
+          for (int exerciseIndex = 0; exerciseIndex < workout.exercises.length; exerciseIndex++) {
             final exercise = workout.exercises[exerciseIndex];
-            final exerciseModel = await exercisesService.getExerciseById(
-              exercise.exerciseId ?? '',
-            );
+            final exerciseModel = await exercisesService.getExerciseById(exercise.exerciseId ?? '');
             if (exerciseModel != null) {
-              final updatedExercise = exercise.copyWith(
-                type: exerciseModel.type,
-              );
+              final updatedExercise = exercise.copyWith(type: exerciseModel.type);
               workout.exercises[exerciseIndex] = updatedExercise;
             }
           }
@@ -292,7 +258,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
 
   void _updateProgram() {
     if (_disposed) return;
-    
+
     try {
       _nameController.text = program.name;
       _descriptionController.text = program.description;
@@ -334,27 +300,16 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
 
   void removeWorkout(int weekIndex, int workoutOrder) {
     // Converte order in index per business‑service
-    final index = program.weeks[weekIndex].workouts.indexWhere(
-      (w) => w.order == workoutOrder,
-    );
+    final index = program.weeks[weekIndex].workouts.indexWhere((w) => w.order == workoutOrder);
     if (index != -1) {
       _trainingBusinessService.removeWorkout(program, weekIndex, index);
     }
     _emit();
   }
 
-  Future<void> addExercise(
-    int weekIndex,
-    int workoutIndex,
-    BuildContext context,
-  ) async {
-    await _exerciseController.addExercise(
-      program,
-      weekIndex,
-      workoutIndex,
-      context,
-    );
-    
+  Future<void> addExercise(int weekIndex, int workoutIndex, BuildContext context) async {
+    await _exerciseController.addExercise(program, weekIndex, workoutIndex, context);
+
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
@@ -368,7 +323,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
         );
       }
     }
-    
+
     _emit();
   }
 
@@ -385,7 +340,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       exerciseIndex,
       context,
     );
-    
+
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
@@ -393,27 +348,19 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       // Se possibile mostrare un messaggio all'utente e loggare per il debug
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore nel salvare modifica: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Errore nel salvare modifica: $e'), backgroundColor: Colors.red),
         );
       }
       // ignore: avoid_print
       print('Error saving program after editExercise: $e\n$st');
     }
-    
+
     _emit();
   }
 
   Future<void> removeExercise(int weekIndex, int workoutIndex, int exerciseIndex) async {
-    _trainingBusinessService.removeExercise(
-      program,
-      weekIndex,
-      workoutIndex,
-      exerciseIndex,
-    );
-    
+    _trainingBusinessService.removeExercise(program, weekIndex, workoutIndex, exerciseIndex);
+
     // Salva le modifiche nel database
     try {
       await _trainingService.addOrUpdateTrainingProgram(program);
@@ -422,16 +369,12 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       // ignore: avoid_print
       print('Error saving program after removeExercise: $e\n$st');
     }
-    
+
     _emit();
   }
 
   Future<void> updateExercise(Exercise exercise) async {
-    await _exerciseController.updateExerciseWeights(
-      program,
-      exercise.exerciseId!,
-      exercise.type,
-    );
+    await _exerciseController.updateExerciseWeights(program, exercise.exerciseId!, exercise.type);
     _emit();
   }
 
@@ -473,12 +416,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }
 
   void removeSuperSet(int weekIndex, int workoutIndex, String superSetId) {
-    _superSetController.removeSuperSet(
-      program,
-      weekIndex,
-      workoutIndex,
-      superSetId,
-    );
+    _superSetController.removeSuperSet(program, weekIndex, workoutIndex, superSetId);
     _emit();
   }
 
@@ -489,13 +427,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     String exerciseType,
     BuildContext context,
   ) async {
-    await _seriesController.addSeries(
-      program,
-      weekIndex,
-      workoutIndex,
-      exerciseIndex,
-      context,
-    );
+    await _seriesController.addSeries(program, weekIndex, workoutIndex, exerciseIndex, context);
     _emit();
   }
 
@@ -530,12 +462,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     if (_disposed) return;
     final prog = program; // snapshot to avoid accessing state after dispose
     // Update in-memory state first for snappy UI
-    _trainingBusinessService.removeExercisesBulkByIds(
-      prog,
-      weekIndex,
-      workoutIndex,
-      exerciseIds,
-    );
+    _trainingBusinessService.removeExercisesBulkByIds(prog, weekIndex, workoutIndex, exerciseIds);
     _emit();
 
     // Persist asynchronously with optimized batching
@@ -553,10 +480,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore eliminando esercizi: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Errore eliminando esercizi: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -590,17 +514,8 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     _emit();
   }
 
-  Future<void> copyWorkout(
-    int sourceWeekIndex,
-    int workoutIndex,
-    BuildContext context,
-  ) async {
-    await _workoutController.copyWorkout(
-      program,
-      sourceWeekIndex,
-      workoutIndex,
-      context,
-    );
+  Future<void> copyWorkout(int sourceWeekIndex, int workoutIndex, BuildContext context) async {
+    await _workoutController.copyWorkout(program, sourceWeekIndex, workoutIndex, context);
     _emit();
   }
 
@@ -610,13 +525,9 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     int exerciseIndex,
     List<Series> updatedSeries,
   ) {
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final updatedExercise = exercise.copyWith(series: updatedSeries);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
-        updatedExercise;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
     _emit();
   }
 
@@ -635,33 +546,13 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     _emit();
   }
 
-  void reorderExercises(
-    int weekIndex,
-    int workoutIndex,
-    int oldIndex,
-    int newIndex,
-  ) {
-    _exerciseController.reorderExercises(
-      program,
-      weekIndex,
-      workoutIndex,
-      oldIndex,
-      newIndex,
-    );
+  void reorderExercises(int weekIndex, int workoutIndex, int oldIndex, int newIndex) {
+    _exerciseController.reorderExercises(program, weekIndex, workoutIndex, oldIndex, newIndex);
     _emit();
   }
 
-  Future<void> duplicateExercise(
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-  ) async {
-    _exerciseController.duplicateExercise(
-      program,
-      weekIndex,
-      workoutIndex,
-      exerciseIndex,
-    );
+  Future<void> duplicateExercise(int weekIndex, int workoutIndex, int exerciseIndex) async {
+    _exerciseController.duplicateExercise(program, weekIndex, workoutIndex, exerciseIndex);
     _emit();
   }
 
@@ -711,20 +602,18 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       program.trackToDeleteWorkouts = [];
       program.trackToDeleteExercises = [];
 
-      await _usersService.updateUser(_athleteIdController.text, {
-        'currentProgram': program.id,
-      });
+      await _usersService.updateUser(_athleteIdController.text, {'currentProgram': program.id});
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Program added/updated successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Program added/updated successfully')));
       }
     } catch (error) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding/updating program: $error')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error adding/updating program: $error')));
       }
     }
   }
@@ -738,17 +627,11 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     );
   }
 
-  void _showSuccessSnackBar(
-    ScaffoldMessengerState scaffoldMessenger,
-    String message,
-  ) {
+  void _showSuccessSnackBar(ScaffoldMessengerState scaffoldMessenger, String message) {
     scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _showErrorSnackBar(
-    ScaffoldMessengerState scaffoldMessenger,
-    String message,
-  ) {
+  void _showErrorSnackBar(ScaffoldMessengerState scaffoldMessenger, String message) {
     scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
@@ -804,26 +687,26 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       debugPrint('Tentativo di import su controller dismesso - operazione ignorata');
       return;
     }
-    
+
     try {
       state = imported.copyWith(id: state.id?.isNotEmpty == true ? state.id : imported.id);
-      
+
       // Controlla di nuovo se il controller è stato dismesso durante l'operazione
       if (_disposed) {
         debugPrint('Controller dismesso durante import - operazione interrotta');
         return;
       }
-      
+
       _updateProgram();
-      
+
       if (_disposed) {
         debugPrint('Controller dismesso durante aggiornamento program - operazione interrotta');
         return;
       }
-      
+
       _superSetController.loadSuperSets(state);
       _emit();
-      
+
       debugPrint('Import programma completato con successo');
     } catch (e) {
       // Se succede un errore durante l'import, mantieni lo stato corrente
@@ -847,14 +730,10 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
   }) async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     try {
-      TrainingProgram? existingProgram = await _trainingService
-          .fetchTrainingProgram(programId);
+      TrainingProgram? existingProgram = await _trainingService.fetchTrainingProgram(programId);
 
       if (existingProgram == null) {
-        _showErrorSnackBar(
-          scaffoldMessenger,
-          'Programma esistente non trovato',
-        );
+        _showErrorSnackBar(scaffoldMessenger, 'Programma esistente non trovato');
         return null;
       }
 
@@ -872,31 +751,15 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
 
       final exercisesService = ref.read(exercisesServiceProvider);
 
-      for (
-        int weekIndex = 0;
-        weekIndex < newProgram.weeks.length;
-        weekIndex++
-      ) {
+      for (int weekIndex = 0; weekIndex < newProgram.weeks.length; weekIndex++) {
         final week = newProgram.weeks[weekIndex];
-        for (
-          int workoutIndex = 0;
-          workoutIndex < week.workouts.length;
-          workoutIndex++
-        ) {
+        for (int workoutIndex = 0; workoutIndex < week.workouts.length; workoutIndex++) {
           final workout = week.workouts[workoutIndex];
-          for (
-            int exerciseIndex = 0;
-            exerciseIndex < workout.exercises.length;
-            exerciseIndex++
-          ) {
+          for (int exerciseIndex = 0; exerciseIndex < workout.exercises.length; exerciseIndex++) {
             final exercise = workout.exercises[exerciseIndex];
-            final exerciseModel = await exercisesService.getExerciseById(
-              exercise.exerciseId ?? '',
-            );
+            final exerciseModel = await exercisesService.getExerciseById(exercise.exerciseId ?? '');
             if (exerciseModel != null) {
-              final updatedExercise = exercise.copyWith(
-                type: exerciseModel.type,
-              );
+              final updatedExercise = exercise.copyWith(type: exerciseModel.type);
               workout.exercises[exerciseIndex] = updatedExercise;
             }
 
@@ -911,17 +774,11 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
 
       await _trainingService.addOrUpdateTrainingProgram(newProgram);
 
-      _showSuccessSnackBar(
-        scaffoldMessenger,
-        'Programma duplicato con successo',
-      );
+      _showSuccessSnackBar(scaffoldMessenger, 'Programma duplicato con successo');
 
       return newProgram.id;
     } catch (error) {
-      _showErrorSnackBar(
-        scaffoldMessenger,
-        'Errore durante la duplicazione del programma: $error',
-      );
+      _showErrorSnackBar(scaffoldMessenger, 'Errore durante la duplicazione del programma: $error');
       return null;
     }
   }

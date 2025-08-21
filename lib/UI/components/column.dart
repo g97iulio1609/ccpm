@@ -41,9 +41,7 @@ class AppColumn extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      constraints: maxWidth != null
-          ? BoxConstraints(maxWidth: maxWidth!)
-          : null,
+      constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth!) : null,
       decoration: BoxDecoration(
         color:
             backgroundColor ??
@@ -52,9 +50,7 @@ class AppColumn extends StatelessWidget {
                 : colorScheme.surfaceContainerHighest.withAlpha(76)),
         borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
         border: Border.all(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.outline.withAlpha(26),
+          color: isSelected ? colorScheme.primary : colorScheme.outline.withAlpha(26),
           width: isSelected ? 2 : 1,
         ),
         boxShadow: enabled ? AppTheme.elevations.small : null,
@@ -68,10 +64,7 @@ class AppColumn extends StatelessWidget {
               padding: contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),
               child: Row(
                 children: [
-                  if (leading != null) ...[
-                    leading!,
-                    SizedBox(width: AppTheme.spacing.md),
-                  ],
+                  if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.md)],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,9 +74,7 @@ class AppColumn extends StatelessWidget {
                             title!,
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: enabled
-                                  ? (isSelected
-                                        ? colorScheme.primary
-                                        : colorScheme.onSurface)
+                                  ? (isSelected ? colorScheme.primary : colorScheme.onSurface)
                                   : colorScheme.onSurfaceVariant.withAlpha(128),
                               fontWeight: isSelected ? FontWeight.w600 : null,
                             ),
@@ -126,10 +117,7 @@ class AppColumn extends StatelessWidget {
                   children[i],
                   if (showDividers && i < children.length - 1) ...[
                     SizedBox(height: AppTheme.spacing.md),
-                    Divider(
-                      color: colorScheme.outline.withAlpha(26),
-                      height: 1,
-                    ),
+                    Divider(color: colorScheme.outline.withAlpha(26), height: 1),
                     SizedBox(height: AppTheme.spacing.md),
                   ] else if (i < children.length - 1)
                     SizedBox(height: AppTheme.spacing.md),

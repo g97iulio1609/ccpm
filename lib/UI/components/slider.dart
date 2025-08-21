@@ -46,10 +46,7 @@ class AppSlider extends StatelessWidget {
         // Header con label e valore
         Row(
           children: [
-            if (leading != null) ...[
-              leading!,
-              SizedBox(width: AppTheme.spacing.sm),
-            ],
+            if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.sm)],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,8 +86,7 @@ class AppSlider extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppTheme.radii.full),
               ),
               child: Text(
-                valueLabel?.call(value) ??
-                    value.toStringAsFixed(divisions != null ? 0 : 1),
+                valueLabel?.call(value) ?? value.toStringAsFixed(divisions != null ? 0 : 1),
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: enabled
                       ? colorScheme.primary
@@ -99,10 +95,7 @@ class AppSlider extends StatelessWidget {
                 ),
               ),
             ),
-            if (trailing != null) ...[
-              SizedBox(width: AppTheme.spacing.sm),
-              trailing!,
-            ],
+            if (trailing != null) ...[SizedBox(width: AppTheme.spacing.sm), trailing!],
           ],
         ),
 
@@ -116,8 +109,7 @@ class AppSlider extends StatelessWidget {
                 ? (activeColor ?? colorScheme.primary).withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTrackColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                      .withAlpha(76)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
@@ -132,8 +124,7 @@ class AppSlider extends StatelessWidget {
                 ? (activeColor ?? colorScheme.primary).withAlpha(128)
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTickMarkColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                      .withAlpha(76)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
           ),
           child: Slider(
@@ -281,10 +272,7 @@ class AppRangeSlider extends StatelessWidget {
         // Header con label e valori
         Row(
           children: [
-            if (leading != null) ...[
-              leading!,
-              SizedBox(width: AppTheme.spacing.sm),
-            ],
+            if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.sm)],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,10 +322,7 @@ class AppRangeSlider extends StatelessWidget {
                 ),
               ),
             ),
-            if (trailing != null) ...[
-              SizedBox(width: AppTheme.spacing.sm),
-              trailing!,
-            ],
+            if (trailing != null) ...[SizedBox(width: AppTheme.spacing.sm), trailing!],
           ],
         ),
 
@@ -351,8 +336,7 @@ class AppRangeSlider extends StatelessWidget {
                 ? (activeColor ?? colorScheme.primary).withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTrackColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                      .withAlpha(76)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
             thumbColor: enabled
                 ? activeColor ?? colorScheme.primary
@@ -367,8 +351,7 @@ class AppRangeSlider extends StatelessWidget {
                 ? (activeColor ?? colorScheme.primary).withAlpha(128)
                 : colorScheme.surfaceContainerHighest.withAlpha(76),
             inactiveTickMarkColor: enabled
-                ? (inactiveColor ?? colorScheme.surfaceContainerHighest)
-                      .withAlpha(76)
+                ? (inactiveColor ?? colorScheme.surfaceContainerHighest).withAlpha(76)
                 : colorScheme.surfaceContainerHighest.withAlpha(26),
           ),
           child: RangeSlider(

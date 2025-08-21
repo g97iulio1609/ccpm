@@ -26,9 +26,7 @@ class ExerciseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isInSuperSet = superSets.any(
-      (ss) => ss.exerciseIds.contains(exercise.id),
-    );
+    final isInSuperSet = superSets.any((ss) => ss.exerciseIds.contains(exercise.id));
 
     return Container(
       decoration: BoxDecoration(
@@ -54,37 +52,27 @@ class ExerciseCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppTheme.radii.lg),
           child: Padding(
-            padding: EdgeInsets.all(
-              dense ? AppTheme.spacing.md : AppTheme.spacing.lg,
-            ),
+            padding: EdgeInsets.all(dense ? AppTheme.spacing.md : AppTheme.spacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(context, theme, colorScheme),
-                SizedBox(
-                  height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md,
-                ),
+                SizedBox(height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md),
                 _buildExerciseInfo(context, theme, colorScheme),
                 if (seriesWidget != null) ...[
-                  SizedBox(
-                    height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md,
-                  ),
+                  SizedBox(height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md),
                   // In lista (schermi stretti) lascia espandere il contenuto naturalmente;
                   // in griglia (schermi larghi) vincola un'altezza per evitare tagli.
                   Builder(
                     builder: (context) {
                       final isWide = MediaQuery.of(context).size.width >= 900;
                       final double? h = isWide ? (dense ? 220 : 280) : null;
-                      return h != null
-                          ? SizedBox(height: h, child: seriesWidget!)
-                          : seriesWidget!;
+                      return h != null ? SizedBox(height: h, child: seriesWidget!) : seriesWidget!;
                     },
                   ),
                 ],
                 if (isInSuperSet) ...[
-                  SizedBox(
-                    height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md,
-                  ),
+                  SizedBox(height: dense ? AppTheme.spacing.sm : AppTheme.spacing.md),
                   _buildSuperSetBadge(context, theme, colorScheme),
                 ],
               ],
@@ -95,11 +83,7 @@ class ExerciseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Row(
       children: [
         Container(
@@ -129,11 +113,7 @@ class ExerciseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildExerciseInfo(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildExerciseInfo(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -151,9 +131,7 @@ class ExerciseCard extends StatelessWidget {
           SizedBox(height: AppTheme.spacing.xs),
           Text(
             exercise.variant!,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -162,16 +140,9 @@ class ExerciseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSuperSetBadge(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildSuperSetBadge(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.secondaryContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(AppTheme.radii.lg),

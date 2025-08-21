@@ -40,11 +40,7 @@ class CoachingService {
         .collection('associations')
         .where('coachId', isEqualTo: coachId)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => Association.fromFirestore(doc))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => Association.fromFirestore(doc)).toList());
   }
 
   /// Ottiene le associazioni per un cliente specifico
@@ -53,11 +49,7 @@ class CoachingService {
         .collection('associations')
         .where('athleteId', isEqualTo: userId)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => Association.fromFirestore(doc))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => Association.fromFirestore(doc)).toList());
   }
 
   /// Cerca i coach in base al nome o all'email
@@ -138,9 +130,7 @@ class CoachingService {
   /// Risponde a una richiesta di associazione (accetta o rifiuta)
   Future<bool> respondToAssociation(String associationId, bool accept) async {
     try {
-      DocumentReference docRef = _firestore
-          .collection('associations')
-          .doc(associationId);
+      DocumentReference docRef = _firestore.collection('associations').doc(associationId);
       await docRef.update({'status': accept ? 'accepted' : 'rejected'});
       return true;
     } catch (e) {

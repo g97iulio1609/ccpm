@@ -48,9 +48,9 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
       if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
         widget.onPaymentSuccess(widget.sessionId);
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PaymentSuccessScreen()),
-          );
+          Navigator.of(
+            context,
+          ).pushReplacement(MaterialPageRoute(builder: (_) => const PaymentSuccessScreen()));
         }
       } else {
         throw Exception('Pagamento fallito: ${paymentIntent.status}');
@@ -60,9 +60,7 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
       widget.onPaymentError(e.toString());
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => PaymentFailureScreen(error: e.toString()),
-          ),
+          MaterialPageRoute(builder: (_) => PaymentFailureScreen(error: e.toString())),
         );
       }
     } finally {
@@ -116,9 +114,7 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
                   const SizedBox(height: 16),
                   Text(
                     _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -130,9 +126,7 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
                     });
                   },
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     labelText: 'Dettagli Carta',
                     helperText: 'Inserisci i dettagli della tua carta',
                   ),
@@ -152,10 +146,7 @@ class _StripeCheckoutWidgetState extends State<StripeCheckoutWidget> {
                   children: [
                     Icon(Icons.lock, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 8),
-                    Text(
-                      'Pagamento sicuro con Stripe',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
+                    Text('Pagamento sicuro con Stripe', style: TextStyle(color: Colors.grey[600])),
                   ],
                 ),
               ],

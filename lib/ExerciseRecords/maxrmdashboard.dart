@@ -18,12 +18,10 @@ import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/UI/components/date_picker_field.dart';
 import 'package:alphanessone/UI/components/input.dart';
 import 'package:alphanessone/trainingBuilder/shared/utils/exercise_utils.dart';
-import 'package:alphanessone/ExerciseRecords/providers/max_rm_providers.dart'
-    as maxrm;
+import 'package:alphanessone/ExerciseRecords/providers/max_rm_providers.dart' as maxrm;
 import 'package:alphanessone/ExerciseRecords/widgets/max_rm_search_bar.dart';
 import 'package:alphanessone/ExerciseRecords/widgets/max_rm_grid.dart';
-import 'package:alphanessone/ExerciseRecords/utils/max_rm_helpers.dart'
-    as helpers;
+import 'package:alphanessone/ExerciseRecords/utils/max_rm_helpers.dart' as helpers;
 
 class MaxRMDashboard extends HookConsumerWidget {
   const MaxRMDashboard({super.key});
@@ -75,10 +73,7 @@ class MaxRMDashboard extends HookConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(AppTheme.spacing.xl),
-                child: MaxRMSearchBar(
-                  controller: selectedUserController,
-                  focusNode: focusNode,
-                ),
+                child: MaxRMSearchBar(controller: selectedUserController, focusNode: focusNode),
               ),
             ),
 
@@ -93,21 +88,17 @@ class MaxRMDashboard extends HookConsumerWidget {
                 children: [
                   Expanded(
                     child: GlassLite(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                       child: TextField(
                         decoration: InputDecoration(
                           hintText: 'Filtra per esercizio...',
                           prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onChanged: (value) {
-                          ref.read(maxrm.recordsFilterProvider.notifier).state =
-                              value.trim().toLowerCase();
+                          ref.read(maxrm.recordsFilterProvider.notifier).state = value
+                              .trim()
+                              .toLowerCase();
                         },
                       ),
                     ),
@@ -119,18 +110,11 @@ class MaxRMDashboard extends HookConsumerWidget {
                       child: DropdownButton<String>(
                         value: ref.watch(maxrm.recordsSortProvider),
                         items: const [
-                          DropdownMenuItem(
-                            value: 'date_desc',
-                            child: Text('Più recenti'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'weight_desc',
-                            child: Text('Peso maggiore'),
-                          ),
+                          DropdownMenuItem(value: 'date_desc', child: Text('Più recenti')),
+                          DropdownMenuItem(value: 'weight_desc', child: Text('Peso maggiore')),
                         ],
                         onChanged: (v) =>
-                            ref.read(maxrm.recordsSortProvider.notifier).state =
-                                v ?? 'date_desc',
+                            ref.read(maxrm.recordsSortProvider.notifier).state = v ?? 'date_desc',
                       ),
                     ),
                   ),
@@ -155,10 +139,7 @@ class MaxRMDashboard extends HookConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.surface,
-                    colorScheme.surfaceContainerHighest.withAlpha(128),
-                  ],
+                  colors: [colorScheme.surface, colorScheme.surfaceContainerHighest.withAlpha(128)],
                   stops: const [0.0, 1.0],
                 ),
               ),
@@ -176,15 +157,11 @@ class MaxRMDashboard extends HookConsumerWidget {
   ) async {
     List<UserModel> users = [];
     if (role == 'admin') {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .get();
+      final snapshot = await FirebaseFirestore.instance.collection('users').get();
       users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
     } else if (role == 'coach') {
       final currentUserId = usersService.getCurrentUserId();
-      final associations = await coachingService
-          .getCoachAssociations(currentUserId)
-          .first;
+      final associations = await coachingService.getCoachAssociations(currentUserId).first;
       for (var association in associations) {
         if (association.status == 'accepted') {
           final athlete = await usersService.getUserById(association.athleteId);
@@ -216,17 +193,12 @@ class MaxRMDashboard extends HookConsumerWidget {
               keepWeight,
               selectedUserId,
             ) async {
-              final exerciseRecordService = ref.read(
-                exerciseRecordServiceProvider,
-              );
+              final exerciseRecordService = ref.read(exerciseRecordServiceProvider);
               final usersService = ref.read(usersServiceProvider);
               final userId = selectedUserId ?? usersService.getCurrentUserId();
 
               double adjustedMaxWeight = repetitions > 1
-                  ? ExerciseUtils.calculateMaxRM(
-                      maxWeight.toDouble(),
-                      repetitions,
-                    ).roundToDouble()
+                  ? ExerciseUtils.calculateMaxRM(maxWeight.toDouble(), repetitions).roundToDouble()
                   : maxWeight.toDouble();
 
               await exerciseRecordService.addExerciseRecord(
@@ -248,9 +220,9 @@ class MaxRMDashboard extends HookConsumerWidget {
 
               if (context.mounted) {
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Max RM added successfully')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Max RM added successfully')));
               }
             },
       ),
@@ -287,12 +259,8 @@ class EditRecordDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final maxWeightController = useTextEditingController(
-      text: record.maxWeight.toString(),
-    );
-    final repetitionsController = useTextEditingController(
-      text: record.repetitions.toString(),
-    );
+    final maxWeightController = useTextEditingController(text: record.maxWeight.toString());
+    final repetitionsController = useTextEditingController(text: record.repetitions.toString());
     final keepWeight = useState(false);
     final selectedDate = useState(record.date);
 
@@ -320,24 +288,14 @@ class EditRecordDialog extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDialogTextFormField(
-              maxWeightController,
-              'Max weight',
-              context,
-            ),
-            _buildDialogTextFormField(
-              repetitionsController,
-              'Repetitions',
-              context,
-            ),
+            _buildDialogTextFormField(maxWeightController, 'Max weight', context),
+            _buildDialogTextFormField(repetitionsController, 'Repetitions', context),
             _buildDatePicker(context, selectedDate),
             Row(
               children: [
                 Text(
                   'Keep current weight',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 Switch(
                   value: keepWeight.value,
@@ -364,10 +322,7 @@ class EditRecordDialog extends HookConsumerWidget {
     );
   }
 
-  Widget _buildDatePicker(
-    BuildContext context,
-    ValueNotifier<DateTime> selectedDate,
-  ) {
+  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DatePickerField(
@@ -393,10 +348,7 @@ class EditRecordDialog extends HookConsumerWidget {
     int newRepetitions = int.parse(repetitionsText);
 
     if (newRepetitions > 1) {
-      newMaxWeight = ExerciseUtils.calculateMaxRM(
-        newMaxWeight,
-        newRepetitions,
-      ).roundToDouble();
+      newMaxWeight = ExerciseUtils.calculateMaxRM(newMaxWeight, newRepetitions).roundToDouble();
       newRepetitions = 1;
     }
 
@@ -418,9 +370,9 @@ class EditRecordDialog extends HookConsumerWidget {
       );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Record updated successfully')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Record updated successfully')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -505,9 +457,7 @@ class _MaxRMForm extends HookConsumerWidget {
                     children: [
                       Text(
                         'Keep current weight',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       ),
                       Switch(
                         value: keepWeight.value,
@@ -522,16 +472,11 @@ class _MaxRMForm extends HookConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         if (formKey.currentState!.validate()) {
-                          final exerciseId =
-                              selectedExerciseController.value?.id ?? '';
+                          final exerciseId = selectedExerciseController.value?.id ?? '';
                           final exerciseName = exerciseNameController.text;
-                          final maxWeight =
-                              num.tryParse(maxWeightController.text) ?? 0;
-                          final repetitions =
-                              int.tryParse(repetitionsController.text) ?? 0;
-                          final selectedUserId = ref.read(
-                            selectedUserIdProvider,
-                          );
+                          final maxWeight = num.tryParse(maxWeightController.text) ?? 0;
+                          final repetitions = int.tryParse(repetitionsController.text) ?? 0;
+                          final selectedUserId = ref.read(selectedUserIdProvider);
                           onSubmit(
                             exerciseId,
                             exerciseName,
@@ -544,22 +489,12 @@ class _MaxRMForm extends HookConsumerWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFFFFD700,
-                        ), // Yellow color
+                        backgroundColor: const Color(0xFFFFD700), // Yellow color
                         foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text(
-                        'Add Max RM',
-                        style: TextStyle(fontSize: 16),
-                      ),
+                      child: const Text('Add Max RM', style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],
@@ -601,10 +536,7 @@ class _MaxRMForm extends HookConsumerWidget {
     );
   }
 
-  Widget _buildDatePicker(
-    BuildContext context,
-    ValueNotifier<DateTime> selectedDate,
-  ) {
+  Widget _buildDatePicker(BuildContext context, ValueNotifier<DateTime> selectedDate) {
     return DatePickerField(
       value: selectedDate.value,
       label: 'Date',

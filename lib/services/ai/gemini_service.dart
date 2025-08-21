@@ -7,9 +7,7 @@ import 'ai_service.dart';
 class GeminiService implements AIService {
   final String apiKey;
   final String model;
-  final Logger _logger = Logger(
-    printer: PrettyPrinter(methodCount: 2, errorMethodCount: 8),
-  );
+  final Logger _logger = Logger(printer: PrettyPrinter(methodCount: 2, errorMethodCount: 8));
 
   GeminiService({required this.apiKey, required this.model});
 
@@ -17,10 +15,7 @@ class GeminiService implements AIService {
       'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent';
 
   @override
-  Future<String> processNaturalLanguageQuery(
-    String query, {
-    Map<String, dynamic>? context,
-  }) async {
+  Future<String> processNaturalLanguageQuery(String query, {Map<String, dynamic>? context}) async {
     _logger.i('Elaborazione query con Gemini: "$query"');
 
     final url = Uri.parse('$baseUrl?key=$apiKey');
@@ -51,17 +46,14 @@ class GeminiService implements AIService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final text = data['candidates'][0]['content']['parts'][0]['text']
-            .trim();
+        final text = data['candidates'][0]['content']['parts'][0]['text'].trim();
         _logger.d('Gemini raw response content: $text');
 
         try {
           // Rimuovi i delimitatori markdown se presenti
           String jsonText = text;
           if (text.startsWith('```')) {
-            final matches = RegExp(
-              r'```(?:json)?\n([\s\S]*?)\n```',
-            ).firstMatch(text);
+            final matches = RegExp(r'```(?:json)?\n([\s\S]*?)\n```').firstMatch(text);
             if (matches != null && matches.groupCount >= 1) {
               jsonText = matches.group(1)!.trim();
             }
@@ -84,17 +76,11 @@ class GeminiService implements AIService {
           return jsonText;
         } catch (e) {
           _logger.w('Failed to parse JSON response: $e');
-          return jsonEncode({
-            'featureType': 'other',
-            'actions': [],
-            'responseText': text,
-          });
+          return jsonEncode({'featureType': 'other', 'actions': [], 'responseText': text});
         }
       }
 
-      throw Exception(
-        'Failed to get response from Gemini API: ${response.statusCode}',
-      );
+      throw Exception('Failed to get response from Gemini API: ${response.statusCode}');
     } catch (e) {
       _logger.e('Error calling Gemini API', error: e);
       throw Exception('Failed to process query: $e');

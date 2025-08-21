@@ -19,12 +19,10 @@ class TrainingProgramWorkoutListPage extends StatefulWidget {
   });
 
   @override
-  State<TrainingProgramWorkoutListPage> createState() =>
-      _TrainingProgramWorkoutListPageState();
+  State<TrainingProgramWorkoutListPage> createState() => _TrainingProgramWorkoutListPageState();
 }
 
-class _TrainingProgramWorkoutListPageState
-    extends State<TrainingProgramWorkoutListPage>
+class _TrainingProgramWorkoutListPageState extends State<TrainingProgramWorkoutListPage>
     with TrainingListMixin {
   // Layout e densità ora sono automatici in base ai breakpoints
 
@@ -35,9 +33,7 @@ class _TrainingProgramWorkoutListPageState
     // Protezione: in fase di caricamento il programma potrebbe non avere ancora la settimana richiesta
     final hasWeek =
         widget.weekIndex <
-        (widget.controller.program.weeks.isNotEmpty
-            ? widget.controller.program.weeks.length
-            : 0);
+        (widget.controller.program.weeks.isNotEmpty ? widget.controller.program.weeks.length : 0);
     if (!hasWeek) {
       return PageScaffold(
         colorScheme: colorScheme,
@@ -50,9 +46,9 @@ class _TrainingProgramWorkoutListPageState
       );
     }
     final workouts = widget.controller.program.weeks[widget.weekIndex].workouts;
-  final screenSize = MediaQuery.of(context).size;
-  final bool useGrid = screenSize.width >= 900;
-  final bool isCompactDensity = screenSize.width < 700;
+    final screenSize = MediaQuery.of(context).size;
+    final bool useGrid = screenSize.width >= 900;
+    final bool isCompactDensity = screenSize.width < 700;
 
     return PageScaffold(
       colorScheme: colorScheme,
@@ -82,34 +78,18 @@ class _TrainingProgramWorkoutListPageState
           ),
         ),
         SliverPadding(
-          padding: EdgeInsets.all(
-            isCompactDensity ? AppTheme.spacing.md : AppTheme.spacing.lg,
-          ),
+          padding: EdgeInsets.all(isCompactDensity ? AppTheme.spacing.md : AppTheme.spacing.lg),
           sliver: workouts.isEmpty
               ? _buildEmptyState(theme, colorScheme, isCompactDensity)
               : (useGrid
-                    ? _buildWorkoutsList(
-                        workouts,
-                        theme,
-                        colorScheme,
-                        isCompactDensity,
-                      )
-                    : _buildWorkoutsGrid(
-                        workouts,
-                        theme,
-                        colorScheme,
-                        isCompactDensity,
-                      )),
+                    ? _buildWorkoutsList(workouts, theme, colorScheme, isCompactDensity)
+                    : _buildWorkoutsGrid(workouts, theme, colorScheme, isCompactDensity)),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isCompact,
-  ) {
+  Widget _buildEmptyState(ThemeData theme, ColorScheme colorScheme, bool isCompact) {
     return SliverFillRemaining(
       hasScrollBody: false,
       child: EmptyState(
@@ -129,16 +109,8 @@ class _TrainingProgramWorkoutListPageState
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         return Padding(
-          padding: EdgeInsets.only(
-            bottom: isCompact ? AppTheme.spacing.sm : AppTheme.spacing.md,
-          ),
-          child: _buildWorkoutCard(
-            context,
-            index,
-            theme,
-            colorScheme,
-            isCompact,
-          ),
+          padding: EdgeInsets.only(bottom: isCompact ? AppTheme.spacing.sm : AppTheme.spacing.md),
+          child: _buildWorkoutCard(context, index, theme, colorScheme, isCompact),
         );
       }, childCount: workouts.length),
     );
@@ -155,10 +127,10 @@ class _TrainingProgramWorkoutListPageState
         return _buildWorkoutCard(context, index, theme, colorScheme, isCompact);
       }, childCount: workouts.length),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-  maxCrossAxisExtent: isCompact ? 420 : 560,
-  mainAxisSpacing: AppTheme.spacing.md,
-  crossAxisSpacing: AppTheme.spacing.md,
-  mainAxisExtent: isCompact ? 120 : 140,
+        maxCrossAxisExtent: isCompact ? 420 : 560,
+        mainAxisSpacing: AppTheme.spacing.md,
+        crossAxisSpacing: AppTheme.spacing.md,
+        mainAxisExtent: isCompact ? 120 : 140,
       ),
     );
   }
@@ -174,16 +146,13 @@ class _TrainingProgramWorkoutListPageState
       colorScheme: colorScheme,
       onTap: () => _navigateToWorkout(index),
       child: Padding(
-        padding: EdgeInsets.all(
-          isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg,
-        ),
+        padding: EdgeInsets.all(isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg),
         child: _WorkoutCardContent(
           index: index,
           theme: theme,
           colorScheme: colorScheme,
           isCompact: isCompact,
-          onCopy: () =>
-              widget.controller.copyWorkout(widget.weekIndex, index, context),
+          onCopy: () => widget.controller.copyWorkout(widget.weekIndex, index, context),
           onReorder: _showReorderDialog,
           onAdd: () => widget.controller.addWorkout(widget.weekIndex),
           onDelete: () => _handleDeleteWorkout(index),
@@ -205,11 +174,7 @@ class _TrainingProgramWorkoutListPageState
   }
 
   void _showReorderDialog() {
-    final workoutNames = widget
-        .controller
-        .program
-        .weeks[widget.weekIndex]
-        .workouts
+    final workoutNames = widget.controller.program.weeks[widget.weekIndex].workouts
         .map((workout) => 'Workout ${workout.order}')
         .toList();
 
@@ -217,11 +182,8 @@ class _TrainingProgramWorkoutListPageState
       context: context,
       builder: (context) => ReorderDialog(
         items: workoutNames,
-        onReorder: (oldIndex, newIndex) => widget.controller.reorderWorkouts(
-          widget.weekIndex,
-          oldIndex,
-          newIndex,
-        ),
+        onReorder: (oldIndex, newIndex) =>
+            widget.controller.reorderWorkouts(widget.weekIndex, oldIndex, newIndex),
       ),
     );
   }
@@ -267,9 +229,7 @@ class _WorkoutCardContent extends StatelessWidget {
         return Row(
           children: [
             _buildWorkoutIcon(),
-            SizedBox(
-              width: isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg,
-            ),
+            SizedBox(width: isCompact ? AppTheme.spacing.md : AppTheme.spacing.lg),
             Expanded(child: _buildWorkoutTitle()),
             _buildOptionsMenu(),
           ],
@@ -286,9 +246,7 @@ class _WorkoutCardContent extends StatelessWidget {
       height: iconSize,
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withAlpha(76),
-        borderRadius: BorderRadius.circular(
-          isCompact ? AppTheme.radii.sm : AppTheme.radii.md,
-        ),
+        borderRadius: BorderRadius.circular(isCompact ? AppTheme.radii.sm : AppTheme.radii.md),
       ),
       child: Center(
         child: FittedBox(
@@ -322,11 +280,7 @@ class _WorkoutCardContent extends StatelessWidget {
     return MenuAnchor(
       builder: (context, controller, child) {
         return IconButton(
-          icon: Icon(
-            Icons.more_vert,
-            color: colorScheme.primary,
-            size: isCompact ? 20 : 24,
-          ),
+          icon: Icon(Icons.more_vert, color: colorScheme.primary, size: isCompact ? 20 : 24),
           onPressed: () {
             if (controller.isOpen) {
               controller.close();
@@ -334,9 +288,7 @@ class _WorkoutCardContent extends StatelessWidget {
               controller.open();
             }
           },
-          padding: EdgeInsets.all(
-            isCompact ? AppTheme.spacing.xs : AppTheme.spacing.sm,
-          ),
+          padding: EdgeInsets.all(isCompact ? AppTheme.spacing.xs : AppTheme.spacing.sm),
           splashRadius: isCompact ? 20 : 24,
         );
       },

@@ -28,8 +28,7 @@ class SubscriptionChecker {
       }
 
       final subscriptionStatus = data['subscriptionStatus'] as String?;
-      final subscriptionExpiryDate =
-          data['subscriptionExpiryDate'] as Timestamp?;
+      final subscriptionExpiryDate = data['subscriptionExpiryDate'] as Timestamp?;
       final isGifted = data['giftedAt'] != null;
 
       if (isGifted &&
@@ -40,8 +39,7 @@ class SubscriptionChecker {
       }
 
       try {
-        final subscriptionDetails = await _inAppPurchaseService
-            .getSubscriptionDetails();
+        final subscriptionDetails = await _inAppPurchaseService.getSubscriptionDetails();
 
         if (subscriptionDetails != null) {
           return subscriptionDetails.status.toLowerCase() == 'active' &&

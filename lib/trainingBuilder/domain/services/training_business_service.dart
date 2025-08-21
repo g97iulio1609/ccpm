@@ -75,35 +75,19 @@ class TrainingBusinessService {
 
   /// Removes a workout from a week
   void removeWorkout(TrainingProgram program, int weekIndex, int workoutIndex) {
-    if (!ValidationUtils.isValidProgramIndex(
-      program,
-      weekIndex,
-      workoutIndex,
-    )) {
+    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex)) {
       throw ArgumentError('Invalid workout index');
     }
 
     final workout = program.weeks[weekIndex].workouts[workoutIndex];
     _trackWorkoutForDeletion(program, workout);
     program.weeks[weekIndex].workouts.removeAt(workoutIndex);
-    ModelUtils.updateWorkoutOrders(
-      program.weeks[weekIndex].workouts,
-      workoutIndex,
-    );
+    ModelUtils.updateWorkoutOrders(program.weeks[weekIndex].workouts, workoutIndex);
   }
 
   /// Adds an exercise to a workout
-  void addExercise(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    Exercise exercise,
-  ) {
-    if (!ValidationUtils.isValidProgramIndex(
-      program,
-      weekIndex,
-      workoutIndex,
-    )) {
+  void addExercise(TrainingProgram program, int weekIndex, int workoutIndex, Exercise exercise) {
+    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex)) {
       throw ArgumentError('Invalid indices');
     }
 
@@ -113,39 +97,21 @@ class TrainingBusinessService {
 
     final exerciseToAdd = exercise.copyWith(
       id: null,
-      order:
-          program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
+      order: program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
       weekProgressions: List.generate(program.weeks.length, (_) => []),
     );
-    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(
-      exerciseToAdd,
-    );
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exerciseToAdd);
   }
 
   /// Removes an exercise from a workout
-  void removeExercise(
-    TrainingProgram program,
-    int weekIndex,
-    int workoutIndex,
-    int exerciseIndex,
-  ) {
-    if (!ValidationUtils.isValidProgramIndex(
-      program,
-      weekIndex,
-      workoutIndex,
-      exerciseIndex,
-    )) {
+  void removeExercise(TrainingProgram program, int weekIndex, int workoutIndex, int exerciseIndex) {
+    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       throw ArgumentError('Invalid exercise index');
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     _trackExerciseForDeletion(program, exercise);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(
-      exerciseIndex,
-    );
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.removeAt(exerciseIndex);
 
     final exercises = program.weeks[weekIndex].workouts[workoutIndex].exercises;
     ModelUtils.updateExerciseOrders(exercises, exerciseIndex);
@@ -181,9 +147,7 @@ class TrainingBusinessService {
     if (indicesToRemove.isEmpty) return;
 
     // Clean up supersets in workout mapping (if present)
-    final originalSuperSets = List<Map<String, dynamic>>.from(
-      workout.superSets ?? const [],
-    );
+    final originalSuperSets = List<Map<String, dynamic>>.from(workout.superSets ?? const []);
     final cleanedSuperSets = <Map<String, dynamic>>[];
     for (final ss in originalSuperSets) {
       final Map<String, dynamic> entry = Map<String, dynamic>.from(ss);
@@ -217,28 +181,17 @@ class TrainingBusinessService {
     int workoutIndex,
     int exerciseIndex,
   ) {
-    if (!ValidationUtils.isValidProgramIndex(
-      program,
-      weekIndex,
-      workoutIndex,
-      exerciseIndex,
-    )) {
+    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       throw ArgumentError('Invalid exercise index');
     }
 
-    final sourceExercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final sourceExercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final duplicatedExercise = ModelUtils.copyExercise(sourceExercise, targetWeekIndex: weekIndex);
 
     final exerciseWithNewOrder = duplicatedExercise.copyWith(
-      order:
-          program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
+      order: program.weeks[weekIndex].workouts[workoutIndex].exercises.length + 1,
     );
-    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(
-      exerciseWithNewOrder,
-    );
+    program.weeks[weekIndex].workouts[workoutIndex].exercises.add(exerciseWithNewOrder);
   }
 
   /// Updates the number of a specific week
@@ -252,25 +205,23 @@ class TrainingBusinessService {
     }
 
     // Check if the new week number is already in use by another week
-    final existingWeekIndex = program.weeks.indexWhere(
-      (week) => week.number == newWeekNumber,
-    );
-    
+    final existingWeekIndex = program.weeks.indexWhere((week) => week.number == newWeekNumber);
+
     if (existingWeekIndex != -1 && existingWeekIndex != weekIndex) {
       // Swap the week numbers
       final currentWeek = program.weeks[weekIndex];
       final existingWeek = program.weeks[existingWeekIndex];
-      
+
       program.weeks[weekIndex] = currentWeek.copyWith(number: newWeekNumber);
       program.weeks[existingWeekIndex] = existingWeek.copyWith(number: currentWeek.number);
-      
+
       // Update week progressions for all exercises in both weeks
       _updateWeekProgressionsForWeekNumberChange(program, weekIndex, existingWeekIndex);
     } else {
       // Simply update the week number
       final currentWeek = program.weeks[weekIndex];
       program.weeks[weekIndex] = currentWeek.copyWith(number: newWeekNumber);
-      
+
       // Update week progressions for all exercises in this week
       _updateWeekProgressionsForSingleWeek(program, weekIndex);
     }
@@ -291,11 +242,15 @@ class TrainingBusinessService {
             // Update week numbers in progressions
             for (int wpIndex = 0; wpIndex < exercise.weekProgressions!.length; wpIndex++) {
               if (wpIndex == weekIndex1 || wpIndex == weekIndex2) {
-                for (int progIndex = 0; progIndex < exercise.weekProgressions![wpIndex].length; progIndex++) {
+                for (
+                  int progIndex = 0;
+                  progIndex < exercise.weekProgressions![wpIndex].length;
+                  progIndex++
+                ) {
                   final progression = exercise.weekProgressions![wpIndex][progIndex];
-                  final newWeekNumber = wpIndex == weekIndex1 
-                    ? program.weeks[weekIndex1].number 
-                    : program.weeks[weekIndex2].number;
+                  final newWeekNumber = wpIndex == weekIndex1
+                      ? program.weeks[weekIndex1].number
+                      : program.weeks[weekIndex2].number;
                   exercise.weekProgressions![wpIndex][progIndex] = progression.copyWith(
                     weekNumber: newWeekNumber,
                   );
@@ -315,7 +270,11 @@ class TrainingBusinessService {
       for (int eIndex = 0; eIndex < workout.exercises.length; eIndex++) {
         final exercise = workout.exercises[eIndex];
         if (exercise.weekProgressions != null && exercise.weekProgressions!.length > weekIndex) {
-          for (int progIndex = 0; progIndex < exercise.weekProgressions![weekIndex].length; progIndex++) {
+          for (
+            int progIndex = 0;
+            progIndex < exercise.weekProgressions![weekIndex].length;
+            progIndex++
+          ) {
             final progression = exercise.weekProgressions![weekIndex][progIndex];
             exercise.weekProgressions![weekIndex][progIndex] = progression.copyWith(
               weekNumber: week.number,
@@ -338,11 +297,11 @@ class TrainingBusinessService {
     }
 
     final sourceWeek = program.weeks[sourceWeekIndex];
-    
+
     // KISS: Simply create a new week with the next available number
     final newWeekNumber = program.weeks.length + 1;
     final copiedWeek = SimpleCopyService.copyWeek(sourceWeek, targetWeekNumber: newWeekNumber);
-    
+
     // KISS: Just add it to the end - no complex positioning logic
     program.weeks.add(copiedWeek);
   }
@@ -354,19 +313,17 @@ class TrainingBusinessService {
     int workoutIndex,
     int? destinationWeekIndex,
   ) async {
-    if (!ValidationUtils.isValidProgramIndex(
-      program,
-      sourceWeekIndex,
-      workoutIndex,
-    )) {
+    if (!ValidationUtils.isValidProgramIndex(program, sourceWeekIndex, workoutIndex)) {
       throw ArgumentError('Invalid source indices');
     }
 
     final sourceWorkout = program.weeks[sourceWeekIndex].workouts[workoutIndex];
-    final copiedWorkout = ModelUtils.copyWorkout(sourceWorkout, targetWeekIndex: destinationWeekIndex);
+    final copiedWorkout = ModelUtils.copyWorkout(
+      sourceWorkout,
+      targetWeekIndex: destinationWeekIndex,
+    );
 
-  if (destinationWeekIndex != null &&
-    destinationWeekIndex < program.weeks.length) {
+    if (destinationWeekIndex != null && destinationWeekIndex < program.weeks.length) {
       final destinationWeek = program.weeks[destinationWeekIndex];
       final existingWorkoutIndex = destinationWeek.workouts.indexWhere(
         (workout) => workout.order == sourceWorkout.order,
@@ -402,20 +359,13 @@ class TrainingBusinessService {
     String exerciseId,
     String exerciseType,
   ) async {
-    final newMaxWeight = await _getLatestMaxWeight(
-      program.athleteId,
-      exerciseId,
-    );
+    final newMaxWeight = await _getLatestMaxWeight(program.athleteId, exerciseId);
 
     for (final week in program.weeks) {
       for (final workout in week.workouts) {
         for (final exercise in workout.exercises) {
           if (exercise.exerciseId == exerciseId) {
-            _updateExerciseWeightsInternal(
-              exercise,
-              newMaxWeight.toDouble(),
-              exerciseType,
-            );
+            _updateExerciseWeightsInternal(exercise, newMaxWeight.toDouble(), exerciseType);
           }
         }
       }
@@ -434,11 +384,7 @@ class TrainingBusinessService {
   }
 
   /// Updates weights for an exercise and its series
-  void _updateExerciseWeightsInternal(
-    Exercise exercise,
-    double maxWeight,
-    String exerciseType,
-  ) {
+  void _updateExerciseWeightsInternal(Exercise exercise, double maxWeight, String exerciseType) {
     // Update series weights
     for (int i = 0; i < exercise.series.length; i++) {
       final series = exercise.series[i];
@@ -446,16 +392,12 @@ class TrainingBusinessService {
           ? double.tryParse(series.intensity!)
           : null;
       if (intensity != null) {
-        final calculatedWeight =
-            WeightCalculationService.calculateWeightFromIntensity(
-              maxWeight,
-              intensity,
-            );
+        final calculatedWeight = WeightCalculationService.calculateWeightFromIntensity(
+          maxWeight,
+          intensity,
+        );
         exercise.series[i] = series.copyWith(
-          weight: WeightCalculationService.roundWeight(
-            calculatedWeight,
-            exerciseType,
-          ),
+          weight: WeightCalculationService.roundWeight(calculatedWeight, exerciseType),
         );
       }
     }
@@ -470,16 +412,12 @@ class TrainingBusinessService {
                 ? double.tryParse(series.intensity!)
                 : null;
             if (intensity != null) {
-              final calculatedWeight =
-                  WeightCalculationService.calculateWeightFromIntensity(
-                    maxWeight,
-                    intensity,
-                  );
+              final calculatedWeight = WeightCalculationService.calculateWeightFromIntensity(
+                maxWeight,
+                intensity,
+              );
               progression.series[i] = series.copyWith(
-                weight: WeightCalculationService.roundWeight(
-                  calculatedWeight,
-                  exerciseType,
-                ),
+                weight: WeightCalculationService.roundWeight(calculatedWeight, exerciseType),
               );
             }
           }

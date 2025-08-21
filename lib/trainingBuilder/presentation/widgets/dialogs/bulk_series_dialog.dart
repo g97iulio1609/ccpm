@@ -32,11 +32,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
           color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
-        child: Icon(
-          Icons.format_list_numbered,
-          color: colorScheme.primary,
-          size: 24,
-        ),
+        child: Icon(Icons.format_list_numbered, color: colorScheme.primary, size: 24),
       ),
       actions: [
         AppDialogHelpers.buildCancelButton(context: context),
@@ -50,9 +46,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
           },
         ),
       ],
-      children: [
-        _buildExerciseSelection(context, selectedExercises, theme, colorScheme),
-      ],
+      children: [_buildExerciseSelection(context, selectedExercises, theme, colorScheme)],
     );
   }
 
@@ -74,12 +68,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
         ),
         SizedBox(height: AppTheme.spacing.md),
         ...workoutExercises.map(
-          (exercise) => _buildExerciseCheckbox(
-            exercise,
-            selectedExercises,
-            theme,
-            colorScheme,
-          ),
+          (exercise) => _buildExerciseCheckbox(exercise, selectedExercises, theme, colorScheme),
         ),
       ],
     );
@@ -104,16 +93,12 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
       },
       title: Text(
         exercise.name,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurface,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
       ),
       subtitle: (exercise.variant?.isNotEmpty ?? false)
           ? Text(
               exercise.variant!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             )
           : null,
       secondary: Container(
@@ -124,9 +109,7 @@ class BulkSeriesSelectionDialog extends HookConsumerWidget {
         ),
         child: Text(
           exercise.type,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: colorScheme.primary,
-          ),
+          style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.primary),
         ),
       ),
     );
@@ -137,11 +120,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
   final List<Exercise> exercises;
   final Function(List<Exercise>) onApply;
 
-  const BulkSeriesConfigurationDialog({
-    super.key,
-    required this.exercises,
-    required this.onApply,
-  });
+  const BulkSeriesConfigurationDialog({super.key, required this.exercises, required this.onApply});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -157,11 +136,7 @@ class BulkSeriesConfigurationDialog extends HookConsumerWidget {
           color: colorScheme.primaryContainer.withAlpha(76),
           borderRadius: BorderRadius.circular(AppTheme.radii.md),
         ),
-        child: Icon(
-          Icons.playlist_add_check,
-          color: colorScheme.primary,
-          size: 24,
-        ),
+        child: Icon(Icons.playlist_add_check, color: colorScheme.primary, size: 24),
       ),
       actions: [
         AppDialogHelpers.buildCancelButton(context: context),

@@ -24,21 +24,15 @@ class ProgressionViewModel {
   });
 
   /// Gets maximum sessions across all weeks
-  int get maxSessions => weekProgressions.fold<int>(
-    0,
-    (max, week) => week.length > max ? week.length : max,
-  );
+  int get maxSessions =>
+      weekProgressions.fold<int>(0, (max, week) => week.length > max ? week.length : max);
 
   /// Gets non-empty session numbers
   List<int> getNonEmptySessions() {
     final nonEmptySessions = <int>[];
     for (int sessionNumber = 0; sessionNumber < maxSessions; sessionNumber++) {
       bool hasData = false;
-      for (
-        int weekIndex = 0;
-        weekIndex < weekProgressions.length;
-        weekIndex++
-      ) {
+      for (int weekIndex = 0; weekIndex < weekProgressions.length; weekIndex++) {
         if (weekIndex < controllers.length &&
             sessionNumber < controllers[weekIndex].length &&
             controllers[weekIndex][sessionNumber].isNotEmpty) {
@@ -61,10 +55,7 @@ class ProgressionViewModel {
   }
 
   /// Gets session controllers for given indices
-  List<ProgressionControllers>? getSessionControllers(
-    int weekIndex,
-    int sessionIndex,
-  ) {
+  List<ProgressionControllers>? getSessionControllers(int weekIndex, int sessionIndex) {
     if (hasControllersFor(weekIndex, sessionIndex)) {
       return controllers[weekIndex][sessionIndex];
     }

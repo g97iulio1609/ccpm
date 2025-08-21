@@ -8,15 +8,11 @@ import '../../ExerciseRecords/exercise_record_services.dart';
 class WeightCalculationService {
   final ExerciseRecordService _exerciseRecordService;
 
-  WeightCalculationService({
-    required ExerciseRecordService exerciseRecordService,
-  }) : _exerciseRecordService = exerciseRecordService;
+  WeightCalculationService({required ExerciseRecordService exerciseRecordService})
+    : _exerciseRecordService = exerciseRecordService;
 
   /// Calcola il peso basandosi sull'intensità percentuale
-  static double calculateWeightFromIntensity(
-    double maxWeight,
-    double intensity,
-  ) {
+  static double calculateWeightFromIntensity(double maxWeight, double intensity) {
     if (maxWeight <= 0 || intensity <= 0) return 0;
     return maxWeight * (intensity / 100);
   }
@@ -82,37 +78,25 @@ class WeightCalculationService {
   }
 
   /// Ricalcola i pesi delle serie basandosi sul nuovo massimale
-  void recalculateSeriesWeights(
-    List<Series> series,
-    double latestMaxWeight,
-    String exerciseType,
-  ) {
+  void recalculateSeriesWeights(List<Series> series, double latestMaxWeight, String exerciseType) {
     for (int i = 0; i < series.length; i++) {
       final currentSeries = series[i];
 
       // Aggiorna weight basandosi sull'intensità
-      if (currentSeries.intensity != null &&
-          currentSeries.intensity!.isNotEmpty) {
+      if (currentSeries.intensity != null && currentSeries.intensity!.isNotEmpty) {
         final intensity = double.tryParse(currentSeries.intensity!);
         if (intensity != null) {
-          final calculatedWeight = calculateWeightFromIntensity(
-            latestMaxWeight,
-            intensity,
-          );
+          final calculatedWeight = calculateWeightFromIntensity(latestMaxWeight, intensity);
           final newWeight = roundWeight(calculatedWeight, exerciseType);
           series[i] = currentSeries.copyWith(weight: newWeight);
         }
       }
 
       // Aggiorna maxWeight basandosi sulla maxIntensity
-      if (currentSeries.maxIntensity != null &&
-          currentSeries.maxIntensity!.isNotEmpty) {
+      if (currentSeries.maxIntensity != null && currentSeries.maxIntensity!.isNotEmpty) {
         final maxIntensity = double.tryParse(currentSeries.maxIntensity!);
         if (maxIntensity != null) {
-          final calculatedMaxWeight = calculateWeightFromIntensity(
-            latestMaxWeight,
-            maxIntensity,
-          );
+          final calculatedMaxWeight = calculateWeightFromIntensity(latestMaxWeight, maxIntensity);
           final newMaxWeight = roundWeight(calculatedMaxWeight, exerciseType);
           series[i] = series[i].copyWith(maxWeight: newMaxWeight);
         }
@@ -131,14 +115,9 @@ class WeightCalculationService {
       final series = progression['series'] as List<dynamic>?;
 
       if (series != null) {
-        final seriesList = series
-            .map((s) => Series.fromMap(s as Map<String, dynamic>))
-            .toList();
+        final seriesList = series.map((s) => Series.fromMap(s as Map<String, dynamic>)).toList();
         recalculateSeriesWeights(seriesList, latestMaxWeight, exerciseType);
-        weekProgressions[i] = {
-          ...progression,
-          'series': seriesList.map((s) => s.toMap()).toList(),
-        };
+        weekProgressions[i] = {...progression, 'series': seriesList.map((s) => s.toMap()).toList()};
       }
     }
   }
@@ -157,24 +136,16 @@ class WeightCalculationService {
     recalculateSeriesWeights(updatedSeries, newLatestMaxWeight, exerciseType);
 
     // Ricalcola i pesi delle progressioni settimanali se presenti
-    if (exercise.weekProgressions != null &&
-        exercise.weekProgressions!.isNotEmpty) {
+    if (exercise.weekProgressions != null && exercise.weekProgressions!.isNotEmpty) {
       for (final weekList in exercise.weekProgressions!) {
         for (final progression in weekList) {
-          recalculateSeriesWeights(
-            progression.series,
-            newLatestMaxWeight,
-            exerciseType,
-          );
+          recalculateSeriesWeights(progression.series, newLatestMaxWeight, exerciseType);
         }
       }
     }
 
     // Restituisce una nuova istanza dell'esercizio con i valori aggiornati
-    return exercise.copyWith(
-      latestMaxWeight: newLatestMaxWeight,
-      series: updatedSeries,
-    );
+    return exercise.copyWith(latestMaxWeight: newLatestMaxWeight, series: updatedSeries);
   }
 
   /// Versione per Map con String e dynamic (compatibilità con viewer)
@@ -195,38 +166,26 @@ class WeightCalculationService {
       seriesMap['originalExerciseId'] = newExerciseId;
 
       if (seriesMap['intensity'] != null) {
-        final double intensity = double.parse(
-          seriesMap['intensity'].toString(),
-        );
-        final double calculatedWeight = calculateWeightFromIntensity(
-          latestMaxWeight,
-          intensity,
-        );
+        final double intensity = double.parse(seriesMap['intensity'].toString());
+        final double calculatedWeight = calculateWeightFromIntensity(latestMaxWeight, intensity);
         final double newWeight = roundWeight(calculatedWeight, exerciseType);
         seriesMap['weight'] = newWeight;
       }
 
       if (seriesMap['maxIntensity'] != null) {
-        final double maxIntensity = double.parse(
-          seriesMap['maxIntensity'].toString(),
-        );
+        final double maxIntensity = double.parse(seriesMap['maxIntensity'].toString());
         final double calculatedMaxWeight = calculateWeightFromIntensity(
           latestMaxWeight,
           maxIntensity,
         );
-        final double newMaxWeight = roundWeight(
-          calculatedMaxWeight,
-          exerciseType,
-        );
+        final double newMaxWeight = roundWeight(calculatedMaxWeight, exerciseType);
         seriesMap['maxWeight'] = newMaxWeight;
       }
 
       // Aggiorna su Firestore
       final seriesId = seriesMap['id'];
       if (seriesId != null) {
-        final seriesRef = FirebaseFirestore.instance
-            .collection('series')
-            .doc(seriesId);
+        final seriesRef = FirebaseFirestore.instance.collection('series').doc(seriesId);
         final updateData = {
           'weight': seriesMap['weight'],
           'maxWeight': seriesMap['maxWeight'],

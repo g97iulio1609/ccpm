@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
 
-
 import '../../shared/shared.dart';
 
 /// Utility per esportare/importare programmi di allenamento
@@ -45,7 +44,7 @@ class TrainingShareService {
     // Genera nuovi ID per evitare conflitti durante l'importazione
     final newProgramId = _generateId();
     final superSetMapping = _generateSuperSetIdMapping(program.weeks);
-    
+
     return {
       'formatVersion': 1,
       'program': {
@@ -86,10 +85,12 @@ class TrainingShareService {
       return {
         ...superSet,
         if (newId != null) 'id': newId,
-        'exerciseIds': (superSet['exerciseIds'] as List?)?.map((exerciseId) {
-          // Manteniamo l'exerciseId per ora, verrà aggiornato dopo la rigenerazione degli ID degli esercizi
-          return exerciseId;
-        }).toList() ?? [],
+        'exerciseIds':
+            (superSet['exerciseIds'] as List?)?.map((exerciseId) {
+              // Manteniamo l'exerciseId per ora, verrà aggiornato dopo la rigenerazione degli ID degli esercizi
+              return exerciseId;
+            }).toList() ??
+            [],
       };
     }).toList();
 
@@ -107,12 +108,12 @@ class TrainingShareService {
   static Map<String, dynamic> _exerciseToMap(Exercise e, Map<String, String> superSetMapping) {
     // Genera nuovo ID per l'esercizio
     final newExerciseId = _generateId();
-    
+
     // Aggiorna superSetId se presente nel mapping
     final newSuperSetId = e.superSetId != null && e.superSetId!.isNotEmpty
         ? superSetMapping[e.superSetId!] ?? e.superSetId
         : e.superSetId;
-    
+
     // Genera nuovi ID per le serie
     final newSeries = e.series.map((s) {
       final seriesMap = s.toMap();
@@ -195,9 +196,7 @@ class TrainingShareService {
   static List<Workout> _parseWorkouts(dynamic data) {
     if (data == null) return [];
     if (data is! List) return [];
-    return data
-        .map((w) => _workoutFromMap(Map<String, dynamic>.from(w)))
-        .toList();
+    return data.map((w) => _workoutFromMap(Map<String, dynamic>.from(w))).toList();
   }
 
   static Workout _workoutFromMap(Map<String, dynamic> map) {
@@ -238,18 +237,18 @@ class TrainingShareService {
   static List<Series> _parseSeries(dynamic data) {
     if (data == null) return [];
     if (data is! List) return [];
-    return data
-        .map((s) => Series.fromMap(Map<String, dynamic>.from(s)))
-        .toList();
+    return data.map((s) => Series.fromMap(Map<String, dynamic>.from(s))).toList();
   }
 
   static List<List<WeekProgression>>? _parseWeekProgressions(dynamic data) {
     if (data == null) return null;
     if (data is! List) return null;
     return data
-        .map((week) => (week as List)
-            .map((wp) => WeekProgression.fromMap(Map<String, dynamic>.from(wp)))
-            .toList())
+        .map(
+          (week) => (week as List)
+              .map((wp) => WeekProgression.fromMap(Map<String, dynamic>.from(wp)))
+              .toList(),
+        )
         .toList();
   }
 
@@ -538,13 +537,15 @@ class TrainingShareService {
             superSetBuilder.addExerciseToSet(eAgg.superSetId!, ex);
           }
         }
-        workouts.add(Workout(
-          id: null,
-          order: wod,
-          name: 'Workout $wod',
-          exercises: exercises,
-          superSets: superSetBuilder.buildForExercises(exercises),
-        ));
+        workouts.add(
+          Workout(
+            id: null,
+            order: wod,
+            name: 'Workout $wod',
+            exercises: exercises,
+            superSets: superSetBuilder.buildForExercises(exercises),
+          ),
+        );
         superSetBuilder.reset();
       }
       weeks.add(Week(id: null, number: wk, workouts: workouts));
@@ -640,34 +641,34 @@ class _CsvIndex {
   final int? restTimeSeconds;
 
   _CsvIndex(List<String> headers)
-      : formatVersion = headers.indexOf('formatVersion'),
-        programId = headers.indexOf('programId'),
-        programName = headers.indexOf('programName'),
-        programDescription = headers.indexOf('programDescription'),
-        athleteId = headers.indexOf('athleteId'),
-        mesocycleNumber = headers.indexOf('mesocycleNumber'),
-        hide = headers.indexOf('hide'),
-        status = headers.indexOf('status'),
-        weekNumber = headers.indexOf('weekNumber'),
-        workoutOrder = headers.indexOf('workoutOrder'),
-        workoutName = headers.indexOf('workoutName'),
-        exerciseOrder = headers.indexOf('exerciseOrder'),
-        exerciseName = headers.indexOf('exerciseName'),
-        exerciseId = headers.indexOf('exerciseId'),
-        type = headers.indexOf('type'),
-        variant = headers.indexOf('variant'),
-        superSetId = headers.indexOf('superSetId'),
-        seriesOrder = headers.indexOf('seriesOrder'),
-        sets = headers.indexOf('sets'),
-        reps = headers.indexOf('reps'),
-        maxReps = headers.indexOf('maxReps'),
-        weight = headers.indexOf('weight'),
-        maxWeight = headers.indexOf('maxWeight'),
-        intensity = headers.indexOf('intensity'),
-        maxIntensity = headers.indexOf('maxIntensity'),
-        rpe = headers.indexOf('rpe'),
-        maxRpe = headers.indexOf('maxRpe'),
-        restTimeSeconds = headers.indexOf('restTimeSeconds');
+    : formatVersion = headers.indexOf('formatVersion'),
+      programId = headers.indexOf('programId'),
+      programName = headers.indexOf('programName'),
+      programDescription = headers.indexOf('programDescription'),
+      athleteId = headers.indexOf('athleteId'),
+      mesocycleNumber = headers.indexOf('mesocycleNumber'),
+      hide = headers.indexOf('hide'),
+      status = headers.indexOf('status'),
+      weekNumber = headers.indexOf('weekNumber'),
+      workoutOrder = headers.indexOf('workoutOrder'),
+      workoutName = headers.indexOf('workoutName'),
+      exerciseOrder = headers.indexOf('exerciseOrder'),
+      exerciseName = headers.indexOf('exerciseName'),
+      exerciseId = headers.indexOf('exerciseId'),
+      type = headers.indexOf('type'),
+      variant = headers.indexOf('variant'),
+      superSetId = headers.indexOf('superSetId'),
+      seriesOrder = headers.indexOf('seriesOrder'),
+      sets = headers.indexOf('sets'),
+      reps = headers.indexOf('reps'),
+      maxReps = headers.indexOf('maxReps'),
+      weight = headers.indexOf('weight'),
+      maxWeight = headers.indexOf('maxWeight'),
+      intensity = headers.indexOf('intensity'),
+      maxIntensity = headers.indexOf('maxIntensity'),
+      rpe = headers.indexOf('rpe'),
+      maxRpe = headers.indexOf('maxRpe'),
+      restTimeSeconds = headers.indexOf('restTimeSeconds');
 }
 
 class _ExerciseAgg {
@@ -704,16 +705,18 @@ class _SuperSetBuilder {
     // Se non abbiamo ID esercizio (in import) possiamo usare placeholder temporanei
     // che verranno riallineati al salvataggio
     return _setIdToExerciseIds.entries
-        .map((e) => {
-              'id': e.key,
-              'name': '',
-              'exerciseIds': e.value.isEmpty
-                  ? exercises
+        .map(
+          (e) => {
+            'id': e.key,
+            'name': '',
+            'exerciseIds': e.value.isEmpty
+                ? exercises
                       .where((ex) => ex.superSetId == e.key)
                       .map((ex) => ex.id ?? ex.exerciseId ?? '')
                       .toList()
-                  : e.value,
-            })
+                : e.value,
+          },
+        )
         .toList();
   }
 

@@ -118,12 +118,7 @@ class ProgressionGroupFields extends StatelessWidget {
         theme: theme,
         onRealTimeUpdate: (type, minValue, maxValue, field) {
           _handleLoadUpdate(
-            LoadUpdateParams(
-              type: type,
-              minValue: minValue,
-              maxValue: maxValue,
-              field: field,
-            ),
+            LoadUpdateParams(type: type, minValue: minValue, maxValue: maxValue, field: field),
             context,
           );
         },
@@ -144,7 +139,7 @@ class ProgressionGroupFields extends StatelessWidget {
           _handleRpeUpdate(params);
           break;
         default:
-          // Unknown type: ignore silently
+        // Unknown type: ignore silently
       }
     } catch (e) {
       // Show user-friendly error message
@@ -200,10 +195,7 @@ class ProgressionGroupFields extends StatelessWidget {
 
   void _handleRpeUpdate(LoadUpdateParams params) {
     try {
-      _updateControllersSafely(
-        rpeMin: params.minValue,
-        rpeMax: params.maxValue,
-      );
+      _updateControllersSafely(rpeMin: params.minValue, rpeMax: params.maxValue);
     } catch (e) {
       throw Exception('Failed to update RPE: $e');
     }

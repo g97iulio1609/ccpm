@@ -7,9 +7,7 @@ class FormatUtils {
     if (value == null) return '';
     if (value is int) return value.toString();
     if (value is double) {
-      return value == value.roundToDouble()
-          ? value.toInt().toString()
-          : value.toStringAsFixed(1);
+      return value == value.roundToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
     }
     if (value is String) {
       if (value.isEmpty) return '';

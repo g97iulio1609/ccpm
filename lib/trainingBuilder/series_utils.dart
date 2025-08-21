@@ -222,15 +222,11 @@ class SeriesUtils {
       return;
     }
 
-    final calculatedWeight =
-        WeightCalculationService.calculateWeightFromIntensity(
-          latestMaxWeight,
-          intensity,
-        );
-    final roundedWeight = WeightCalculationService.roundWeight(
-      calculatedWeight,
-      exerciseType,
+    final calculatedWeight = WeightCalculationService.calculateWeightFromIntensity(
+      latestMaxWeight,
+      intensity,
     );
+    final roundedWeight = WeightCalculationService.roundWeight(calculatedWeight, exerciseType);
 
     weightController.text = _formatDouble(roundedWeight);
     weightNotifier.value = roundedWeight;
@@ -245,10 +241,7 @@ class SeriesUtils {
     final weight = double.tryParse(weightController.text.trim()) ?? 0.0;
 
     if (weight > 0 && latestMaxWeight > 0) {
-      final calculatedIntensity = calculateIntensityFromWeight(
-        weight,
-        latestMaxWeight,
-      );
+      final calculatedIntensity = calculateIntensityFromWeight(weight, latestMaxWeight);
       intensityController.text = _formatDouble(calculatedIntensity);
     } else {
       intensityController.clear();
@@ -277,18 +270,12 @@ class SeriesUtils {
         latestMaxWeight > 0) {
       final percentage = getRPEPercentage(rpe, reps);
       final calculatedWeight = latestMaxWeight * percentage;
-      final roundedWeight = WeightCalculationService.roundWeight(
-        calculatedWeight,
-        exerciseType,
-      );
+      final roundedWeight = WeightCalculationService.roundWeight(calculatedWeight, exerciseType);
 
       weightController.text = _formatDouble(roundedWeight);
       weightNotifier.value = roundedWeight;
 
-      final calculatedIntensity = calculateIntensityFromWeight(
-        roundedWeight,
-        latestMaxWeight,
-      );
+      final calculatedIntensity = calculateIntensityFromWeight(roundedWeight, latestMaxWeight);
       intensityController.text = _formatDouble(calculatedIntensity);
     } else {
       weightController.text = _formatDouble(0.0);
@@ -340,20 +327,15 @@ class SeriesUtils {
         workoutIndex < 0 ||
         workoutIndex >= program.weeks[weekIndex].workouts.length ||
         exerciseIndex < 0 ||
-        exerciseIndex >=
-            program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
+        exerciseIndex >= program.weeks[weekIndex].workouts[workoutIndex].exercises.length) {
       return;
     }
 
-    final exercise = program
-        .weeks[weekIndex]
-        .workouts[workoutIndex]
-        .exercises[exerciseIndex];
+    final exercise = program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex];
     final exerciseId = exercise.exerciseId;
     final athleteId = program.athleteId;
 
-    final latestMaxWeight =
-        (exerciseId != null && exerciseId.isNotEmpty && athleteId.isNotEmpty)
+    final latestMaxWeight = (exerciseId != null && exerciseId.isNotEmpty && athleteId.isNotEmpty)
         ? await getLatestMaxWeight(exerciseRecordService, athleteId, exerciseId)
         : 0.0;
 
@@ -363,25 +345,16 @@ class SeriesUtils {
         .toList();
 
     final updatedExercise = exercise.copyWith(series: updatedSeries);
-    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] =
-        updatedExercise;
+    program.weeks[weekIndex].workouts[workoutIndex].exercises[exerciseIndex] = updatedExercise;
   }
 
   /// Logica interna per calcolare e impostare peso, intensità e RPE di una singola serie.
   /// Restituisce una nuova istanza di Series con i valori calcolati.
-  static Series _calculateWeight(
-    Series series,
-    String? exerciseType,
-    double latestMaxWeight,
-  ) {
+  static Series _calculateWeight(Series series, String? exerciseType, double latestMaxWeight) {
     final currentMaxWeight = latestMaxWeight.clamp(0.0, double.maxFinite);
 
     if (currentMaxWeight <= 0) {
-      return series.copyWith(
-        weight: 0.0,
-        intensity: _formatDouble(0.0),
-        rpe: '',
-      );
+      return series.copyWith(weight: 0.0, intensity: _formatDouble(0.0), rpe: '');
     }
 
     final String intensityText = series.intensity?.trim() ?? '';
@@ -392,31 +365,20 @@ class SeriesUtils {
     if (intensityText.isNotEmpty) {
       final intensityValue = double.tryParse(intensityText);
       if (intensityValue != null && intensityValue > 0) {
-        final calculatedW =
-            WeightCalculationService.calculateWeightFromIntensity(
-              currentMaxWeight,
-              intensityValue,
-            );
-        final newWeight = WeightCalculationService.roundWeight(
-          calculatedW,
-          exerciseType,
+        final calculatedW = WeightCalculationService.calculateWeightFromIntensity(
+          currentMaxWeight,
+          intensityValue,
         );
+        final newWeight = WeightCalculationService.roundWeight(calculatedW, exerciseType);
         final newIntensity = _formatDouble(
           calculateIntensityFromWeight(newWeight, currentMaxWeight),
         );
         final newRpe = (reps > 0 && reps <= 10)
             ? (calculateRPE(newWeight, currentMaxWeight, reps) != null
-                  ? _formatDouble(
-                      calculateRPE(newWeight, currentMaxWeight, reps)!,
-                      precision: 1,
-                    )
+                  ? _formatDouble(calculateRPE(newWeight, currentMaxWeight, reps)!, precision: 1)
                   : '')
             : '';
-        return series.copyWith(
-          weight: newWeight,
-          intensity: newIntensity,
-          rpe: newRpe,
-        );
+        return series.copyWith(weight: newWeight, intensity: newIntensity, rpe: newRpe);
       }
     }
 
@@ -426,44 +388,25 @@ class SeriesUtils {
       if (rpeValue != null && rpeValue >= 2 && rpeValue <= 10) {
         final percentage = getRPEPercentage(rpeValue, reps);
         final calculatedW = currentMaxWeight * percentage;
-        final newWeight = WeightCalculationService.roundWeight(
-          calculatedW,
-          exerciseType,
-        );
+        final newWeight = WeightCalculationService.roundWeight(calculatedW, exerciseType);
         final newIntensity = _formatDouble(
           calculateIntensityFromWeight(newWeight, currentMaxWeight),
         );
         final newRpe = _formatDouble(rpeValue, precision: 1);
-        return series.copyWith(
-          weight: newWeight,
-          intensity: newIntensity,
-          rpe: newRpe,
-        );
+        return series.copyWith(weight: newWeight, intensity: newIntensity, rpe: newRpe);
       }
     }
 
     // Priorità 3: Calcolo basato sul Peso
     if (series.weight > 0) {
-      final newWeight = WeightCalculationService.roundWeight(
-        series.weight,
-        exerciseType,
-      );
-      final newIntensity = _formatDouble(
-        calculateIntensityFromWeight(newWeight, currentMaxWeight),
-      );
+      final newWeight = WeightCalculationService.roundWeight(series.weight, exerciseType);
+      final newIntensity = _formatDouble(calculateIntensityFromWeight(newWeight, currentMaxWeight));
       final newRpe = (reps > 0 && reps <= 10)
           ? (calculateRPE(newWeight, currentMaxWeight, reps) != null
-                ? _formatDouble(
-                    calculateRPE(newWeight, currentMaxWeight, reps)!,
-                    precision: 1,
-                  )
+                ? _formatDouble(calculateRPE(newWeight, currentMaxWeight, reps)!, precision: 1)
                 : '')
           : '';
-      return series.copyWith(
-        weight: newWeight,
-        intensity: newIntensity,
-        rpe: newRpe,
-      );
+      return series.copyWith(weight: newWeight, intensity: newIntensity, rpe: newRpe);
     }
 
     // Fallback
@@ -485,21 +428,14 @@ class SeriesUtils {
     final minIntensity = calculateIntensityFromWeight(minW, currentMax);
     final maxIntensity = calculateIntensityFromWeight(maxW, currentMax);
 
-    final orderedMinIntensity = minIntensity <= maxIntensity
-        ? minIntensity
-        : maxIntensity;
-    final orderedMaxIntensity = minIntensity <= maxIntensity
-        ? maxIntensity
-        : minIntensity;
+    final orderedMinIntensity = minIntensity <= maxIntensity ? minIntensity : maxIntensity;
+    final orderedMaxIntensity = minIntensity <= maxIntensity ? maxIntensity : minIntensity;
 
     return '${_formatDouble(orderedMinIntensity)}/${_formatDouble(orderedMaxIntensity)}';
   }
 
   /// Calcola un range di pesi (min/max) dato un range di intensità e il massimale.
-  static List<double> calculateWeightRange(
-    String intensityRange,
-    double latestMaxWeight,
-  ) {
+  static List<double> calculateWeightRange(String intensityRange, double latestMaxWeight) {
     final currentMax = latestMaxWeight.clamp(0.0, double.maxFinite);
     if (currentMax <= 0) return [0.0, 0.0];
 
@@ -508,31 +444,13 @@ class SeriesUtils {
     double maxW = 0.0;
 
     if (parts.length == 2) {
-      final minIntensity = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(
-        0.0,
-        200.0,
-      );
-      final maxIntensity = (double.tryParse(parts[1].trim()) ?? 0.0).clamp(
-        0.0,
-        200.0,
-      );
-      minW = WeightCalculationService.calculateWeightFromIntensity(
-        currentMax,
-        minIntensity,
-      );
-      maxW = WeightCalculationService.calculateWeightFromIntensity(
-        currentMax,
-        maxIntensity,
-      );
+      final minIntensity = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(0.0, 200.0);
+      final maxIntensity = (double.tryParse(parts[1].trim()) ?? 0.0).clamp(0.0, 200.0);
+      minW = WeightCalculationService.calculateWeightFromIntensity(currentMax, minIntensity);
+      maxW = WeightCalculationService.calculateWeightFromIntensity(currentMax, maxIntensity);
     } else if (parts.isNotEmpty && parts[0].trim().isNotEmpty) {
-      final intensity = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(
-        0.0,
-        200.0,
-      );
-      minW = maxW = WeightCalculationService.calculateWeightFromIntensity(
-        currentMax,
-        intensity,
-      );
+      final intensity = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(0.0, 200.0);
+      minW = maxW = WeightCalculationService.calculateWeightFromIntensity(currentMax, intensity);
     }
     final orderedMinWeight = minW <= maxW ? minW : maxW;
     final orderedMaxWeight = minW <= maxW ? maxW : minW;
@@ -581,21 +499,12 @@ class SeriesUtils {
     double maxW = 0.0;
 
     if (parts.length == 2) {
-      final minRPEValue = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(
-        2.0,
-        10.0,
-      );
-      final maxRPEValue = (double.tryParse(parts[1].trim()) ?? 0.0).clamp(
-        2.0,
-        10.0,
-      );
+      final minRPEValue = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(2.0, 10.0);
+      final maxRPEValue = (double.tryParse(parts[1].trim()) ?? 0.0).clamp(2.0, 10.0);
       minW = currentMax * getRPEPercentage(minRPEValue, reps);
       maxW = currentMax * getRPEPercentage(maxRPEValue, reps);
     } else if (parts.isNotEmpty && parts[0].trim().isNotEmpty) {
-      final rpeValue = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(
-        2.0,
-        10.0,
-      );
+      final rpeValue = (double.tryParse(parts[0].trim()) ?? 0.0).clamp(2.0, 10.0);
       minW = maxW = currentMax * getRPEPercentage(rpeValue, reps);
     }
     final orderedMinWeight = minW <= maxW ? minW : maxW;

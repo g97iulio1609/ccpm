@@ -10,10 +10,7 @@ class SuperSetHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: AppTheme.spacing.xs,
-        horizontal: AppTheme.spacing.sm,
-      ),
+      padding: EdgeInsets.symmetric(vertical: AppTheme.spacing.xs, horizontal: AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.sm),
@@ -26,10 +23,9 @@ class SuperSetHeaderRow extends StatelessWidget {
             child: Text(
               '#',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: cs.onSurface,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700),
             ),
           ),
           ...exercises.asMap().entries.map((entry) {
@@ -50,21 +46,21 @@ class SuperSetHeaderRow extends StatelessWidget {
                         ),
                         Expanded(
                           child: Text(
-                            'Reps',
+                            (entry.value.type.toLowerCase() == 'cardio') ? 'Durata' : 'Reps',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.labelMedium,
                           ),
                         ),
                         Expanded(
                           child: Text(
-                            'Peso',
+                            (entry.value.type.toLowerCase() == 'cardio') ? 'Distanza' : 'Peso',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.labelMedium,
                           ),
                         ),
                         Expanded(
                           child: Text(
-                            'Fatti',
+                            (entry.value.type.toLowerCase() == 'cardio') ? 'Effettivo' : 'Fatti',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.labelMedium,
                           ),
@@ -106,10 +102,7 @@ class SuperSetExerciseNameEntry extends StatelessWidget {
           Container(
             width: 24,
             height: 24,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
             child: Center(
               child: Text(
                 '${index + 1}',
@@ -148,26 +141,16 @@ class SuperSetExerciseNameEntry extends StatelessWidget {
           ),
           PopupMenuButton<String>(
             tooltip: 'Azioni',
-            icon: Icon(
-              Icons.more_vert,
-              size: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            icon: Icon(Icons.more_vert, size: 20, color: colorScheme.onSurfaceVariant),
             onSelected: onMenuSelected,
             itemBuilder: (ctx) => const [
               PopupMenuItem(
                 value: 'change',
-                child: ListTile(
-                  leading: Icon(Icons.swap_horiz),
-                  title: Text('Cambia esercizio'),
-                ),
+                child: ListTile(leading: Icon(Icons.swap_horiz), title: Text('Cambia esercizio')),
               ),
               PopupMenuItem(
                 value: 'edit_series',
-                child: ListTile(
-                  leading: Icon(Icons.tune),
-                  title: Text('Modifica serie…'),
-                ),
+                child: ListTile(leading: Icon(Icons.tune), title: Text('Modifica serie…')),
               ),
             ],
           ),

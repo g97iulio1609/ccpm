@@ -38,17 +38,12 @@ class AppTabs extends StatelessWidget {
         color: colorScheme.surface,
         boxShadow: showDivider ? AppTheme.elevations.small : null,
         border: showDivider
-            ? Border(
-                bottom: BorderSide(color: colorScheme.outline.withAlpha(26)),
-              )
+            ? Border(bottom: BorderSide(color: colorScheme.outline.withAlpha(26)))
             : null,
       ),
       child: Row(
         children: [
-          if (leading != null) ...[
-            leading!,
-            SizedBox(width: AppTheme.spacing.md),
-          ],
+          if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.md)],
           Expanded(
             child: TabBar(
               isScrollable: isScrollable,
@@ -67,21 +62,14 @@ class AppTabs extends StatelessWidget {
                 letterSpacing: -0.5,
               ),
               splashFactory: NoSplash.splashFactory,
-              overlayColor: WidgetStateProperty.resolveWith<Color?>((
-                Set<WidgetState> states,
-              ) {
-                return states.contains(WidgetState.focused)
-                    ? null
-                    : Colors.transparent;
+              overlayColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+                return states.contains(WidgetState.focused) ? null : Colors.transparent;
               }),
               tabs: tabs.map((tab) => _buildTab(tab, colorScheme)).toList(),
               onTap: onTabSelected,
             ),
           ),
-          if (trailing != null) ...[
-            SizedBox(width: AppTheme.spacing.md),
-            trailing!,
-          ],
+          if (trailing != null) ...[SizedBox(width: AppTheme.spacing.md), trailing!],
         ],
       ),
     );
@@ -94,9 +82,7 @@ class AppTabs extends StatelessWidget {
           horizontal: AppTheme.spacing.md,
           vertical: AppTheme.spacing.xs,
         ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppTheme.radii.full)),
         child: Text(label),
       ),
     );
@@ -165,12 +151,7 @@ class TabBadge extends StatelessWidget {
   final Color? backgroundColor;
   final Color? textColor;
 
-  const TabBadge({
-    super.key,
-    required this.count,
-    this.backgroundColor,
-    this.textColor,
-  });
+  const TabBadge({super.key, required this.count, this.backgroundColor, this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -203,12 +184,7 @@ class IconTab extends StatelessWidget {
   final IconData icon;
   final bool isSelected;
 
-  const IconTab({
-    super.key,
-    required this.label,
-    required this.icon,
-    this.isSelected = false,
-  });
+  const IconTab({super.key, required this.label, required this.icon, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {
@@ -222,9 +198,7 @@ class IconTab extends StatelessWidget {
           Icon(
             icon,
             size: 20,
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant,
+            color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
           ),
           SizedBox(width: AppTheme.spacing.xs),
           Text(label),

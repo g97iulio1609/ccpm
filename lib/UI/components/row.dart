@@ -48,12 +48,9 @@ class AppRow extends StatelessWidget {
                 (isSelected
                     ? colorScheme.primaryContainer.withAlpha(76)
                     : colorScheme.surfaceContainerHighest.withAlpha(76)),
-            borderRadius:
-                borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
+            borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.outline.withAlpha(26),
+              color: isSelected ? colorScheme.primary : colorScheme.outline.withAlpha(26),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -62,16 +59,12 @@ class AppRow extends StatelessWidget {
             child: InkWell(
               onTap: enabled ? onTap : null,
               onLongPress: enabled ? onLongPress : null,
-              borderRadius:
-                  borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
+              borderRadius: borderRadius ?? BorderRadius.circular(AppTheme.radii.lg),
               child: Padding(
                 padding: contentPadding ?? EdgeInsets.all(AppTheme.spacing.lg),
                 child: Row(
                   children: [
-                    if (leading != null) ...[
-                      leading!,
-                      SizedBox(width: AppTheme.spacing.md),
-                    ],
+                    if (leading != null) ...[leading!, SizedBox(width: AppTheme.spacing.md)],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,12 +74,8 @@ class AppRow extends StatelessWidget {
                               title!,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 color: enabled
-                                    ? (isSelected
-                                          ? colorScheme.primary
-                                          : colorScheme.onSurface)
-                                    : colorScheme.onSurfaceVariant.withAlpha(
-                                        128,
-                                      ),
+                                    ? (isSelected ? colorScheme.primary : colorScheme.onSurface)
+                                    : colorScheme.onSurfaceVariant.withAlpha(128),
                                 fontWeight: isSelected ? FontWeight.w600 : null,
                               ),
                             ),
@@ -98,18 +87,13 @@ class AppRow extends StatelessWidget {
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: enabled
                                     ? colorScheme.onSurfaceVariant
-                                    : colorScheme.onSurfaceVariant.withAlpha(
-                                        128,
-                                      ),
+                                    : colorScheme.onSurfaceVariant.withAlpha(128),
                               ),
                             ),
                         ],
                       ),
                     ),
-                    if (trailing != null) ...[
-                      SizedBox(width: AppTheme.spacing.md),
-                      trailing!,
-                    ],
+                    if (trailing != null) ...[SizedBox(width: AppTheme.spacing.md), trailing!],
                     if (actions != null) ...[
                       SizedBox(width: AppTheme.spacing.md),
                       ...actions!.map(
@@ -125,8 +109,7 @@ class AppRow extends StatelessWidget {
             ),
           ),
         ),
-        if (showDivider)
-          Divider(color: colorScheme.outline.withAlpha(26), height: 1),
+        if (showDivider) Divider(color: colorScheme.outline.withAlpha(26), height: 1),
       ],
     );
   }
@@ -196,20 +179,14 @@ class _Badge extends StatelessWidget {
     final badgeColor = color ?? colorScheme.primary;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: badgeColor.withAlpha(51),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
       ),
       child: Text(
         text,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: badgeColor,
-          fontWeight: FontWeight.w600,
-        ),
+        style: theme.textTheme.labelSmall?.copyWith(color: badgeColor, fontWeight: FontWeight.w600),
       ),
     );
   }

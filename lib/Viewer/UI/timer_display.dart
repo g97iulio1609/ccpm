@@ -21,8 +21,7 @@ class TimerDisplay extends StatefulWidget {
   State<TimerDisplay> createState() => _TimerDisplayState();
 }
 
-class _TimerDisplayState extends State<TimerDisplay>
-    with TickerProviderStateMixin {
+class _TimerDisplayState extends State<TimerDisplay> with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _progressController;
   late Animation<double> _pulseAnimation;
@@ -38,9 +37,10 @@ class _TimerDisplayState extends State<TimerDisplay>
       duration: const Duration(milliseconds: 1000),
     );
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.03,
+    ).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
 
     // Controller per il progresso fluido
     _progressController = AnimationController(
@@ -48,9 +48,10 @@ class _TimerDisplayState extends State<TimerDisplay>
       duration: const Duration(milliseconds: 300),
     );
 
-    _smoothProgressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _progressController, curve: Curves.easeOutCubic),
-    );
+    _smoothProgressAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _progressController, curve: Curves.easeOutCubic));
 
     _progressController.forward();
   }
@@ -74,9 +75,7 @@ class _TimerDisplayState extends State<TimerDisplay>
     super.dispose();
   }
 
-
-  bool get _shouldPulse =>
-      widget.remainingSeconds <= 5 && widget.remainingSeconds > 0;
+  bool get _shouldPulse => widget.remainingSeconds <= 5 && widget.remainingSeconds > 0;
 
   @override
   Widget build(BuildContext context) {
@@ -91,10 +90,7 @@ class _TimerDisplayState extends State<TimerDisplay>
     } else {
       if (_pulseController.isAnimating) {
         _pulseController.stop();
-        _pulseController.animateTo(
-          0.0,
-          duration: const Duration(milliseconds: 200),
-        );
+        _pulseController.animateTo(0.0, duration: const Duration(milliseconds: 200));
       }
     }
 
@@ -116,8 +112,7 @@ class _TimerDisplayState extends State<TimerDisplay>
         ? (widget.totalSeconds - widget.remainingSeconds) / widget.totalSeconds
         : 0.0;
 
-    final isWarning =
-        widget.remainingSeconds <= 10 && widget.remainingSeconds > 5;
+    final isWarning = widget.remainingSeconds <= 10 && widget.remainingSeconds > 5;
     final isCritical = widget.remainingSeconds <= 5;
 
     Color accentColor = AppTheme.primaryGold;
@@ -128,11 +123,7 @@ class _TimerDisplayState extends State<TimerDisplay>
     }
 
     return AnimatedBuilder(
-      animation: Listenable.merge([
-        widget.animation,
-        _pulseAnimation,
-        _smoothProgressAnimation,
-      ]),
+      animation: Listenable.merge([widget.animation, _pulseAnimation, _smoothProgressAnimation]),
       builder: (context, child) {
         // Progresso interpolato per maggiore fluidità
         final smoothProgress = rawProgress * _smoothProgressAnimation.value;
@@ -145,17 +136,10 @@ class _TimerDisplayState extends State<TimerDisplay>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: colorScheme.surface,
-              border: Border.all(
-                color: colorScheme.outline.withAlpha(15),
-                width: 1,
-              ),
+              border: Border.all(color: colorScheme.outline.withAlpha(15), width: 1),
               boxShadow: [
                 if (isCritical)
-                  BoxShadow(
-                    color: accentColor.withAlpha(30),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
+                  BoxShadow(color: accentColor.withAlpha(30), blurRadius: 20, spreadRadius: 2),
               ],
             ),
             child: Stack(
@@ -195,25 +179,21 @@ class _TimerDisplayState extends State<TimerDisplay>
                       // Time display con animazione del testo più fluida
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        transitionBuilder:
-                            (Widget child, Animation<double> animation) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position:
-                                      Tween<Offset>(
-                                        begin: const Offset(0.0, 0.2),
-                                        end: Offset.zero,
-                                      ).animate(
-                                        CurvedAnimation(
-                                          parent: animation,
-                                          curve: Curves.easeOutCubic,
-                                        ),
-                                      ),
-                                  child: child,
-                                ),
-                              );
-                            },
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position:
+                                  Tween<Offset>(
+                                    begin: const Offset(0.0, 0.2),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                                  ),
+                              child: child,
+                            ),
+                          );
+                        },
                         child: Text(
                           WorkoutFormatters.formatTime(widget.remainingSeconds),
                           key: ValueKey(widget.remainingSeconds),
@@ -238,13 +218,8 @@ class _TimerDisplayState extends State<TimerDisplay>
                         ),
                         decoration: BoxDecoration(
                           color: accentColor.withAlpha(15),
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radii.full,
-                          ),
-                          border: Border.all(
-                            color: accentColor.withAlpha(50),
-                            width: 1,
-                          ),
+                          borderRadius: BorderRadius.circular(AppTheme.radii.full),
+                          border: Border.all(color: accentColor.withAlpha(50), width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -253,10 +228,7 @@ class _TimerDisplayState extends State<TimerDisplay>
                               duration: const Duration(milliseconds: 400),
                               width: 4,
                               height: 4,
-                              decoration: BoxDecoration(
-                                color: accentColor,
-                                shape: BoxShape.circle,
-                              ),
+                              decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle),
                             ),
                             SizedBox(width: AppTheme.spacing.xxs),
                             AnimatedSwitcher(
@@ -288,17 +260,11 @@ class _TimerDisplayState extends State<TimerDisplay>
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       margin: EdgeInsets.only(bottom: AppTheme.spacing.lg),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: AppTheme.primaryGold.withAlpha(15),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
-        border: Border.all(
-          color: AppTheme.primaryGold.withAlpha(100),
-          width: 1.5,
-        ),
+        border: Border.all(color: AppTheme.primaryGold.withAlpha(100), width: 1.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

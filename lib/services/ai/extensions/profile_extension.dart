@@ -14,11 +14,7 @@ class ProfileExtension implements AIExtension {
   }
 
   @override
-  Future<String?> handle(
-    Map<String, dynamic> interpretation,
-    String userId,
-    UserModel user,
-  ) async {
+  Future<String?> handle(Map<String, dynamic> interpretation, String userId, UserModel user) async {
     final action = interpretation['action'] as String?;
     _logger.d('Handling profile action: $action');
 
@@ -73,9 +69,7 @@ class ProfileExtension implements AIExtension {
     }
 
     if (interpretation.containsKey('activityLevel')) {
-      final level = _stringToActivityLevel(
-        interpretation['activityLevel'].toString(),
-      );
+      final level = _stringToActivityLevel(interpretation['activityLevel'].toString());
       updates['activityLevel'] = level;
     }
 
@@ -94,10 +88,7 @@ class ProfileExtension implements AIExtension {
     }
   }
 
-  Future<String?> _handleQueryProfile(
-    Map<String, dynamic> interpretation,
-    UserModel user,
-  ) async {
+  Future<String?> _handleQueryProfile(Map<String, dynamic> interpretation, UserModel user) async {
     _logger.i('Querying profile with interpretation: $interpretation');
     if (!interpretation.containsKey('field')) {
       _logger.w('Field not specified for profile query.');
@@ -111,14 +102,11 @@ class ProfileExtension implements AIExtension {
         return user.phoneNumber ?? 'Numero di telefono non impostato.';
       case 'height':
       case 'altezza':
-        return user.height != null
-            ? '${user.height} cm'
-            : 'Altezza non impostata.';
+        return user.height != null ? '${user.height} cm' : 'Altezza non impostata.';
       case 'birthdate':
       case 'data di nascita':
       case 'compleanno':
-        return user.birthdate?.toString().split(' ')[0] ??
-            'Data di nascita non impostata.';
+        return user.birthdate?.toString().split(' ')[0] ?? 'Data di nascita non impostata.';
       case 'activity':
       case 'livello di attività':
         return user.activityLevel != null

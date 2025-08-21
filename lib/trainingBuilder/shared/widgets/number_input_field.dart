@@ -54,22 +54,14 @@ class NumberInputField extends StatelessWidget {
                 }),
               ]
             : [FilteringTextInputFormatter.digitsOnly],
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurface,
-        ),
+        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(AppTheme.spacing.md),
           labelText: label,
           hintText: hint,
-          prefixIcon: Icon(
-            icon,
-            color: colorScheme.onSurfaceVariant.withAlpha(128),
-            size: 20,
-          ),
-          labelStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          prefixIcon: Icon(icon, color: colorScheme.onSurfaceVariant.withAlpha(128), size: 20),
+          labelStyle: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
             color: colorScheme.onSurfaceVariant.withAlpha(128),
           ),

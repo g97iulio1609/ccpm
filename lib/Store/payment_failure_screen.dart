@@ -20,15 +20,9 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
@@ -52,10 +46,7 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.error.withAlpha(204),
-              AppTheme.error.withAlpha(153),
-            ],
+            colors: [AppTheme.error.withAlpha(204), AppTheme.error.withAlpha(153)],
           ),
         ),
         child: SafeArea(
@@ -84,11 +75,10 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
                       const SizedBox(height: 32),
                       Text(
                         'Pagamento non riuscito',
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Padding(
@@ -96,8 +86,9 @@ class _PaymentFailureScreenState extends State<PaymentFailureScreen>
                         child: Text(
                           'Si è verificato un errore durante il pagamento:\n${widget.error}',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(color: Colors.white.withAlpha(230)),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(color: Colors.white.withAlpha(230)),
                         ),
                       ),
                       const SizedBox(height: 48),

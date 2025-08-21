@@ -39,7 +39,6 @@ class SeriesControllers {
     weight.max.text = tb_format.FormatUtils.formatNumber(series.maxWeight?.toString() ?? '');
   }
 
-
   void clear() {
     reps.clear();
     sets.text = '1';
@@ -56,8 +55,7 @@ class SeriesControllers {
 }
 
 /// Notifier per gestire lo stato dei controller delle serie bulk
-class BulkSeriesControllersNotifier
-    extends StateNotifier<List<SeriesControllers>> {
+class BulkSeriesControllersNotifier extends StateNotifier<List<SeriesControllers>> {
   BulkSeriesControllersNotifier() : super([]);
 
   void initialize(List<Exercise> exercises) {
@@ -114,9 +112,6 @@ class BulkSeriesControllersNotifier
 
 /// Provider per i controller delle serie bulk
 final bulkSeriesControllersProvider =
-    StateNotifierProvider<
-      BulkSeriesControllersNotifier,
-      List<SeriesControllers>
-    >((ref) {
+    StateNotifierProvider<BulkSeriesControllersNotifier, List<SeriesControllers>>((ref) {
       return BulkSeriesControllersNotifier();
     });

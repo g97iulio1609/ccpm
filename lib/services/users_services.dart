@@ -14,10 +14,7 @@ class UniqueNumberGenerator {
   static String generate() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random.secure();
-    return List.generate(
-      8,
-      (index) => chars[random.nextInt(chars.length)],
-    ).join();
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
   }
 }
 
@@ -65,15 +62,10 @@ class UsersService {
 
   void _initializeUsersStream() {
     _userChangesSubscription?.cancel();
-    _userChangesSubscription = _firestore
-        .collection('users')
-        .snapshots()
-        .listen((snapshot) {
-          final users = snapshot.docs
-              .map((doc) => UserModel.fromFirestore(doc))
-              .toList();
-          _usersStreamController.add(_filterUsers(users));
-        });
+    _userChangesSubscription = _firestore.collection('users').snapshots().listen((snapshot) {
+      final users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+      _usersStreamController.add(_filterUsers(users));
+    });
   }
 
   void _clearUsersStream() {
@@ -119,9 +111,7 @@ class UsersService {
 
   Future<void> updateUserRole(String userId, String newRole) async {
     try {
-      await _firestore.collection('users').doc(userId).update({
-        'role': newRole,
-      });
+      await _firestore.collection('users').doc(userId).update({'role': newRole});
       _ref.read(userRoleProvider.notifier).state = newRole;
     } catch (e) {
       throw Exception('Failed to update user role');
@@ -152,8 +142,7 @@ class UsersService {
 
       for (var userDoc in users.docs) {
         final userData = userDoc.data();
-        final expiryDate = (userData['subscriptionExpiryDate'] as Timestamp?)
-            ?.toDate();
+        final expiryDate = (userData['subscriptionExpiryDate'] as Timestamp?)?.toDate();
         final currentRole = userData['role'] as String?;
 
         if (expiryDate != null &&
@@ -191,8 +180,7 @@ class UsersService {
   Future<void> setUserRole(String userId) async {
     final userDoc = await _firestore.collection('users').doc(userId).get();
     if (userDoc.exists) {
-      final String userRole =
-          (userDoc.data() as Map<String, dynamic>)['role'] ?? 'client';
+      final String userRole = (userDoc.data() as Map<String, dynamic>)['role'] ?? 'client';
       _ref.read(userRoleProvider.notifier).state = userRole;
     }
   }
@@ -216,9 +204,7 @@ class UsersService {
 
       if (userDoc.exists) {
         if (currentUserRole == 'admin') {
-          final result = await _functions.httpsCallable('deleteUser').call({
-            'userId': userId,
-          });
+          final result = await _functions.httpsCallable('deleteUser').call({'userId': userId});
           if (result.data['success'] != true) {
             throw Exception('Failed to delete user via Cloud Function');
           }
@@ -229,9 +215,7 @@ class UsersService {
             await _firestore.collection('users').doc(userId).delete();
             await _auth.signOut();
           } else {
-            throw Exception(
-              'Gli utenti non-admin possono eliminare solo il proprio account.',
-            );
+            throw Exception('Gli utenti non-admin possono eliminare solo il proprio account.');
           }
         }
 
@@ -259,8 +243,10 @@ class UsersService {
     String? gender,
   }) async {
     try {
-      UserCredential userCredential = await _authForUserCreation!
-          .createUserWithEmailAndPassword(email: email, password: password);
+      UserCredential userCredential = await _authForUserCreation!.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
       User? newUser = userCredential.user;
       if (newUser != null) {

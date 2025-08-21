@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
-import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart'
-    as tb_format;
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart' as tb_format;
 import 'package:alphanessone/UI/components/kpi_badge.dart';
 
 /// Component for displaying series group information
@@ -35,10 +34,7 @@ class SeriesGroupHeader extends StatelessWidget {
 
   Widget _buildSeriesCountBadge(ThemeData theme, ColorScheme colorScheme) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.sm,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withAlpha(77),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
@@ -53,11 +49,7 @@ class SeriesGroupHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildSeriesInfo(
-    Series series,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildSeriesInfo(Series series, ThemeData theme, ColorScheme colorScheme) {
     return Text(
       tb_format.FormatUtils.formatSeriesInfo(
         reps: series.reps,
@@ -85,10 +77,7 @@ class SeriesInfoCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       padding: EdgeInsets.all(AppTheme.spacing.sm),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withAlpha(76),
@@ -124,17 +113,9 @@ class SeriesInfoCard extends StatelessWidget {
         SizedBox(height: AppTheme.spacing.xs),
         Row(
           children: [
-            KpiBadge(
-              text: repsLabel,
-              icon: Icons.repeat,
-              color: colorScheme.primary,
-            ),
+            KpiBadge(text: repsLabel, icon: Icons.repeat, color: colorScheme.primary),
             SizedBox(width: AppTheme.spacing.xs),
-            KpiBadge(
-              text: weightLabel,
-              icon: Icons.monitor_weight,
-              color: colorScheme.secondary,
-            ),
+            KpiBadge(text: weightLabel, icon: Icons.monitor_weight, color: colorScheme.secondary),
           ],
         ),
       ],
@@ -170,8 +151,7 @@ class SeriesGroupCard extends StatefulWidget {
   State<SeriesGroupCard> createState() => _SeriesGroupCardState();
 }
 
-class _SeriesGroupCardState extends State<SeriesGroupCard>
-    with TickerProviderStateMixin {
+class _SeriesGroupCardState extends State<SeriesGroupCard> with TickerProviderStateMixin {
   bool _isHovered = false;
 
   @override
@@ -226,10 +206,7 @@ class _SeriesGroupCardState extends State<SeriesGroupCard>
 
   Widget _buildTrailingButton(ColorScheme colorScheme) {
     return IconButton(
-      icon: Icon(
-        Icons.more_vert,
-        color: colorScheme.onSurfaceVariant.withAlpha(128),
-      ),
+      icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant.withAlpha(128)),
       onPressed: widget.onOptionsPressed,
     );
   }

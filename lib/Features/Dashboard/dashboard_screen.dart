@@ -27,10 +27,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     _controller.forward();
   }
 
@@ -173,9 +170,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             return _LiveTile(
               icon: Icons.timeline,
               title: 'Records',
-              primaryInfo: latestRecord != null
-                  ? latestRecord.exerciseId
-                  : 'Nessun record',
+              primaryInfo: latestRecord != null ? latestRecord.exerciseId : 'Nessun record',
               secondaryInfo: latestRecord != null
                   ? '${latestRecord.maxWeight} kg'
                   : 'Tocca per aggiungere',
@@ -254,16 +249,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   // Header con saluto e profilo
                   SliverToBoxAdapter(
                     child: SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: const Offset(0, -0.5),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: _controller,
-                              curve: Curves.easeOutCubic,
-                            ),
-                          ),
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.5),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic)),
                       child: Padding(
                         padding: EdgeInsets.all(AppTheme.spacing.md),
                         child: Row(
@@ -280,11 +269,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 ),
                                 Text(
                                   user.displayName,
-                                  style: theme.textTheme.headlineMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
+                                  style: theme.textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ],
                             ),
@@ -297,9 +285,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppTheme.primaryGold.withAlpha(
-                                          77,
-                                        ),
+                                        color: AppTheme.primaryGold.withAlpha(77),
                                         blurRadius: 10,
                                         spreadRadius: 2,
                                       ),
@@ -312,10 +298,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                         ? NetworkImage(user.photoURL)
                                         : null,
                                     child: user.photoURL.isEmpty
-                                        ? const Icon(
-                                            Icons.person,
-                                            color: AppTheme.surfaceDark,
-                                          )
+                                        ? const Icon(Icons.person, color: AppTheme.surfaceDark)
                                         : null,
                                   ),
                                 ),
@@ -337,10 +320,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         crossAxisCount: 2,
                         mainAxisSpacing: AppTheme.spacing.md,
                         crossAxisSpacing: AppTheme.spacing.md,
-                        children: [
-                          _buildTrainingTile(user),
-                          _buildRecordsTile(user),
-                        ],
+                        children: [_buildTrainingTile(user), _buildRecordsTile(user)],
                       ),
                     ),
                   ),
@@ -348,16 +328,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   // Sezioni Principali
                   SliverToBoxAdapter(
                     child: SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: const Offset(0, 0.5),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: _controller,
-                              curve: Curves.easeOutCubic,
-                            ),
-                          ),
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.5),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic)),
                       child: Padding(
                         padding: EdgeInsets.all(AppTheme.spacing.md),
                         child: Column(
@@ -365,9 +339,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           children: [
                             Text(
                               'Sezioni Principali',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                              ),
+                              style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
                             ),
                             SizedBox(height: AppTheme.spacing.md),
                             Wrap(
@@ -377,8 +349,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 _AnimatedActionButton(
                                   icon: Icons.fitness_center,
                                   label: 'Allenamenti',
-                                  onTap: () =>
-                                      context.push(Routes.trainingGallery),
+                                  onTap: () => context.push(Routes.trainingGallery),
                                   controller: _controller,
                                   delay: 0.6,
                                 ),
@@ -399,24 +370,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 _AnimatedActionButton(
                                   icon: Icons.monitor_weight,
                                   label: 'Misurazioni',
-                                  onTap: () =>
-                                      context.push(Routes.measurements),
+                                  onTap: () => context.push(Routes.measurements),
                                   controller: _controller,
                                   delay: 0.9,
                                 ),
                                 _AnimatedActionButton(
                                   icon: Icons.timeline,
                                   label: 'Records',
-                                  onTap: () =>
-                                      context.push(Routes.maxRmDashboard),
+                                  onTap: () => context.push(Routes.maxRmDashboard),
                                   controller: _controller,
                                   delay: 1.0,
                                 ),
                                 _AnimatedActionButton(
                                   icon: Icons.list_alt,
                                   label: 'Esercizi',
-                                  onTap: () =>
-                                      context.push(Routes.exercisesList),
+                                  onTap: () => context.push(Routes.exercisesList),
                                   controller: _controller,
                                   delay: 1.1,
                                 ),
@@ -434,25 +402,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       child: FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _controller,
-                          curve: const Interval(
-                            0.8,
-                            1.0,
-                            curve: Curves.easeOut,
-                          ),
+                          curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                         ),
                         child: SlideTransition(
-                          position:
-                              Tween<Offset>(
-                                begin: const Offset(0, 0.5),
-                                end: Offset.zero,
-                              ).animate(
+                          position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+                              .animate(
                                 CurvedAnimation(
                                   parent: _controller,
-                                  curve: const Interval(
-                                    0.8,
-                                    1.0,
-                                    curve: Curves.easeOut,
-                                  ),
+                                  curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                                 ),
                               ),
                           child: Padding(
@@ -467,9 +424,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.radii.lg,
-                                ),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
                                   color: AppTheme.primaryGold.withAlpha(77),
                                   width: 1,
@@ -486,25 +441,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 color: Colors.transparent,
                                 child: InkWell(
                                   onTap: () => context.push(Routes.status),
-                                  borderRadius: BorderRadius.circular(
-                                    AppTheme.radii.lg,
-                                  ),
+                                  borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                                   child: Padding(
-                                    padding: EdgeInsets.all(
-                                      AppTheme.spacing.md,
-                                    ),
+                                    padding: EdgeInsets.all(AppTheme.spacing.md),
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: EdgeInsets.all(
-                                            AppTheme.spacing.sm,
-                                          ),
+                                          padding: EdgeInsets.all(AppTheme.spacing.sm),
                                           decoration: BoxDecoration(
-                                            color: AppTheme.primaryGold
-                                                .withAlpha(77),
-                                            borderRadius: BorderRadius.circular(
-                                              AppTheme.radii.sm,
-                                            ),
+                                            color: AppTheme.primaryGold.withAlpha(77),
+                                            borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                                           ),
                                           child: const Icon(
                                             Icons.star,
@@ -515,32 +461,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                         SizedBox(width: AppTheme.spacing.md),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Abbonamento Premium',
-                                                style: theme
-                                                    .textTheme
-                                                    .titleMedium
-                                                    ?.copyWith(
-                                                      color: Colors.white,
-                                                    ),
+                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                               Text(
                                                 'Attivo fino al ${user.subscriptionExpiryDate?.day}/${user.subscriptionExpiryDate?.month}/${user.subscriptionExpiryDate?.year}',
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                      color: Colors.white70,
-                                                    ),
+                                                style: theme.textTheme.bodySmall?.copyWith(
+                                                  color: Colors.white70,
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        const Icon(
-                                          Icons.chevron_right,
-                                          color: Colors.white70,
-                                        ),
+                                        const Icon(Icons.chevron_right, color: Colors.white70),
                                       ],
                                     ),
                                   ),
@@ -556,25 +494,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       child: FadeTransition(
                         opacity: CurvedAnimation(
                           parent: _controller,
-                          curve: const Interval(
-                            0.8,
-                            1.0,
-                            curve: Curves.easeOut,
-                          ),
+                          curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                         ),
                         child: SlideTransition(
-                          position:
-                              Tween<Offset>(
-                                begin: const Offset(0, 0.5),
-                                end: Offset.zero,
-                              ).animate(
+                          position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+                              .animate(
                                 CurvedAnimation(
                                   parent: _controller,
-                                  curve: const Interval(
-                                    0.8,
-                                    1.0,
-                                    curve: Curves.easeOut,
-                                  ),
+                                  curve: const Interval(0.8, 1.0, curve: Curves.easeOut),
                                 ),
                               ),
                           child: Padding(
@@ -589,9 +516,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.radii.lg,
-                                ),
+                                borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                                 border: Border.all(
                                   color: AppTheme.primaryGold.withAlpha(77),
                                   width: 1,
@@ -607,27 +532,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  onTap: () =>
-                                      context.push(Routes.subscriptions),
-                                  borderRadius: BorderRadius.circular(
-                                    AppTheme.radii.lg,
-                                  ),
+                                  onTap: () => context.push(Routes.subscriptions),
+                                  borderRadius: BorderRadius.circular(AppTheme.radii.lg),
                                   child: Padding(
-                                    padding: EdgeInsets.all(
-                                      AppTheme.spacing.md,
-                                    ),
+                                    padding: EdgeInsets.all(AppTheme.spacing.md),
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: EdgeInsets.all(
-                                            AppTheme.spacing.sm,
-                                          ),
+                                          padding: EdgeInsets.all(AppTheme.spacing.sm),
                                           decoration: BoxDecoration(
-                                            color: AppTheme.primaryGold
-                                                .withAlpha(77),
-                                            borderRadius: BorderRadius.circular(
-                                              AppTheme.radii.sm,
-                                            ),
+                                            color: AppTheme.primaryGold.withAlpha(77),
+                                            borderRadius: BorderRadius.circular(AppTheme.radii.sm),
                                           ),
                                           child: const Icon(
                                             Icons.star_border,
@@ -638,32 +553,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                         SizedBox(width: AppTheme.spacing.md),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Passa a Premium',
-                                                style: theme
-                                                    .textTheme
-                                                    .titleMedium
-                                                    ?.copyWith(
-                                                      color: Colors.white,
-                                                    ),
+                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                               Text(
                                                 'Sblocca tutte le funzionalità',
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                      color: Colors.white70,
-                                                    ),
+                                                style: theme.textTheme.bodySmall?.copyWith(
+                                                  color: Colors.white70,
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        const Icon(
-                                          Icons.chevron_right,
-                                          color: Colors.white70,
-                                        ),
+                                        const Icon(Icons.chevron_right, color: Colors.white70),
                                       ],
                                     ),
                                   ),
@@ -716,32 +623,22 @@ class _LiveTile extends StatelessWidget {
         curve: Interval(delay, delay + 0.2, curve: Curves.easeOut),
       ),
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
-            .animate(
-              CurvedAnimation(
-                parent: controller,
-                curve: Interval(delay, delay + 0.2, curve: Curves.easeOut),
-              ),
-            ),
+        position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: controller,
+            curve: Interval(delay, delay + 0.2, curve: Curves.easeOut),
+          ),
+        ),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                AppTheme.surfaceMedium,
-                AppTheme.surfaceMedium.withAlpha(204),
-              ],
+              colors: [AppTheme.surfaceMedium, AppTheme.surfaceMedium.withAlpha(204)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(AppTheme.radii.lg),
             border: Border.all(color: color.withAlpha(77), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: color.withAlpha(10),
-                blurRadius: 10,
-                spreadRadius: 0,
-              ),
-            ],
+            boxShadow: [BoxShadow(color: color.withAlpha(10), blurRadius: 10, spreadRadius: 0)],
           ),
           child: Material(
             color: Colors.transparent,
@@ -767,9 +664,7 @@ class _LiveTile extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: Colors.white70,
-                          ),
+                          style: theme.textTheme.titleSmall?.copyWith(color: Colors.white70),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -781,9 +676,7 @@ class _LiveTile extends StatelessWidget {
                         ),
                         Text(
                           secondaryInfo,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white70,
-                          ),
+                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
                         ),
                       ],
                     ),
@@ -823,16 +716,14 @@ class _AnimatedActionButton extends StatelessWidget {
         curve: Interval(delay, delay + 0.2, curve: Curves.easeOut),
       ),
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
-            .animate(
-              CurvedAnimation(
-                parent: controller,
-                curve: Interval(delay, delay + 0.2, curve: Curves.easeOut),
-              ),
-            ),
+        position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: controller,
+            curve: Interval(delay, delay + 0.2, curve: Curves.easeOut),
+          ),
+        ),
         child: SizedBox(
-          width:
-              (MediaQuery.of(context).size.width - AppTheme.spacing.md * 4) / 3,
+          width: (MediaQuery.of(context).size.width - AppTheme.spacing.md * 4) / 3,
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -846,18 +737,12 @@ class _AnimatedActionButton extends StatelessWidget {
                       padding: EdgeInsets.all(AppTheme.spacing.sm),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            AppTheme.surfaceMedium,
-                            AppTheme.surfaceMedium.withAlpha(204),
-                          ],
+                          colors: [AppTheme.surfaceMedium, AppTheme.surfaceMedium.withAlpha(204)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(AppTheme.radii.md),
-                        border: Border.all(
-                          color: AppTheme.primaryGold.withAlpha(26),
-                          width: 1,
-                        ),
+                        border: Border.all(color: AppTheme.primaryGold.withAlpha(26), width: 1),
                         boxShadow: [
                           BoxShadow(
                             color: AppTheme.primaryGold.withAlpha(26),
@@ -871,9 +756,7 @@ class _AnimatedActionButton extends StatelessWidget {
                     SizedBox(height: AppTheme.spacing.xs),
                     Text(
                       label,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                      ),
+                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -887,23 +770,23 @@ class _AnimatedActionButton extends StatelessWidget {
   }
 }
 
-final currentTrainingProgramProvider =
-    StreamProvider.family<TrainingProgram?, String>((ref, userId) async* {
-      final usersService = ref.watch(usersServiceProvider);
-      final trainingService = TrainingProgramService(FirestoreService());
+final currentTrainingProgramProvider = StreamProvider.family<TrainingProgram?, String>((
+  ref,
+  userId,
+) async* {
+  final usersService = ref.watch(usersServiceProvider);
+  final trainingService = TrainingProgramService(FirestoreService());
 
-      // Usa stream Firestore per il programma corrente se disponibile,
-      // altrimenti emetti il valore una tantum e completa.
-      final user = await usersService.getUserById(userId);
-      if (user?.currentProgram == null) {
-        yield null;
-        return;
-      }
+  // Usa stream Firestore per il programma corrente se disponibile,
+  // altrimenti emetti il valore una tantum e completa.
+  final user = await usersService.getUserById(userId);
+  if (user?.currentProgram == null) {
+    yield null;
+    return;
+  }
 
-      // Fallback: poll evitato; qui potremmo collegarci a snapshot di collezioni
-      // correlate se previsto dal servizio. In mancanza, emetti fetch singolo.
-      final program = await trainingService.fetchTrainingProgram(
-        user!.currentProgram!,
-      );
-      yield program;
-    });
+  // Fallback: poll evitato; qui potremmo collegarci a snapshot di collezioni
+  // correlate se previsto dal servizio. In mancanza, emetti fetch singolo.
+  final program = await trainingService.fetchTrainingProgram(user!.currentProgram!);
+  yield program;
+});

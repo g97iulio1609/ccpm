@@ -5,13 +5,11 @@ import 'base_repository.dart';
 
 /// Repository for Exercise operations
 /// Consolidates exercise data access from both trainingBuilder and Viewer modules
-class ExerciseRepository extends BaseRepository<Exercise>
-    with RepositoryMixin<Exercise> {
+class ExerciseRepository extends BaseRepository<Exercise> with RepositoryMixin<Exercise> {
   static const String collectionName = 'exercises';
 
   @override
-  CollectionReference get collection =>
-      FirebaseFirestore.instance.collection(collectionName);
+  CollectionReference get collection => FirebaseFirestore.instance.collection(collectionName);
 
   @override
   Exercise fromFirestore(DocumentSnapshot doc) {
@@ -45,17 +43,10 @@ class ExerciseRepository extends BaseRepository<Exercise>
   }
 
   /// Get exercises by original exercise ID (for tracking variations)
-  Future<List<Exercise>> getByOriginalExerciseId(
-    String originalExerciseId,
-  ) async {
+  Future<List<Exercise>> getByOriginalExerciseId(String originalExerciseId) async {
     try {
-      logOperation('getByOriginalExerciseId', {
-        'originalExerciseId': originalExerciseId,
-      });
-      return await getWhere(
-        field: 'originalExerciseId',
-        value: originalExerciseId,
-      );
+      logOperation('getByOriginalExerciseId', {'originalExerciseId': originalExerciseId});
+      return await getWhere(field: 'originalExerciseId', value: originalExerciseId);
     } catch (e) {
       handleError('get exercises by original exercise ID', e);
     }
@@ -98,10 +89,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
   /// Update exercise series
   Future<void> updateSeries(String exerciseId, List<Series> series) async {
     try {
-      logOperation('updateSeries', {
-        'exerciseId': exerciseId,
-        'seriesCount': series.length,
-      });
+      logOperation('updateSeries', {'exerciseId': exerciseId, 'seriesCount': series.length});
 
       await updateFields(exerciseId, {
         'series': series.map((s) => s.toMap()).toList(),
@@ -115,10 +103,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
   /// Add series to exercise
   Future<void> addSeries(String exerciseId, Series series) async {
     try {
-      logOperation('addSeries', {
-        'exerciseId': exerciseId,
-        'seriesOrder': series.order,
-      });
+      logOperation('addSeries', {'exerciseId': exerciseId, 'seriesOrder': series.order});
 
       await updateFields(exerciseId, {
         'series': FieldValue.arrayUnion([series.toMap()]),
@@ -132,10 +117,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
   /// Remove series from exercise
   Future<void> removeSeries(String exerciseId, String seriesId) async {
     try {
-      logOperation('removeSeries', {
-        'exerciseId': exerciseId,
-        'seriesId': seriesId,
-      });
+      logOperation('removeSeries', {'exerciseId': exerciseId, 'seriesId': seriesId});
 
       // Get current exercise to find and remove the specific series
       final exercise = await getById(exerciseId);
@@ -156,10 +138,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
   }
 
   /// Update exercise completion status
-  Future<void> updateCompletionStatus(
-    String exerciseId,
-    bool isCompleted,
-  ) async {
+  Future<void> updateCompletionStatus(String exerciseId, bool isCompleted) async {
     try {
       logOperation('updateCompletionStatus', {
         'exerciseId': exerciseId,
@@ -178,15 +157,9 @@ class ExerciseRepository extends BaseRepository<Exercise>
   /// Update exercise notes
   Future<void> updateNotes(String exerciseId, String notes) async {
     try {
-      logOperation('updateNotes', {
-        'exerciseId': exerciseId,
-        'notesLength': notes.length,
-      });
+      logOperation('updateNotes', {'exerciseId': exerciseId, 'notesLength': notes.length});
 
-      await updateFields(exerciseId, {
-        'note': notes,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await updateFields(exerciseId, {'note': notes, 'updatedAt': FieldValue.serverTimestamp()});
     } catch (e) {
       handleError('update exercise notes', e);
     }
@@ -195,16 +168,11 @@ class ExerciseRepository extends BaseRepository<Exercise>
   /// Duplicate exercise with new order
   Future<String> duplicateExercise(String exerciseId, int newOrder) async {
     try {
-      logOperation('duplicateExercise', {
-        'originalExerciseId': exerciseId,
-        'newOrder': newOrder,
-      });
+      logOperation('duplicateExercise', {'originalExerciseId': exerciseId, 'newOrder': newOrder});
 
       final originalExercise = await getById(exerciseId);
       if (originalExercise == null) {
-        throw RepositoryException(
-          'Exercise not found for duplication: $exerciseId',
-        );
+        throw RepositoryException('Exercise not found for duplication: $exerciseId');
       }
 
       final duplicatedExercise = originalExercise.copyWith(
@@ -214,14 +182,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
         updatedAt: DateTime.now(),
         // Reset series completion status
         series: originalExercise.series
-            .map(
-              (s) => s.copyWith(
-                id: null,
-                done: false,
-                repsDone: 0,
-                weightDone: 0.0,
-              ),
-            )
+            .map((s) => s.copyWith(id: null, done: false, repsDone: 0, weightDone: 0.0))
             .toList(),
       );
 
@@ -257,9 +218,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
   /// Get exercise statistics
   Future<ExerciseStats> getExerciseStats(String originalExerciseId) async {
     try {
-      logOperation('getExerciseStats', {
-        'originalExerciseId': originalExerciseId,
-      });
+      logOperation('getExerciseStats', {'originalExerciseId': originalExerciseId});
 
       final exercises = await getByOriginalExerciseId(originalExerciseId);
 
@@ -277,8 +236,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
         if (exercise.isCompleted) {
           totalPerformances++;
           if (exercise.updatedAt != null) {
-            if (lastPerformed == null ||
-                exercise.updatedAt!.isAfter(lastPerformed)) {
+            if (lastPerformed == null || exercise.updatedAt!.isAfter(lastPerformed)) {
               lastPerformed = exercise.updatedAt;
             }
           }
@@ -301,9 +259,7 @@ class ExerciseRepository extends BaseRepository<Exercise>
         totalSeries: totalSeries,
         completedSeries: completedSeries,
         lastPerformed: lastPerformed,
-        completionRate: totalSeries > 0
-            ? (completedSeries / totalSeries) * 100
-            : 0.0,
+        completionRate: totalSeries > 0 ? (completedSeries / totalSeries) * 100 : 0.0,
       );
     } catch (e) {
       handleError('get exercise statistics', e);
@@ -366,8 +322,7 @@ class ExerciseStats {
 }
 
 /// Cached version of ExerciseRepository for better performance
-class CachedExerciseRepository extends CachedRepository<Exercise>
-    with RepositoryMixin<Exercise> {
+class CachedExerciseRepository extends CachedRepository<Exercise> with RepositoryMixin<Exercise> {
   final ExerciseRepository _baseRepository = ExerciseRepository();
 
   CachedExerciseRepository({super.cacheDuration});
@@ -376,12 +331,10 @@ class CachedExerciseRepository extends CachedRepository<Exercise>
   CollectionReference get collection => _baseRepository.collection;
 
   @override
-  Exercise fromFirestore(DocumentSnapshot doc) =>
-      _baseRepository.fromFirestore(doc);
+  Exercise fromFirestore(DocumentSnapshot doc) => _baseRepository.fromFirestore(doc);
 
   @override
-  Map<String, dynamic> toFirestore(Exercise model) =>
-      _baseRepository.toFirestore(model);
+  Map<String, dynamic> toFirestore(Exercise model) => _baseRepository.toFirestore(model);
 
   @override
   void validateModel(Exercise model) => _baseRepository.validateModel(model);
@@ -391,8 +344,7 @@ class CachedExerciseRepository extends CachedRepository<Exercise>
       _baseRepository.getByWorkoutId(workoutId);
   Future<List<Exercise>> getByOriginalExerciseId(String originalExerciseId) =>
       _baseRepository.getByOriginalExerciseId(originalExerciseId);
-  Future<List<Exercise>> getByType(String type) =>
-      _baseRepository.getByType(type);
+  Future<List<Exercise>> getByType(String type) => _baseRepository.getByType(type);
   Future<List<Exercise>> getBySuperSetId(String superSetId) =>
       _baseRepository.getBySuperSetId(superSetId);
   Future<List<Exercise>> getOrderedByWorkout(String workoutId) =>

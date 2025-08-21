@@ -52,20 +52,12 @@ class MeasurementChart extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildEmptyState(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.monitor_weight,
-            size: 72,
-            color: colorScheme.onSurfaceVariant.withAlpha(128),
-          ),
+          Icon(Icons.monitor_weight, size: 72, color: colorScheme.onSurfaceVariant.withAlpha(128)),
           SizedBox(height: AppTheme.spacing.md),
           Text(
             'Nessuna misurazione',
@@ -78,9 +70,7 @@ class MeasurementChart extends StatelessWidget {
           SizedBox(height: AppTheme.spacing.sm),
           Text(
             'Aggiungi la prima misurazione per vedere l\'andamento nel tempo',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppTheme.spacing.md),
@@ -88,9 +78,7 @@ class MeasurementChart extends StatelessWidget {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text(
-                    'Tocca + in alto a destra per aggiungere una misurazione',
-                  ),
+                  content: Text('Tocca + in alto a destra per aggiungere una misurazione'),
                 ),
               );
             },
@@ -106,14 +94,10 @@ class MeasurementChart extends StatelessWidget {
     return FlGridData(
       show: true,
       drawVerticalLine: true,
-      getDrawingHorizontalLine: (value) => FlLine(
-        color: colorScheme.outlineVariant.withAlpha(51),
-        strokeWidth: 1,
-      ),
-      getDrawingVerticalLine: (value) => FlLine(
-        color: colorScheme.outlineVariant.withAlpha(51),
-        strokeWidth: 1,
-      ),
+      getDrawingHorizontalLine: (value) =>
+          FlLine(color: colorScheme.outlineVariant.withAlpha(51), strokeWidth: 1),
+      getDrawingVerticalLine: (value) =>
+          FlLine(color: colorScheme.outlineVariant.withAlpha(51), strokeWidth: 1),
     );
   }
 
@@ -159,10 +143,7 @@ class MeasurementChart extends StatelessWidget {
   FlBorderData _buildBorderData(ColorScheme colorScheme) {
     return FlBorderData(
       show: true,
-      border: Border.all(
-        color: colorScheme.outlineVariant.withAlpha(51),
-        width: 1,
-      ),
+      border: Border.all(color: colorScheme.outlineVariant.withAlpha(51), width: 1),
     );
   }
 
@@ -170,42 +151,25 @@ class MeasurementChart extends StatelessWidget {
     final lines = <LineChartBarData>[];
 
     if (showWeight) {
-      lines.add(
-        _createLineData((m) => m.weight, ChartConfig.chartColors['weight']!),
-      );
+      lines.add(_createLineData((m) => m.weight, ChartConfig.chartColors['weight']!));
     }
 
     if (showBodyFat) {
-      lines.add(
-        _createLineData(
-          (m) => m.bodyFatPercentage,
-          ChartConfig.chartColors['bodyFat']!,
-        ),
-      );
+      lines.add(_createLineData((m) => m.bodyFatPercentage, ChartConfig.chartColors['bodyFat']!));
     }
 
     if (showWaist) {
-      lines.add(
-        _createLineData(
-          (m) => m.waistCircumference,
-          ChartConfig.chartColors['waist']!,
-        ),
-      );
+      lines.add(_createLineData((m) => m.waistCircumference, ChartConfig.chartColors['waist']!));
     }
 
     return lines;
   }
 
-  LineChartBarData _createLineData(
-    double? Function(MeasurementModel) getValue,
-    Color color,
-  ) {
+  LineChartBarData _createLineData(double? Function(MeasurementModel) getValue, Color color) {
     return LineChartBarData(
       spots: measurements.asMap().entries.map((entry) {
         final value = getValue(entry.value);
-        return value != null && value > 0
-            ? FlSpot(entry.key.toDouble(), value)
-            : FlSpot.nullSpot;
+        return value != null && value > 0 ? FlSpot(entry.key.toDouble(), value) : FlSpot.nullSpot;
       }).toList(),
       isCurved: true,
       color: color,
@@ -242,10 +206,7 @@ class MeasurementChart extends StatelessWidget {
             ][touchedSpot.barIndex];
             return LineTooltipItem(
               '${DateFormat('dd/MM/yyyy').format(date)}\n$measurementType: ${value.toStringAsFixed(1)}',
-              TextStyle(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
+              TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
             );
           }).toList();
         },
@@ -261,14 +222,7 @@ class MeasurementChart extends StatelessWidget {
     final items = <Widget>[];
 
     if (showWeight) {
-      items.add(
-        _buildLegendItem(
-          'Peso',
-          ChartConfig.chartColors['weight']!,
-          theme,
-          colorScheme,
-        ),
-      );
+      items.add(_buildLegendItem('Peso', ChartConfig.chartColors['weight']!, theme, colorScheme));
     }
     if (showBodyFat) {
       items.add(
@@ -291,24 +245,12 @@ class MeasurementChart extends StatelessWidget {
       );
     }
 
-    return Wrap(
-      spacing: AppTheme.spacing.md,
-      runSpacing: AppTheme.spacing.sm,
-      children: items,
-    );
+    return Wrap(spacing: AppTheme.spacing.md, runSpacing: AppTheme.spacing.sm, children: items);
   }
 
-  Widget _buildLegendItem(
-    String label,
-    Color color,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildLegendItem(String label, Color color, ThemeData theme, ColorScheme colorScheme) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing.md,
-        vertical: AppTheme.spacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md, vertical: AppTheme.spacing.xs),
       decoration: BoxDecoration(
         color: color.withAlpha(51),
         borderRadius: BorderRadius.circular(AppTheme.radii.full),
@@ -325,10 +267,7 @@ class MeasurementChart extends StatelessWidget {
           SizedBox(width: AppTheme.spacing.xs),
           Text(
             label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.textTheme.labelMedium?.copyWith(color: color, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -346,14 +285,10 @@ class MeasurementChart extends StatelessWidget {
       values.addAll(measurements.map((m) => m.weight).where((v) => v > 0));
     }
     if (showBodyFat) {
-      values.addAll(
-        measurements.map((m) => m.bodyFatPercentage).where((v) => v > 0),
-      );
+      values.addAll(measurements.map((m) => m.bodyFatPercentage).where((v) => v > 0));
     }
     if (showWaist) {
-      values.addAll(
-        measurements.map((m) => m.waistCircumference).where((v) => v > 0),
-      );
+      values.addAll(measurements.map((m) => m.waistCircumference).where((v) => v > 0));
     }
 
     if (values.isEmpty) {
