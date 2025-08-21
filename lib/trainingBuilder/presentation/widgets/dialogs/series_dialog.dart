@@ -414,16 +414,12 @@ class _CardioFormState extends State<_CardioForm> {
       // HIIT fields
       _cardioType = s.cardioType ?? 'steady';
       final workInterval = s.workIntervalSeconds ?? 0;
-      if (workInterval > 0) {
-        _workMinutes.text = (workInterval ~/ 60).toString();
-        _workSeconds.text = (workInterval % 60).toString();
-      }
+      _workMinutes.text = (workInterval ~/ 60).toString();
+      _workSeconds.text = (workInterval % 60).toString();
       final restInterval = s.restIntervalSeconds ?? 0;
-      if (restInterval > 0) {
-        _restMinutes.text = (restInterval ~/ 60).toString();
-        _restSeconds.text = (restInterval % 60).toString();
-      }
-      _rounds.text = (s.rounds ?? '').toString();
+      _restMinutes.text = (restInterval ~/ 60).toString();
+      _restSeconds.text = (restInterval % 60).toString();
+      _rounds.text = (s.rounds?.toString() ?? '');
     }
   }
 
@@ -758,6 +754,9 @@ class _CardioFormState extends State<_CardioForm> {
     for (int i = 0; i < sets; i++) {
       if (i < exist.length) {
         final e = exist[i];
+        final updatedWorkInterval = workInterval > 0 ? workInterval : (e.workIntervalSeconds ?? (_cardioType == 'hiit' ? 0 : null));
+        final updatedRestInterval = restInterval > 0 ? restInterval : (e.restIntervalSeconds ?? (_cardioType == 'hiit' ? 0 : null));
+        
         list.add(
           e.copyWith(
             reps: 0,
@@ -771,8 +770,8 @@ class _CardioFormState extends State<_CardioForm> {
             hrPercent: hrPct ?? e.hrPercent,
             hrBpm: hrBpm ?? e.hrBpm,
             kcal: kcal ?? e.kcal,
-            workIntervalSeconds: workInterval > 0 ? workInterval : e.workIntervalSeconds,
-            restIntervalSeconds: restInterval > 0 ? restInterval : e.restIntervalSeconds,
+            workIntervalSeconds: updatedWorkInterval,
+            restIntervalSeconds: updatedRestInterval,
             rounds: rounds ?? e.rounds,
             cardioType: _cardioType,
           ),
@@ -794,8 +793,8 @@ class _CardioFormState extends State<_CardioForm> {
             hrPercent: hrPct,
             hrBpm: hrBpm,
             kcal: kcal,
-            workIntervalSeconds: workInterval > 0 ? workInterval : null,
-            restIntervalSeconds: restInterval > 0 ? restInterval : null,
+            workIntervalSeconds: _cardioType == 'hiit' ? workInterval : null,
+            restIntervalSeconds: _cardioType == 'hiit' ? restInterval : null,
             rounds: rounds,
             cardioType: _cardioType,
           ),
