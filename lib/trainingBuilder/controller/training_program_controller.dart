@@ -448,6 +448,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
       currentSeriesGroup,
       context,
       latestMaxWeight,
+      exerciseType, // Pass the exercise type to series controller
     );
     _emit();
   }

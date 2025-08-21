@@ -99,6 +99,7 @@ class SeriesController {
     List<Series> currentSeriesGroup,
     BuildContext context,
     num latestMaxWeight,
+    String exerciseType,
   ) async {
     if (!_isValidIndex(program, weekIndex, workoutIndex, exerciseIndex)) {
       return;
@@ -114,7 +115,7 @@ class SeriesController {
       program.athleteId,
       weekIndex,
       currentSeriesGroup,
-      exercise.type,
+      exerciseType, // Use the passed exerciseType parameter
       latestMaxWeight,
     );
 
