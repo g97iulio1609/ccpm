@@ -596,26 +596,15 @@ class FirestoreService {
     String? originalExerciseId,
   ) async {
     DocumentReference seriesRef = _db.collection('series').doc(series.serieId ?? series.id ?? '');
-    batch.set(seriesRef, {
-      'reps': series.reps,
-      'sets': series.sets,
-      'intensity': series.intensity,
-      'rpe': series.rpe,
-      'weight': series.weight,
-      'exerciseId': exerciseId,
-      'serieId': series.serieId ?? series.id,
-      'originalExerciseId': originalExerciseId,
-      'order': order,
-      'done': series.done,
-      'reps_done': series.repsDone,
-      'weight_done': series.weightDone,
-      //new interval
-      'maxReps': series.maxReps,
-      'maxSets': series.maxSets,
-      'maxIntensity': series.maxIntensity,
-      'maxRpe': series.maxRpe,
-      'maxWeight': series.maxWeight,
-    }, SetOptions(merge: true));
+    // Use model serializer to keep cardio/HIIT fields (KISS/DRY)
+    final Map<String, dynamic> data = series.toFirestore();
+    // Override linkage and ordering to ensure relational consistency
+    data['exerciseId'] = exerciseId; // link to exercisesWorkout doc
+    data['originalExerciseId'] = originalExerciseId; // keep catalog exercise id
+    data['order'] = order;
+    data['serieId'] = series.serieId ?? series.id; // ensure stored
+
+    batch.set(seriesRef, data, SetOptions(merge: true));
   }
 
   Future<void> removeToDeleteItems(TrainingProgram program) async {

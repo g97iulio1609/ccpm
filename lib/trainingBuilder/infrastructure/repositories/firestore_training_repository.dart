@@ -264,25 +264,15 @@ class FirestoreTrainingRepository implements TrainingRepository {
     final seriesToSave = series.serieId != seriesId ? series.copyWith(serieId: seriesId) : series;
 
     final seriesRef = _db.collection('series').doc(seriesId);
-    batch.set(seriesRef, {
-      'reps': seriesToSave.reps,
-      'sets': seriesToSave.sets,
-      'intensity': seriesToSave.intensity,
-      'rpe': seriesToSave.rpe,
-      'weight': seriesToSave.weight,
-      'exerciseId': exerciseId,
-      'serieId': seriesToSave.serieId,
-      'originalExerciseId': originalExerciseId,
-      'order': order,
-      'done': seriesToSave.done,
-      'reps_done': seriesToSave.repsDone,
-      'weight_done': seriesToSave.weightDone,
-      'maxReps': seriesToSave.maxReps,
-      'maxSets': seriesToSave.maxSets,
-      'maxIntensity': seriesToSave.maxIntensity,
-      'maxRpe': seriesToSave.maxRpe,
-      'maxWeight': seriesToSave.maxWeight,
-    }, SetOptions(merge: true));
+    // Use the unified model serializer to ensure cardio/HIIT fields are persisted too.
+    final Map<String, dynamic> data = seriesToSave.toFirestore();
+    // Override linkage and metadata fields
+    data['exerciseId'] = exerciseId;
+    data['serieId'] = seriesId;
+    data['originalExerciseId'] = originalExerciseId;
+    data['order'] = order;
+
+    batch.set(seriesRef, data, SetOptions(merge: true));
   }
 
   Future<void> _deleteWeekData(WriteBatch batch, String weekId) async {

@@ -29,8 +29,12 @@ class ExerciseDialog extends HookConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final exerciseNameController = useTextEditingController(text: exercise?.name ?? '');
-    final variantController = useTextEditingController(text: exercise?.variant ?? '');
+    final exerciseNameController = useTextEditingController(
+      text: exercise?.name ?? '',
+    );
+    final variantController = useTextEditingController(
+      text: exercise?.variant ?? '',
+    );
     final selectedExerciseId = useState<String>(exercise?.exerciseId ?? '');
     final selectedExerciseType = useState<String>(exercise?.type ?? '');
 
@@ -99,12 +103,15 @@ class ExerciseDialog extends HookConsumerWidget {
                 data: Theme.of(context).copyWith(
                   searchViewTheme: SearchViewThemeData(
                     // Slightly higher opacity for better readability
-                    backgroundColor: colorScheme.surfaceContainerHighest.withAlpha(184),
+                    backgroundColor: colorScheme.surfaceContainerHighest
+                        .withAlpha(184),
                     elevation: 0,
                     surfaceTintColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                      side: BorderSide(color: colorScheme.outline.withAlpha(90)),
+                      side: BorderSide(
+                        color: colorScheme.outline.withAlpha(90),
+                      ),
                     ),
                   ),
                 ),
@@ -120,7 +127,9 @@ class ExerciseDialog extends HookConsumerWidget {
                       onSubmitted: (value) {
                         exerciseNameController.text = value;
                       },
-                      padding: MaterialStatePropertyAll(EdgeInsets.all(AppTheme.spacing.md)),
+                      padding: MaterialStatePropertyAll(
+                        EdgeInsets.all(AppTheme.spacing.md),
+                      ),
                       elevation: const MaterialStatePropertyAll(0),
                       backgroundColor: MaterialStatePropertyAll(
                         // Match the overlay with higher opacity
@@ -128,8 +137,12 @@ class ExerciseDialog extends HookConsumerWidget {
                       ),
                       shape: MaterialStatePropertyAll(
                         RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radii.lg),
-                          side: BorderSide(color: colorScheme.outline.withAlpha(90)),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radii.lg,
+                          ),
+                          side: BorderSide(
+                            color: colorScheme.outline.withAlpha(90),
+                          ),
                         ),
                       ),
                     );
@@ -138,12 +151,21 @@ class ExerciseDialog extends HookConsumerWidget {
                     final query = controller.text.toLowerCase();
                     final filtered = query.isEmpty
                         ? exercisesList
-                        : exercisesList.where((e) => e.name.toLowerCase().contains(query)).toList();
+                        : exercisesList
+                              .where(
+                                (e) => e.name.toLowerCase().contains(query),
+                              )
+                              .toList();
                     return filtered.map((e) {
                       return Container(
-                        decoration: BoxDecoration(color: colorScheme.surface.withAlpha(196)),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withAlpha(196),
+                        ),
                         child: ListTile(
-                          leading: Icon(Icons.fitness_center, color: colorScheme.primary),
+                          leading: Icon(
+                            Icons.fitness_center,
+                            color: colorScheme.primary,
+                          ),
                           title: Text(e.name),
                           onTap: () {
                             controller.closeView(e.name);
@@ -181,7 +203,9 @@ class ExerciseDialog extends HookConsumerWidget {
               ),
               child: TextFormField(
                 controller: variantController,
-                style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(AppTheme.spacing.md),
