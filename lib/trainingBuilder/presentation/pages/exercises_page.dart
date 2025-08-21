@@ -59,7 +59,8 @@ class ExercisesPage extends ConsumerWidget {
                 final isNarrow = constraints.maxWidth < 780;
                 final isMobile = constraints.maxWidth < 600;
                 
-                final actions = [
+                // Bottoni per uso in Row (con Flexible)
+                final flexActions = [
                   if (exercises.isNotEmpty) ...[
                     Flexible(
                       child: AppButton(
@@ -85,6 +86,28 @@ class ExercisesPage extends ConsumerWidget {
                   ),
                 ];
 
+                // Bottoni per uso in Wrap (senza Flexible)
+                final wrapActions = [
+                  if (exercises.isNotEmpty) ...[
+                    AppButton(
+                      label: isMobile ? 'Riordina' : 'Riordina Esercizi',
+                      icon: Icons.reorder,
+                      variant: AppButtonVariant.ghost,
+                      size: compact ? AppButtonSize.sm : AppButtonSize.md,
+                      block: false, // sempre compatto in wrap
+                      onPressed: () => _showReorderDialog(context, exercises),
+                    ),
+                  ],
+                  AppButton(
+                    label: isMobile ? 'Aggiungi' : 'Aggiungi Esercizio',
+                    icon: Icons.add_circle_outline,
+                    variant: AppButtonVariant.primary,
+                    size: compact ? AppButtonSize.sm : AppButtonSize.md,
+                    block: false, // sempre compatto in wrap
+                    onPressed: () => controller.addExercise(weekIndex, workoutIndex, context),
+                  ),
+                ];
+
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -104,13 +127,13 @@ class ExercisesPage extends ConsumerWidget {
                           alignment: WrapAlignment.end,
                           spacing: AppTheme.spacing.sm,
                           runSpacing: AppTheme.spacing.xs,
-                          children: actions,
+                          children: wrapActions,
                         ),
                       )
                     else
                       Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: actions,
+                        children: flexActions,
                       ),
                   ],
                 );
