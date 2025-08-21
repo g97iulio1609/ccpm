@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
@@ -257,63 +258,126 @@ class _GroupCountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        // Glassmorphism background con gradiente
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            cs.surface.withValues(alpha: 0.9),
-            cs.surfaceContainerHighest.withValues(alpha: 0.8),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: cs.outline.withValues(alpha: 0.12),
-          width: 1,
-        ),
-        boxShadow: [
-          // Ombra principale
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          // Ombra interna per effetto vetro
-          BoxShadow(
-            color: cs.onSurface.withValues(alpha: 0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          // Highlight interno per effetto vetro
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              cs.onSurface.withValues(alpha: 0.08),
-              Colors.transparent,
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            // Liquid Glass Background - più translucente e dinamico
+            gradient: RadialGradient(
+              center: Alignment.topLeft,
+              radius: 1.2,
+              colors: isDark ? [
+                Colors.white.withValues(alpha: 0.25),
+                Colors.white.withValues(alpha: 0.15),
+                Colors.white.withValues(alpha: 0.08),
+              ] : [
+                cs.surface.withValues(alpha: 0.95),
+                cs.surfaceContainerHighest.withValues(alpha: 0.85),
+                cs.surfaceContainer.withValues(alpha: 0.75),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            // Bordo liquido con sfumatura
+            border: Border.all(
+              width: 1.5,
+              color: isDark 
+                ? Colors.white.withValues(alpha: 0.2)
+                : cs.outline.withValues(alpha: 0.08),
+            ),
+            boxShadow: [
+              // Ombra principale più morbida
+              BoxShadow(
+                color: isDark 
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : cs.shadow.withValues(alpha: 0.12),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: -2,
+              ),
+              // Ombra interna per profondità
+              BoxShadow(
+                color: isDark 
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : cs.surface.withValues(alpha: 0.8),
+                blurRadius: 1,
+                offset: const Offset(0, 1),
+                spreadRadius: 0,
+              ),
+              // Riflesso superiore per effetto liquido
+              BoxShadow(
+                color: isDark 
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : cs.primary.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, -1),
+                spreadRadius: 0,
+              ),
             ],
-            stops: const [0.0, 0.3],
           ),
-        ),
-        child: Center(
-          child: Text(
-            '$count',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: cs.primary,
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-              letterSpacing: 0.5,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              // Riflesso liquido interno con gradiente complesso
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark ? [
+                  Colors.white.withValues(alpha: 0.2),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.1),
+                ] : [
+                  cs.surface.withValues(alpha: 0.9),
+                  Colors.transparent,
+                  cs.shadow.withValues(alpha: 0.03),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                // Highlight finale per massimo effetto vetro
+                gradient: RadialGradient(
+                  center: const Alignment(-0.6, -0.6),
+                  radius: 0.8,
+                  colors: [
+                    isDark 
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : cs.primary.withValues(alpha: 0.08),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.7],
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '$count',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: isDark 
+                      ? Colors.white.withValues(alpha: 0.95)
+                      : cs.primary.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    letterSpacing: 0.2,
+                    shadows: [
+                      Shadow(
+                        color: isDark 
+                          ? Colors.black.withValues(alpha: 0.3)
+                          : cs.shadow.withValues(alpha: 0.15),
+                        offset: const Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),
