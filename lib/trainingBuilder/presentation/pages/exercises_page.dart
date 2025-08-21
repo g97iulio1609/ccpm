@@ -16,8 +16,6 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/shared/widgets/page_scaffold.dart';
 import 'package:alphanessone/shared/widgets/empty_state.dart';
 import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
-import 'package:alphanessone/trainingBuilder/widgets/exercise_list_widgets.dart'
-    show ReorderExercisesFAB;
 
 class ExercisesPage extends ConsumerWidget {
   final TrainingProgramController controller;
@@ -150,24 +148,7 @@ class ExercisesPage extends ConsumerWidget {
       ],
     );
 
-    // Su schermi compatti, mostra un FAB per il riordino come azione rapida
-    final showFab = compact && exercises.isNotEmpty;
-    if (!showFab) return page;
-
-    return Stack(
-      children: [
-        page,
-        Positioned(
-          right: AppTheme.spacing.lg,
-          bottom: AppTheme.spacing.lg,
-          child: ReorderExercisesFAB(
-            onPressed: () => _showReorderDialog(context, exercises),
-            isCompact: true,
-            colorScheme: colorScheme,
-          ),
-        ),
-      ],
-    );
+    return page;
   }
 
   void _showReorderDialog(BuildContext context, List<Exercise> exercises) {

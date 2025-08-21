@@ -4,7 +4,6 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/trainingBuilder/controller/training_program_controller.dart';
 import 'package:alphanessone/trainingBuilder/providers/training_providers.dart';
-import 'package:alphanessone/trainingBuilder/shared/widgets/reorder_dialog.dart';
 import '../cards/series_card.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
@@ -75,8 +74,8 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
                   onSeriesUpdated: (updatedSeries) => _updateSeries(updatedSeries),
                 ),
                 Positioned(
-                  right: 60, // maggiore spazio per evitare sovrapposizioni
-                  top: 12,
+                  right: 60,
+                  top: -6, // sopra il bordo del container
                   child: _GroupCountBadge(count: seriesGroup.length),
                 ),
               ],
@@ -108,32 +107,13 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
   Widget _buildActionButtons(ThemeData theme, ColorScheme colorScheme) {
     final isSmallScreen = MediaQuery.of(context).size.width < 600;
 
-    return Row(
-      children: [
-        Expanded(
-          child: AppButton(
-            label: isSmallScreen ? 'Reorder' : 'Riordina Serie',
-            icon: Icons.reorder,
-            onPressed: _showReorderDialog,
-            variant: AppButtonVariant.ghost,
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            iconColor: colorScheme.onSurfaceVariant,
-            size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
-            block: true,
-          ),
-        ),
-        SizedBox(width: AppTheme.spacing.md),
-        Expanded(
-          child: AppButton(
-            label: isSmallScreen ? 'Add' : 'Aggiungi Serie',
-            icon: Icons.add,
-            onPressed: _addNewSeries,
-            variant: AppButtonVariant.primary,
-            size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
-            block: true,
-          ),
-        ),
-      ],
+    return AppButton(
+      label: isSmallScreen ? 'Add' : 'Aggiungi Serie',
+      icon: Icons.add,
+      onPressed: _addNewSeries,
+      variant: AppButtonVariant.primary,
+      size: isSmallScreen ? AppButtonSize.sm : AppButtonSize.md,
+      block: true,
     );
   }
 
@@ -244,50 +224,7 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
     );
   }
 
-  void _showReorderDialog() {
-    // Crea una lista di nomi delle serie per il ReorderDialog
-    final seriesNames = widget.exercise.series.asMap().entries.map((entry) {
-      final index = entry.key;
-      final series = entry.value;
-      return 'Serie ${index + 1}: ${_formatSeriesInfo(series)}';
-    }).toList();
 
-    showDialog(
-      context: context,
-      builder: (context) => ReorderDialog(
-        items: seriesNames,
-        onReorder: (oldIndex, newIndex) {
-          widget.controller.reorderSeries(
-            widget.weekIndex,
-            widget.workoutIndex,
-            widget.exerciseIndex,
-            oldIndex,
-            newIndex,
-          );
-          setState(() {}); // Aggiorna la UI
-        },
-      ),
-    );
-  }
-
-  // Metodo helper per formattare le informazioni della serie
-  String _formatSeriesInfo(Series series) {
-    final repsInfo = series.maxReps != null && series.maxReps! > series.reps
-        ? '${series.reps}-${series.maxReps}'
-        : '${series.reps}';
-
-    String weightInfo = '';
-    if (series.weight > 0) {
-      if (series.maxWeight != null && series.maxWeight! > series.weight) {
-        weightInfo =
-            ' × ${series.weight.toStringAsFixed(1)}-${series.maxWeight!.toStringAsFixed(1)}kg';
-      } else {
-        weightInfo = ' × ${series.weight.toStringAsFixed(1)}kg';
-      }
-    }
-
-    return '$repsInfo reps$weightInfo';
-  }
 
   void _updateSeries(Series updatedSeries) {
     final index = widget.exercise.series.indexWhere((s) => s.serieId == updatedSeries.serieId);

@@ -36,6 +36,14 @@ class SeriesList extends StatelessWidget {
     this.exerciseType,
   });
 
+  List<String> _getCardioHeaders() {
+    final hasHiit = series.any((s) => s.cardioType == 'hiit');
+    if (hasHiit) {
+      return const ['#', 'Lavoro/Riposo', 'Round', 'Effettivo'];
+    }
+    return const ['#', 'Durata', 'Distanza', 'Effettivo'];
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -397,7 +405,7 @@ class _SeriesRow extends StatelessWidget {
     if (s == 0) {
       return '${m}min';
     }
-    return '${m}:${s.toString().padLeft(2, '0')}';
+    return '$m:${s.toString().padLeft(2, '0')}';
   }
 }
 

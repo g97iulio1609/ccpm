@@ -132,7 +132,7 @@ class AppDialog extends StatelessWidget {
     );
 
     // Content should always be scrollable to avoid overflows when space is tight
-    final Widget content = Flexible(
+    final Widget content = Expanded(
       child: SingleChildScrollView(
         padding: EdgeInsets.zero,
         child: ConstrainedBox(
@@ -162,7 +162,6 @@ class AppDialog extends StatelessWidget {
               maxHeight: maxDialogHeight,
             ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [header, content, footer],
             ),

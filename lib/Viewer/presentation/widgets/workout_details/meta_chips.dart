@@ -11,6 +11,7 @@ class MetaChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCardio = exercise.type.toLowerCase() == 'cardio';
     final isBodyweight = exercise.isBodyweight == true;
+    final isHiit = isCardio && exercise.series.any((s) => s.cardioType == 'hiit');
     
     final reps = exercise.series.isNotEmpty ? exercise.series.first.reps : null;
     final weight = exercise.series.isNotEmpty ? exercise.series.first.weight : null;
@@ -18,16 +19,43 @@ class MetaChips extends StatelessWidget {
         .firstWhere((s) => s.restTimeSeconds != null, orElse: () => exercise.series.first)
         .restTimeSeconds;
 
+    List<Widget> chips = [
+      _chip(context, Icons.layers_outlined, '${exercise.series.length} serie'),
+    ];
+
+    if (isHiit) {
+      // HIIT specific chips
+      chips.add(_chip(context, Icons.flash_on, 'HIIT'));
+      final firstHiitSeries = exercise.series.firstWhere((s) => s.cardioType == 'hiit', orElse: () => exercise.series.first);
+      
+      if (firstHiitSeries.workIntervalSeconds != null && firstHiitSeries.workIntervalSeconds! > 0) {
+        chips.add(_chip(context, Icons.play_arrow, '${firstHiitSeries.workIntervalSeconds}s lavoro'));
+      }
+      if (firstHiitSeries.restIntervalSeconds != null && firstHiitSeries.restIntervalSeconds! > 0) {
+        chips.add(_chip(context, Icons.pause, '${firstHiitSeries.restIntervalSeconds}s riposo'));
+      }
+      if (firstHiitSeries.rounds != null && firstHiitSeries.rounds! > 0) {
+        chips.add(_chip(context, Icons.repeat, '${firstHiitSeries.rounds} round'));
+      }
+    } else if (isCardio) {
+      // Standard cardio chips
+      chips.add(_chip(context, Icons.directions_run, 'Cardio'));
+    } else {
+      // Weight training chips
+      if (reps != null) chips.add(_chip(context, Icons.repeat, 'x$reps'));
+      if (weight != null && !isBodyweight) {
+        chips.add(_chip(context, Icons.fitness_center, WorkoutFormatters.formatWeight(weight)));
+      }
+    }
+
+    if (rest != null) {
+      chips.add(_chip(context, Icons.timer_outlined, WorkoutFormatters.formatRest(rest)));
+    }
+
     return Wrap(
       spacing: AppTheme.spacing.xs,
       runSpacing: AppTheme.spacing.xs,
-      children: [
-        _chip(context, Icons.layers_outlined, '${exercise.series.length} serie'),
-        if (reps != null && !isCardio) _chip(context, Icons.repeat, 'x$reps'),
-        if (weight != null && !isCardio && !isBodyweight)
-          _chip(context, Icons.fitness_center, WorkoutFormatters.formatWeight(weight)),
-        if (rest != null) _chip(context, Icons.timer_outlined, WorkoutFormatters.formatRest(rest)),
-      ],
+      children: chips,
     );
   }
 

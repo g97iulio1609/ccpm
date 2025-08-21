@@ -265,17 +265,58 @@ class ReorderExercisesFAB extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
-      onPressed: onPressed,
-      backgroundColor: colorScheme.primaryContainer,
-      foregroundColor: colorScheme.onPrimaryContainer,
-      icon: const Icon(Icons.reorder),
-      label: Text(
-        isCompact ? 'Riordina' : 'Riordina Esercizi',
-        style: const TextStyle(fontWeight: FontWeight.w600),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.surface.withValues(alpha: 0.9),
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+              ],
+            ),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: onPressed,
+            backgroundColor: Colors.transparent,
+            foregroundColor: colorScheme.primary,
+            elevation: 0,
+            icon: const Icon(Icons.reorder),
+            label: Text(
+              isCompact ? 'Riordina' : 'Riordina Esercizi',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+              ),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radii.xl),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
