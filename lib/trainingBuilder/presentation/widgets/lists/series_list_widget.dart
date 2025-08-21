@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
@@ -258,128 +257,30 @@ class _GroupCountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            // Liquid Glass Background - più translucente e dinamico
-            gradient: RadialGradient(
-              center: Alignment.topLeft,
-              radius: 1.2,
-              colors: isDark ? [
-                Colors.white.withValues(alpha: 0.25),
-                Colors.white.withValues(alpha: 0.15),
-                Colors.white.withValues(alpha: 0.08),
-              ] : [
-                cs.surface.withValues(alpha: 0.95),
-                cs.surfaceContainerHighest.withValues(alpha: 0.85),
-                cs.surfaceContainer.withValues(alpha: 0.75),
-              ],
-              stops: const [0.0, 0.5, 1.0],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            // Bordo liquido con sfumatura
-            border: Border.all(
-              width: 1.5,
-              color: isDark 
-                ? Colors.white.withValues(alpha: 0.2)
-                : cs.outline.withValues(alpha: 0.08),
-            ),
-            boxShadow: [
-              // Ombra principale più morbida
-              BoxShadow(
-                color: isDark 
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : cs.shadow.withValues(alpha: 0.12),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-                spreadRadius: -2,
-              ),
-              // Ombra interna per profondità
-              BoxShadow(
-                color: isDark 
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : cs.surface.withValues(alpha: 0.8),
-                blurRadius: 1,
-                offset: const Offset(0, 1),
-                spreadRadius: 0,
-              ),
-              // Riflesso superiore per effetto liquido
-              BoxShadow(
-                color: isDark 
-                  ? Colors.white.withValues(alpha: 0.15)
-                  : cs.primary.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, -1),
-                spreadRadius: 0,
-              ),
-            ],
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              // Riflesso liquido interno con gradiente complesso
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark ? [
-                  Colors.white.withValues(alpha: 0.2),
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.1),
-                ] : [
-                  cs.surface.withValues(alpha: 0.9),
-                  Colors.transparent,
-                  cs.shadow.withValues(alpha: 0.03),
-                ],
-                stops: const [0.0, 0.5, 1.0],
-              ),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                // Highlight finale per massimo effetto vetro
-                gradient: RadialGradient(
-                  center: const Alignment(-0.6, -0.6),
-                  radius: 0.8,
-                  colors: [
-                    isDark 
-                      ? Colors.white.withValues(alpha: 0.25)
-                      : cs.primary.withValues(alpha: 0.08),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.7],
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$count',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: isDark 
-                      ? Colors.white.withValues(alpha: 0.95)
-                      : cs.primary.withValues(alpha: 0.9),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                    letterSpacing: 0.2,
-                    shadows: [
-                      Shadow(
-                        color: isDark 
-                          ? Colors.black.withValues(alpha: 0.3)
-                          : cs.shadow.withValues(alpha: 0.15),
-                        offset: const Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+        ],
+      ),
+      child: Text(
+        '$count',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: cs.onSurface.withValues(alpha: 0.7),
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
         ),
       ),
     );
