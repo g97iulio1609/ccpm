@@ -74,8 +74,8 @@ class _SeriesListWidgetState extends ConsumerState<SeriesListWidget> {
                   onSeriesUpdated: (updatedSeries) => _updateSeries(updatedSeries),
                 ),
                 Positioned(
-                  right: 60,
-                  top: -6, // sopra il bordo del container
+                  right: 16,
+                  top: -12, // più in alto per un posizionamento migliore
                   child: _GroupCountBadge(count: seriesGroup.length),
                 ),
               ],
@@ -251,25 +251,64 @@ class _GroupCountBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing.sm, vertical: AppTheme.spacing.xs),
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
-        color: cs.surface.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(AppTheme.radii.xxl),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        // Glassmorphism background con gradiente
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.surface.withValues(alpha: 0.9),
+            cs.surfaceContainerHighest.withValues(alpha: 0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: cs.outline.withValues(alpha: 0.12),
+          width: 1,
+        ),
         boxShadow: [
+          // Ombra principale
           BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: cs.shadow.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+          // Ombra interna per effetto vetro
+          BoxShadow(
+            color: cs.onSurface.withValues(alpha: 0.05),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
           ),
         ],
       ),
-      child: Text(
-        '$count',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: cs.primary,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          // Highlight interno per effetto vetro
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              cs.onSurface.withValues(alpha: 0.08),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.3],
+          ),
+        ),
+        child: Center(
+          child: Text(
+            '$count',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
       ),
     );
