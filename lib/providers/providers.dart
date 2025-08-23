@@ -37,7 +37,13 @@ final firebaseFunctionsProvider = Provider<FirebaseFunctions>((ref) => FirebaseF
 
 // Provider per UsersService
 final usersServiceProvider = Provider<UsersService>((ref) {
-  return UsersService(ref, ref.watch(firebaseFirestoreProvider), ref.watch(firebaseAuthProvider));
+  final service = UsersService(
+    ref,
+    ref.watch(firebaseFirestoreProvider),
+    ref.watch(firebaseAuthProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 // Provider per TDEEService

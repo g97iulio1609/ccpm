@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../providers/providers.dart';
 
@@ -23,23 +24,34 @@ class UsersService {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
   FirebaseAuth? _authForUserCreation;
-  final _usersStreamController = BehaviorSubject<List<UserModel>>();
+  final _usersStreamController = BehaviorSubject<List<UserModel>>.seeded(const []);
   StreamSubscription? _userChangesSubscription;
+  StreamSubscription<User?>? _authSubscription;
   String _searchQuery = '';
   final ExerciseRecordService _exerciseRecordService;
 
   UsersService(this._ref, this._firestore, this._auth)
     : _exerciseRecordService = _ref.read(exerciseRecordServiceProvider) {
     _initializeUserCreationAuth();
-    _auth.authStateChanges().listen(_handleAuthStateChanges);
+    _authSubscription = _auth.authStateChanges().listen(_handleAuthStateChanges);
   }
 
   Future<void> _initializeUserCreationAuth() async {
-    final FirebaseApp userCreationApp = await Firebase.initializeApp(
-      name: 'UserCreationApp',
-      options: Firebase.app().options,
-    );
-    _authForUserCreation = FirebaseAuth.instanceFor(app: userCreationApp);
+    try {
+      FirebaseApp userCreationApp;
+      final existing = Firebase.apps.where((a) => a.name == 'UserCreationApp');
+      if (existing.isEmpty) {
+        userCreationApp = await Firebase.initializeApp(
+          name: 'UserCreationApp',
+          options: Firebase.app().options,
+        );
+      } else {
+        userCreationApp = existing.first;
+      }
+      _authForUserCreation = FirebaseAuth.instanceFor(app: userCreationApp);
+    } catch (e) {
+      debugPrint('Failed to init auth for user creation: $e');
+    }
   }
 
   void _handleAuthStateChanges(User? user) async {
@@ -62,15 +74,42 @@ class UsersService {
 
   void _initializeUsersStream() {
     _userChangesSubscription?.cancel();
-    _userChangesSubscription = _firestore.collection('users').snapshots().listen((snapshot) {
-      final users = snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
-      _usersStreamController.add(_filterUsers(users));
-    });
+    _userChangesSubscription = _firestore.collection('users').snapshots().listen(
+      (snapshot) {
+        try {
+          final users = snapshot.docs.map((doc) {
+            try {
+              return UserModel.fromFirestore(doc);
+            } catch (e) {
+              debugPrint('Error parsing user doc ${doc.id}: $e');
+              return null;
+            }
+          }).where((user) => user != null).cast<UserModel>().toList();
+          
+          if (!_usersStreamController.isClosed) {
+            _usersStreamController.add(_filterUsers(users));
+          }
+        } catch (e) {
+          debugPrint('Error processing users stream: $e');
+        }
+      },
+      onError: (error) {
+        debugPrint('Users stream error: $error');
+      },
+    );
   }
 
   void _clearUsersStream() {
     _userChangesSubscription?.cancel();
-    _usersStreamController.add([]);
+    if (!_usersStreamController.isClosed) {
+      _usersStreamController.add([]);
+    }
+  }
+  
+  void dispose() {
+    _userChangesSubscription?.cancel();
+    _authSubscription?.cancel();
+    _usersStreamController.close();
   }
 
   List<UserModel> _filterUsers(List<UserModel> users) {
@@ -88,7 +127,9 @@ class UsersService {
 
   void searchUsers(String query) {
     _searchQuery = query;
-    final users = _usersStreamController.value;
+    final users = _usersStreamController.hasValue
+        ? _usersStreamController.value
+        : const <UserModel>[];
     _usersStreamController.add(_filterUsers(users));
   }
 
@@ -194,42 +235,54 @@ class UsersService {
     return userDoc.exists ? UserModel.fromFirestore(userDoc) : null;
   }
 
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  // Use the same region as Cloud Functions (see functions/src/config/firebase.mjs)
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
 
   Future<void> deleteUser(String userId) async {
     try {
       String currentUserRole = getCurrentUserRole();
+      String currentUserId = getCurrentUserId();
+
+      // Prevent admin from deleting themselves
+      if (userId == currentUserId) {
+        throw Exception('Non puoi eliminare il tuo stesso account da qui.');
+      }
+
+      if (currentUserRole != 'admin') {
+        throw Exception('Solo gli amministratori possono eliminare altri utenti.');
+      }
 
       final userDoc = await _firestore.collection('users').doc(userId).get();
-
-      if (userDoc.exists) {
-        if (currentUserRole == 'admin') {
-          final result = await _functions.httpsCallable('deleteUser').call({'userId': userId});
-          if (result.data['success'] != true) {
-            throw Exception('Failed to delete user via Cloud Function');
-          }
-        } else {
-          User? currentUser = _auth.currentUser;
-          if (currentUser != null && currentUser.uid == userId) {
-            await currentUser.delete();
-            await _firestore.collection('users').doc(userId).delete();
-            await _auth.signOut();
-          } else {
-            throw Exception('Gli utenti non-admin possono eliminare solo il proprio account.');
-          }
-        }
-
-        final updatedUsers = _usersStreamController.value
-            .where((user) => user.id != userId)
-            .toList();
-        _usersStreamController.add(updatedUsers);
-      } else {
-        throw Exception('Utente non trovato in Firestore.');
+      if (!userDoc.exists) {
+        throw Exception('Utente non trovato.');
       }
+
+      // Simple deletion - just delete the user document
+      await _firestore.collection('users').doc(userId).delete();
+      
+      // Also attempt to delete the Firebase Auth user via callable (non-blocking)
+      _functions.httpsCallable('deleteUserCallable').call({
+        'userId': userId,
+      }).then((_) {}, onError: (e) {
+        // Log only in debug to avoid confusing users
+        if (kDebugMode) {
+          debugPrint('Warning: Could not delete auth user: $e');
+        }
+      });
+
+      // Update the local stream immediately without waiting
+      final currentUsers = List<UserModel>.from(
+        _usersStreamController.hasValue ? _usersStreamController.value : const <UserModel>[],
+      );
+      currentUsers.removeWhere((user) => user.id == userId);
+      _usersStreamController.add(currentUsers);
+      
     } catch (e) {
-      throw Exception("Errore durante l'eliminazione dell'utente: $e");
+      debugPrint('Error deleting user: $e');
+      rethrow;
     }
   }
+
 
   Future<void> updateUser(String userId, Map<String, dynamic> data) async {
     await _firestore.collection('users').doc(userId).update(data);

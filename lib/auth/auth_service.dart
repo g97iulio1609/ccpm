@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:alphanessone/services/users_services.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService(ref));
@@ -76,34 +77,46 @@ class AuthService {
 
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Initialize GoogleSignIn if not already done
+      // Initialize Google Sign-In if not already done
       await googleSignIn.initialize();
+      
+      // Sign out any existing session to ensure clean state
+      await googleSignIn.signOut();
+      
+      // Trigger the authentication flow with the new API
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate(
+        scopeHint: ['email', 'profile'],
+      );
 
-      // Try lightweight authentication first
-      GoogleSignInAccount? googleUser;
-      try {
-        final result = googleSignIn.attemptLightweightAuthentication();
-        if (result is Future<GoogleSignInAccount?>) {
-          googleUser = await result;
-        } else {
-          googleUser = result as GoogleSignInAccount?;
-        }
-      } catch (e) {
-        // If lightweight auth fails, try full authentication
-        googleUser = null;
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+      // Verify we have the required tokens
+      if (googleAuth.idToken == null) {
+        throw Exception('Failed to obtain ID token from Google');
       }
 
-      // If lightweight auth didn't work, try full authentication
-      googleUser ??= await googleSignIn.authenticate(scopeHint: ['email', 'profile']);
+      // Create a new credential (accessToken not available in v7+)
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
 
-      final googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
-
+      // Once signed in, return the UserCredential
       final userCredential = await auth.signInWithCredential(credential);
+      
+      if (userCredential.user == null) {
+        throw Exception('Failed to authenticate with Firebase');
+      }
+      
       await updateUserDataIfNeeded(userCredential.user!);
       return userCredential;
+    } on Exception catch (e) {
+      // Log error for debugging but don't print in production
+      debugPrint('Google Sign-In Exception: $e');
+      rethrow;
     } catch (error) {
-      return null;
+      debugPrint('Google Sign-In Error: $error');
+      throw Exception('Google Sign-In failed: $error');
     }
   }
 
@@ -150,10 +163,10 @@ class AuthService {
                   ),
                 );
                 SchedulerBinding.instance.addPostFrameCallback((_) {
-                  if (userRole == 'admin') {
-                    Navigator.pushNamed(context, '/programs_screen');
+                  if (userRole == 'admin' || userRole == 'coach') {
+                    context.go('/programs_screen');
                   } else {
-                    Navigator.pushNamed(context, '/programs_screen/user_programs/$userId');
+                    context.go('/user_programs', extra: {'userId': userId});
                   }
                 });
               }

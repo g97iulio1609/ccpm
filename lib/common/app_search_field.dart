@@ -204,9 +204,10 @@ class AppSearchField<T> extends HookConsumerWidget {
               decoration: BoxDecoration(color: cs.surface.withAlpha(196)),
               child: InkWell(
                 onTap: () {
-                  onSelected(e);
-                  // Close the view; callers manage the external controller text.
+                  // Close the view first to avoid conflicts
                   controllerAnchor.closeView(searchController.text);
+                  // Then call the selection callback
+                  onSelected(e);
                 },
                 child: itemBuilder(context, e),
               ),

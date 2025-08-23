@@ -187,6 +187,7 @@ Future<T?> showAppDialog<T>({
 }) {
   return showDialog<T>(
     context: context,
+    useRootNavigator: true,
     builder: (ctx) => AppDialog(
       title: title,
       subtitle: subtitle,

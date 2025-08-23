@@ -7,6 +7,7 @@ import { ProductService } from './src/services/productService.mjs';
 export * from './src/controllers/subscriptionController.mjs';
 export * from './src/controllers/productController.mjs';
 export * from './src/controllers/userController.mjs';
+export * from './src/controllers/userCallable.mjs';
 
 // Funzione schedulata per verificare e aggiornare le sottoscrizioni
 export const checkAndUpdateSubscription = onSchedule({

@@ -106,22 +106,44 @@ class CustomDrawer extends ConsumerWidget {
             ),
           ),
 
-          // User Profile / Logout section coerente con glass
+          // User Profile / Logout section with glassmorphism
           Padding(
             padding: EdgeInsets.only(
               left: AppTheme.spacing.lg,
               right: AppTheme.spacing.lg,
               bottom: AppTheme.spacing.lg,
             ),
-            child: AppCard(
-              glass: true,
-              glassTint: colorScheme.surface.withAlpha(172),
-              glassBlur: 16,
+            child: GlassLite(
               padding: EdgeInsets.zero,
+              blur: 20,
+              tint: colorScheme.surface.withAlpha(128),
+              border: Border.all(
+                color: colorScheme.outline.withAlpha(51),
+                width: 0.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withAlpha(26),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
               child: Column(
                 children: [
                   _buildUserProfile(context, ref, theme, colorScheme),
-                  Divider(color: colorScheme.outline.withAlpha(38), height: 1),
+                  Container(
+                    height: 0.5,
+                    margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing.md),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.outline.withAlpha(0),
+                          colorScheme.outline.withAlpha(76),
+                          colorScheme.outline.withAlpha(0),
+                        ],
+                      ),
+                    ),
+                  ),
                   _buildLogoutButton(context, theme, colorScheme),
                 ],
               ),
@@ -459,43 +481,96 @@ class CustomDrawer extends ConsumerWidget {
 
     return Material(
       color: Colors.transparent,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.lg)),
       child: InkWell(
         onTap: () => _navigateTo(context, '/user_profile', {'userId': user?.uid}),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radii.lg)),
         child: Container(
-          padding: EdgeInsets.all(AppTheme.spacing.lg),
+          padding: EdgeInsets.all(AppTheme.spacing.md),
           child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(AppTheme.spacing.md),
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withAlpha(76),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.primary.withAlpha(128),
+                      colorScheme.primary,
+                    ],
+                  ),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withAlpha(51),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(Icons.person, color: colorScheme.primary, size: 24),
+                child: Icon(
+                  Icons.person_rounded,
+                  color: colorScheme.onPrimary,
+                  size: 16,
+                ),
               ),
-              SizedBox(width: AppTheme.spacing.md),
+              SizedBox(width: AppTheme.spacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       displayName,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: AppTheme.spacing.xs),
-                    AppBadge(
-                      label: userRole.toUpperCase(),
-                      variant: AppBadgeVariant.filled,
-                      status: AppBadgeStatus.info,
-                      size: AppBadgeSize.small,
+                    SizedBox(height: AppTheme.spacing.xs / 2),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withAlpha(102),
+                        borderRadius: BorderRadius.circular(AppTheme.radii.lg),
+                        border: Border.all(
+                          color: colorScheme.primary.withAlpha(76),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Text(
+                        userRole.toUpperCase(),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant, size: 24),
+              Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withAlpha(76),
+                  borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                ),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: colorScheme.onSurfaceVariant.withAlpha(179),
+                  size: 16,
+                ),
+              ),
             ],
           ),
         ),
@@ -506,26 +581,48 @@ class CustomDrawer extends ConsumerWidget {
   Widget _buildLogoutButton(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
     return Material(
       color: Colors.transparent,
+      borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppTheme.radii.lg)),
       child: InkWell(
         onTap: onLogout,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppTheme.radii.lg)),
         child: Container(
-          padding: EdgeInsets.all(AppTheme.spacing.lg),
+          padding: EdgeInsets.all(AppTheme.spacing.md),
           child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(AppTheme.spacing.sm),
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: colorScheme.errorContainer.withAlpha(76),
-                  borderRadius: BorderRadius.circular(AppTheme.radii.md),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.error.withAlpha(128),
+                      colorScheme.error,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(AppTheme.radii.sm),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.error.withAlpha(51),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(Icons.logout, color: colorScheme.error, size: 20),
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: colorScheme.onError,
+                  size: 16,
+                ),
               ),
-              SizedBox(width: AppTheme.spacing.md),
+              SizedBox(width: AppTheme.spacing.sm),
               Text(
                 'Logout',
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.error,
                   fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
@@ -590,6 +687,17 @@ class CustomDrawer extends ConsumerWidget {
     // Limitiamo a 5-7 voci principali
     final admin = [
       'Coaching',
+      'Gestione Utenti',
+      'I Miei Allenamenti',
+      'Food Tracker',
+      'Misurazioni',
+      'Massimali',
+      'Esercizi',
+      'Abbonamenti',
+      'Profilo Utente',
+    ];
+    final coach = [
+      'Coaching',
       'I Miei Allenamenti',
       'Food Tracker',
       'Misurazioni',
@@ -606,6 +714,9 @@ class CustomDrawer extends ConsumerWidget {
       'Esercizi',
       'Profilo Utente',
     ];
-    return (userRole == 'admin' || userRole == 'coach') ? admin : client;
+    
+    if (userRole == 'admin') return admin;
+    if (userRole == 'coach') return coach;
+    return client;
   }
 }

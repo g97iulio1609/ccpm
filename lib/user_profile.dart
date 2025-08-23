@@ -94,6 +94,12 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
   }
 
   void _updateControllers(Map<String, dynamic> data) {
+    // Recreate controllers safely to avoid stale references and leaks
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+    _controllers.clear();
+
     data.forEach((key, value) {
       if (!_excludedFields.contains(key)) {
         _controllers[key] = TextEditingController(text: value?.toString() ?? '');
@@ -138,9 +144,9 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
   }
 
   void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
   Future<void> _uploadProfilePicture() async {
@@ -248,10 +254,13 @@ class UserProfileState extends ConsumerState<UserProfile> with SingleTickerProvi
         AppDialogHelpers.buildActionButton(
           context: context,
           label: 'Elimina',
-          onPressed: () {
-            Navigator.of(context).pop();
+          onPressed: () async {
+            await Navigator.of(context, rootNavigator: true).maybePop();
+            if (!mounted) return;
             final currentUser = FirebaseAuth.instance.currentUser!;
-            _reauthenticateAndDelete(_isGoogleUser(currentUser));
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _reauthenticateAndDelete(_isGoogleUser(currentUser));
+            });
           },
           isPrimary: false,
           isDestructive: true,

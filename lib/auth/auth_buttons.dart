@@ -186,11 +186,25 @@ class GoogleSignInButtonWrapper extends ConsumerWidget {
         if (userId != null && context.mounted) {
           _showSnackBar(context, 'Google Sign-In successful', Colors.green);
           _navigateToAppropriateScreen(context, userRole, userId);
+        } else if (context.mounted) {
+          _showSnackBar(context, 'Failed to retrieve user ID', Colors.red);
         }
+      } else if (context.mounted) {
+        // User cancelled the sign-in
+        _showSnackBar(context, 'Google Sign-In cancelled', Colors.orange);
       }
     } catch (error) {
+      debugPrint('Google Sign-In Error Details: $error');
       if (context.mounted) {
-        _showSnackBar(context, 'Failed to sign in with Google: $error', Colors.red);
+        String errorMessage = 'Failed to sign in with Google';
+        if (error.toString().contains('network_error')) {
+          errorMessage = 'Network error. Please check your connection.';
+        } else if (error.toString().contains('sign_in_canceled')) {
+          errorMessage = 'Sign-in was cancelled';
+        } else if (error.toString().contains('sign_in_failed')) {
+          errorMessage = 'Google Sign-In failed. Please try again.';
+        }
+        _showSnackBar(context, errorMessage, Colors.red);
       }
     }
   }
