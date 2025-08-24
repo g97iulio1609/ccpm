@@ -47,6 +47,7 @@ class SeriesDialog extends StatefulWidget {
 class _SeriesDialogState extends State<SeriesDialog> {
   late final SeriesFormController _formController;
   final GlobalKey<_CardioFormState> _cardioKey = GlobalKey<_CardioFormState>();
+  final ScrollController _scrollController = ScrollController();
   String _seriesType = 'standard';
 
   @override
@@ -58,11 +59,49 @@ class _SeriesDialogState extends State<SeriesDialog> {
       latestMaxWeight: widget.latestMaxWeight,
       originalExerciseId: widget.exercise.exerciseId, // Pass the original exercise ID
     );
+    _setupFocusListeners();
+  }
+
+  void _setupFocusListeners() {
+    // Aggiunge listener ai nodi di focus per auto-scroll
+    final allNodes = [
+      _formController.repsNode,
+      _formController.maxRepsNode,
+      _formController.setsNode,
+      _formController.intensityNode,
+      _formController.maxIntensityNode,
+      _formController.rpeNode,
+      _formController.maxRpeNode,
+      _formController.weightNode,
+      _formController.maxWeightNode,
+    ];
+
+    for (final node in allNodes) {
+      node.addListener(() {
+        if (node.hasFocus) {
+          _scrollToFocusedField();
+        }
+      });
+    }
+  }
+
+  void _scrollToFocusedField() {
+    // Ritarda lo scroll per permettere alla tastiera di animare
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent * 0.3, // Scorri verso il centro
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
     _formController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -70,21 +109,29 @@ class _SeriesDialogState extends State<SeriesDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardHeight = mediaQuery.viewInsets.bottom;
 
     final isCardio = (widget.exerciseType.toLowerCase() == 'cardio');
     final isBodyweight = widget.exercise.isBodyweight == true;
 
-    return AppDialog(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(_getDialogTitle(), style: theme.textTheme.titleMedium),
-          IconButton(
-            icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: AppDialog(
+        // Riduci altezza massima quando tastiera è aperta per mobile
+        maxHeight: keyboardHeight > 0 
+            ? mediaQuery.size.height * 0.6 // Limita a 60% dell'altezza quando tastiera aperta
+            : mediaQuery.size.height * 0.8, // Altrimenti usa 80%
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(_getDialogTitle(), style: theme.textTheme.titleMedium),
+            IconButton(
+              icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
       actions: [
         AppDialogHelpers.buildCancelButton(context: context),
         AppDialogHelpers.buildActionButton(
@@ -94,6 +141,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
         ),
       ],
       child: SingleChildScrollView(
+        controller: _scrollController,
         child: isCardio
             ? _CardioForm(
                 key: _cardioKey,
@@ -175,6 +223,7 @@ class _SeriesDialogState extends State<SeriesDialog> {
                   ],
                 ],
               ),
+        ),
       ),
     );
   }
@@ -380,6 +429,7 @@ class _CardioForm extends StatefulWidget {
 
 class _CardioFormState extends State<_CardioForm> {
   final _svc = const CardioMetricsService();
+  final ScrollController? _parentScrollController = null; // Sarà passato dal parent
 
   final TextEditingController _sets = TextEditingController(text: '1');
   // Duration as hours and minutes (user-friendly); converted to seconds when saving
@@ -594,6 +644,7 @@ class _CardioFormState extends State<_CardioForm> {
             child: TextField(
               controller: c,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
               decoration: InputDecoration(
                 prefixIcon: Icon(icon, color: cs.primary),
                 border: InputBorder.none,
