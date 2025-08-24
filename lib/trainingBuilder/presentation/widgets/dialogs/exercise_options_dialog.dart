@@ -317,16 +317,17 @@ class ExerciseOptionsDialog extends ConsumerWidget {
     showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(dialogContext).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: const Text('Aggiorna Max RM'),
-          content: Column(
+          actions: [
+            AppDialogHelpers.buildCancelButton(context: dialogContext),
+            AppDialogHelpers.buildActionButton(
+              context: dialogContext,
+              label: 'Salva',
+              onPressed: () => Navigator.pop(dialogContext, true),
+            ),
+          ],
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
@@ -348,16 +349,6 @@ class ExerciseOptionsDialog extends ConsumerWidget {
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Salva'),
-            ),
-          ],
         );
       },
     ).then((result) async {
@@ -460,26 +451,21 @@ class ExerciseOptionsDialog extends ConsumerWidget {
   void _showDeleteConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        insetPadding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-        ),
+      builder: (context) => AppDialog(
         title: const Text('Elimina Esercizio'),
-        content: Text('Sei sicuro di voler eliminare "${exercise.name}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-          TextButton(
+          AppDialogHelpers.buildCancelButton(context: context),
+          AppDialogHelpers.buildActionButton(
+            context: context,
+            label: 'Elimina',
+            isDestructive: true,
             onPressed: () {
               Navigator.pop(context);
               onDelete();
             },
-            child: const Text('Elimina'),
           ),
         ],
+        child: Text('Sei sicuro di voler eliminare "${exercise.name}"?'),
       ),
     );
   }

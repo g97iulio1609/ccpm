@@ -17,6 +17,7 @@ import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/trainingBuilder/services/training_share_service.dart';
 import 'package:alphanessone/trainingBuilder/services/training_share_service_async.dart';
 import 'package:alphanessone/trainingBuilder/models/training_model.dart';
+import 'package:alphanessone/trainingBuilder/models/progressions_model.dart';
 
 class TrainingProgramPage extends HookConsumerWidget {
   final String programId;
@@ -234,7 +235,7 @@ class _ActionButtons extends ConsumerWidget {
             Expanded(
               child: AppButton(
                 icon: Icons.save,
-                label: 'Save Program',
+                label: 'Save',
                 variant: AppButtonVariant.primary,
                 onPressed: () => controller.submitProgram(context),
                 block: true,
@@ -243,52 +244,15 @@ class _ActionButtons extends ConsumerWidget {
           ],
         ),
         SizedBox(height: AppTheme.spacing.md),
+        // Simplified actions: only Export and Import
         Row(
           children: [
             Expanded(
               child: AppButton(
-                icon: Icons.code,
-                label: 'Export JSON',
+                icon: Icons.file_download_outlined,
+                label: 'Export',
                 variant: AppButtonVariant.subtle,
-                onPressed: () async {
-                  try {
-                    final exportMap = TrainingShareService.programToExportMap(controller.program);
-                    final content = await encodeJsonAsync(exportMap);
-                    if (context.mounted) {
-                      _showExportDialog(context, title: 'Export JSON', content: content);
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Errore export JSON: $e')));
-                    }
-                  }
-                },
-                block: true,
-              ),
-            ),
-            SizedBox(width: AppTheme.spacing.md),
-            Expanded(
-              child: AppButton(
-                icon: Icons.table_chart_outlined,
-                label: 'Export CSV',
-                variant: AppButtonVariant.subtle,
-                onPressed: () async {
-                  try {
-                    final exportMap = TrainingShareService.programToExportMap(controller.program);
-                    final content = await buildCsvAsync(exportMap);
-                    if (context.mounted) {
-                      _showExportDialog(context, title: 'Export CSV', content: content);
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Errore export CSV: $e')));
-                    }
-                  }
-                },
+                onPressed: () => _showUnifiedExportDialog(context),
                 block: true,
               ),
             ),
@@ -299,93 +263,6 @@ class _ActionButtons extends ConsumerWidget {
                 label: 'Import',
                 variant: AppButtonVariant.subtle,
                 onPressed: () => _showImportDialog(context, ref),
-                block: true,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppTheme.spacing.md),
-        Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                icon: Icons.file_download_outlined,
-                label: 'Export .json',
-                variant: AppButtonVariant.subtle,
-                onPressed: () async {
-                  try {
-                    await const share_io.TrainingShareIO().exportProgramFile(
-                      controller.program,
-                      format: 'json',
-                      suggestedFileName: controller.program.name,
-                    );
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Errore export file JSON: $e')));
-                    }
-                  }
-                },
-                block: true,
-              ),
-            ),
-            SizedBox(width: AppTheme.spacing.md),
-            Expanded(
-              child: AppButton(
-                icon: Icons.file_download_outlined,
-                label: 'Export .csv',
-                variant: AppButtonVariant.subtle,
-                onPressed: () async {
-                  try {
-                    await const share_io.TrainingShareIO().exportProgramFile(
-                      controller.program,
-                      format: 'csv',
-                      suggestedFileName: controller.program.name,
-                    );
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Errore export file CSV: $e')));
-                    }
-                  }
-                },
-                block: true,
-              ),
-            ),
-            SizedBox(width: AppTheme.spacing.md),
-            Expanded(
-              child: AppButton(
-                icon: Icons.file_upload_outlined,
-                label: 'Import da file',
-                variant: AppButtonVariant.subtle,
-                onPressed: () async {
-                  try {
-                    final imported = await const share_io.TrainingShareIO().importProgramFromFile();
-                    if (imported != null) {
-                      // Aggiungi suffisso al nome per maggiore chiarezza
-                      final importedProgram = imported.copyWith(
-                        name: imported.name.isNotEmpty
-                            ? '${imported.name} (import)'
-                            : 'Programma Importato',
-                      );
-
-                      controller.importProgramModel(importedProgram);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Programma importato da file con successo')),
-                        );
-                      }
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Errore import da file: $e')));
-                    }
-                  }
-                },
                 block: true,
               ),
             ),
@@ -416,23 +293,165 @@ class _ActionButtons extends ConsumerWidget {
             decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
           SizedBox(height: AppTheme.spacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              AppDialogHelpers.buildCancelButton(context: context),
-              AppDialogHelpers.buildActionButton(
-                context: context,
-                label: 'Copia',
-                icon: Icons.copy,
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: controller.text));
-                  Navigator.of(context, rootNavigator: true).pop();
-                  messenger.showSnackBar(const SnackBar(content: Text('Contenuto copiato')));
-                },
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: AppTheme.spacing.sm,
+              runSpacing: AppTheme.spacing.xs,
+              children: [
+                AppDialogHelpers.buildCancelButton(context: context),
+                AppDialogHelpers.buildActionButton(
+                  context: context,
+                  label: 'Copia',
+                  icon: Icons.copy,
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: controller.text));
+                    Navigator.of(context, rootNavigator: true).pop();
+                    messenger.showSnackBar(const SnackBar(content: Text('Contenuto copiato')));
+                  },
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showUnifiedExportDialog(BuildContext context) async {
+    String format = 'json';
+    String content = '';
+    bool loading = true;
+    final exportMap = TrainingShareService.programToExportMap(controller.program);
+    final messenger = ScaffoldMessenger.of(context);
+    final textCtrl = TextEditingController();
+
+    Future<void> _loadContent() async {
+      loading = true;
+      try {
+        content = (format == 'csv')
+            ? await buildCsvAsync(exportMap)
+            : await encodeJsonAsync(exportMap);
+        textCtrl.text = content;
+      } catch (e) {
+        content = 'Errore generazione contenuto: $e';
+        textCtrl.text = content;
+      } finally {
+        loading = false;
+      }
+    }
+
+    await _loadContent();
+
+    showAppDialog(
+      context: context,
+      title: 'Export Program',
+      subtitle: 'Scegli formato e azione',
+      maxWidth: 900,
+      maxHeight: 700,
+      child: StatefulBuilder(
+        builder: (context, setState) {
+          final mq = MediaQuery.of(context);
+          final isCompact = mq.size.width < 700 || mq.size.height < 800;
+          final editorHeight = (isCompact ? mq.size.height * 0.35 : mq.size.height * 0.45)
+              .clamp(220.0, 480.0);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Wrap(
+                spacing: AppTheme.spacing.sm,
+                runSpacing: AppTheme.spacing.xs,
+                children: [
+                  ChoiceChip(
+                    label: const Text('JSON'),
+                    selected: format == 'json',
+                    onSelected: (_) async {
+                      setState(() => format = 'json');
+                      await _loadContent();
+                      // ignore: use_build_context_synchronously
+                      setState(() {});
+                    },
+                  ),
+                  ChoiceChip(
+                    label: const Text('CSV'),
+                    selected: format == 'csv',
+                    onSelected: (_) async {
+                      setState(() => format = 'csv');
+                      await _loadContent();
+                      // ignore: use_build_context_synchronously
+                      setState(() {});
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: AppTheme.spacing.md),
+              if (loading)
+                const Center(child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ))
+              else
+                SizedBox(
+                  height: editorHeight,
+                  child: TextField(
+                    controller: textCtrl,
+                    readOnly: true,
+                    expands: true,
+                    maxLines: null,
+                    minLines: null,
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                  ),
+                ),
+              SizedBox(height: AppTheme.spacing.md),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: AppTheme.spacing.sm,
+                  runSpacing: AppTheme.spacing.xs,
+                  children: [
+                    AppDialogHelpers.buildCancelButton(context: context),
+                    TextButton.icon(
+                      onPressed: () async {
+                        try {
+                          await const share_io.TrainingShareIO().exportProgramFile(
+                            controller.program,
+                            format: format,
+                            suggestedFileName: controller.program.name,
+                          );
+                          // ignore: use_build_context_synchronously
+                          Navigator.of(context, rootNavigator: true).pop();
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('File ${format.toUpperCase()} esportato')),
+                          );
+                        } catch (e) {
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('Errore export file: $e')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.file_download_outlined),
+                      label: const Text('Salva file'),
+                    ),
+                    AppDialogHelpers.buildActionButton(
+                      context: context,
+                      label: 'Copia',
+                      icon: Icons.copy,
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: content));
+                        // ignore: use_build_context_synchronously
+                        Navigator.of(context, rootNavigator: true).pop();
+                        messenger.showSnackBar(const SnackBar(content: Text('Contenuto copiato')));
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -442,7 +461,7 @@ class _ActionButtons extends ConsumerWidget {
     String format = 'json';
     Map<String, dynamic>? previewData;
     String? previewError;
-    // Capture messenger from the caller context; pop the dialog via root navigator when done.
+    // Capture messenger from the page context; avoid using dialog context after pop.
     final messenger = ScaffoldMessenger.of(context);
     showAppDialog(
       context: context,
@@ -537,14 +556,15 @@ class _ActionButtons extends ConsumerWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
+              Wrap(
+                spacing: AppTheme.spacing.sm,
+                runSpacing: AppTheme.spacing.xs,
                 children: [
                   ChoiceChip(
                     label: const Text('JSON'),
                     selected: format == 'json',
                     onSelected: (_) => setState(() => format = 'json'),
                   ),
-                  SizedBox(width: AppTheme.spacing.sm),
                   ChoiceChip(
                     label: const Text('CSV'),
                     selected: format == 'csv',
@@ -569,92 +589,166 @@ class _ActionButtons extends ConsumerWidget {
               SizedBox(height: AppTheme.spacing.md),
               // Preview area (on-demand, no slowdown during typing)
               buildPreview(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  AppDialogHelpers.buildCancelButton(context: context),
-                  TextButton.icon(
-                    onPressed: () async {
-                      setState(() {
-                        previewError = null;
-                        previewData = null;
-                      });
-                      try {
-                        final map = (format == 'json')
-                            ? await parseJsonToExportMapAsync(inputCtrl.text)
-                            : await parseCsvToExportMapAsync(inputCtrl.text);
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: AppTheme.spacing.sm,
+                  runSpacing: AppTheme.spacing.xs,
+                  children: [
+                    AppDialogHelpers.buildCancelButton(context: context),
+                    TextButton.icon(
+                      onPressed: () async {
                         setState(() {
-                          previewData = map;
                           previewError = null;
-                        });
-                      } catch (e) {
-                        setState(() {
-                          previewError = e.toString();
                           previewData = null;
                         });
-                      }
-                    },
-                    icon: const Icon(Icons.visibility_outlined),
-                    label: const Text('Anteprima'),
-                  ),
-                  AppDialogHelpers.buildActionButton(
-                    context: context,
-                    label: 'Importa',
-                    icon: Icons.check,
-                    onPressed: () async {
-                      // Chiudi il dialog immediatamente per evitare problemi di lifecycle
-                      Navigator.of(context, rootNavigator: true).pop();
-
-                      try {
-                        TrainingProgram program;
-                        if (format == 'json') {
-                          final map = await parseJsonToExportMapAsync(inputCtrl.text);
-                          program = TrainingShareService.programFromExportMap(
-                            Map<String, dynamic>.from(map['program'] as Map),
-                          );
-                        } else {
-                          final map = await parseCsvToExportMapAsync(inputCtrl.text);
-                          program = TrainingShareService.programFromExportMap(
-                            Map<String, dynamic>.from(map['program'] as Map),
-                          );
-                        }
-
-                        // Aggiungi suffisso al nome per maggiore chiarezza
-                        final importedProgram = program.copyWith(
-                          name: program.name.isNotEmpty
-                              ? '${program.name} (import)'
-                              : 'Programma Importato',
-                        );
-
-                        // Usa ref.read per ottenere una referenza fresca del controller
-                        // Questo evita problemi con il lifecycle del StateNotifier
                         try {
-                          final controllerNotifier = ref.read(
-                            trainingProgramControllerProvider.notifier,
-                          );
-                          controllerNotifier.importProgramModel(importedProgram);
+                          final map = (format == 'json')
+                              ? await parseJsonToExportMapAsync(inputCtrl.text)
+                              : await parseCsvToExportMapAsync(inputCtrl.text);
+                          setState(() {
+                            previewData = map;
+                            previewError = null;
+                          });
                         } catch (e) {
-                          // Fallback: se il controller non è disponibile, aggiorna direttamente lo stato
-                          debugPrint('Fallback: aggiornamento diretto dello stato - $e');
-                          final stateNotifier = ref.read(trainingProgramStateProvider.notifier);
-                          stateNotifier.updateProgram(importedProgram);
+                          setState(() {
+                            previewError = e.toString();
+                            previewData = null;
+                          });
                         }
+                      },
+                      icon: const Icon(Icons.visibility_outlined),
+                      label: const Text('Anteprima'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        // Import from file picker
+                        Navigator.of(context, rootNavigator: true).pop();
+                        try {
+                          final imported = await const share_io.TrainingShareIO().importProgramFromFile();
+                          if (imported != null) {
+                            await _finalizeImport(imported, ref, messenger);
+                            return;
+                          }
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Nessun file selezionato')),
+                          );
+                        } catch (e) {
+                          messenger.showSnackBar(SnackBar(content: Text('Errore import da file: $e')));
+                        }
+                      },
+                      icon: const Icon(Icons.file_upload_outlined),
+                      label: const Text('Importa da file'),
+                    ),
+                    AppDialogHelpers.buildActionButton(
+                      context: context,
+                      label: 'Importa',
+                      icon: Icons.check,
+                      onPressed: () async {
+                        // Chiudi il dialog immediatamente per evitare problemi di lifecycle
+                        Navigator.of(context, rootNavigator: true).pop();
 
-                        messenger.showSnackBar(
-                          const SnackBar(content: Text('Programma importato con successo')),
-                        );
-                      } catch (e) {
-                        messenger.showSnackBar(SnackBar(content: Text('Errore import: $e')));
-                      }
-                    },
-                  ),
-                ],
+                        try {
+                          TrainingProgram program;
+                          if (format == 'json') {
+                            final map = await parseJsonToExportMapAsync(inputCtrl.text);
+                            program = TrainingShareService.programFromExportMap(
+                              Map<String, dynamic>.from(map['program'] as Map),
+                            );
+                          } else {
+                            final map = await parseCsvToExportMapAsync(inputCtrl.text);
+                            program = TrainingShareService.programFromExportMap(
+                              Map<String, dynamic>.from(map['program'] as Map),
+                            );
+                          }
+
+                          await _finalizeImport(program, ref, messenger);
+                        } catch (e) {
+                          messenger.showSnackBar(SnackBar(content: Text('Errore import: $e')));
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           );
         },
       ),
     );
+  }
+
+  Future<void> _finalizeImport(
+    TrainingProgram program,
+    WidgetRef ref,
+    ScaffoldMessengerState messenger,
+  ) async {
+    try {
+      final ctrl = ref.read(trainingProgramControllerProvider.notifier);
+      final currentAthleteId = ctrl.program.athleteId;
+
+      var importedProgram = program;
+
+      // Se l'atleta differisce, imposta quello corrente e resetta i dati esecuzione
+      if (currentAthleteId.isNotEmpty && program.athleteId != currentAthleteId) {
+        importedProgram = _adaptProgramForAthlete(program, currentAthleteId);
+        await ctrl.updateProgramWeights(importedProgram);
+      }
+
+      // Aggiungi suffisso al nome per chiarezza
+      importedProgram = importedProgram.copyWith(
+        name: importedProgram.name.isNotEmpty
+            ? '${importedProgram.name} (import)'
+            : 'Programma Importato',
+      );
+
+      // Import nel controller mantenendo l'ID corrente se presente
+      ctrl.importProgramModel(importedProgram);
+
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Programma importato con successo')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Errore durante import: $e')));
+    }
+  }
+
+  TrainingProgram _adaptProgramForAthlete(TrainingProgram program, String athleteId) {
+    final adaptedWeeks = program.weeks.map((w) {
+      final adaptedWorkouts = w.workouts.map((wo) {
+        final adaptedExercises = wo.exercises.map((ex) {
+          final adaptedSeries = ex.series
+              .map(
+                (s) => s.copyWith(
+                  done: false,
+                  isCompleted: false,
+                  repsDone: 0,
+                  weightDone: 0.0,
+                ),
+              )
+              .toList();
+
+          // Reset anche le serie nelle progressioni settimanali
+          List<List<WeekProgression>>? adaptedProgressions;
+          if (ex.weekProgressions != null && ex.weekProgressions!.isNotEmpty) {
+            adaptedProgressions = ex.weekProgressions!
+                .map(
+                  (weekList) => weekList
+                      .map((wp) => wp.copyWith(resetCompletionData: true))
+                      .toList(),
+                )
+                .toList();
+          }
+
+          return ex.copyWith(series: adaptedSeries, weekProgressions: adaptedProgressions);
+        }).toList();
+        return wo.copyWith(exercises: adaptedExercises);
+      }).toList();
+      return w.copyWith(workouts: adaptedWorkouts);
+    }).toList();
+
+    return program.copyWith(athleteId: athleteId, weeks: adaptedWeeks);
   }
 }
 

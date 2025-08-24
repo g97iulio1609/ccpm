@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:alphanessone/providers/providers.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/button.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
@@ -413,26 +414,13 @@ class SetCurrentProgramDialog extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return AlertDialog(
-      scrollable: true,
-      insetPadding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-      ),
-      backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
+    return AppDialog(
       title: Text(
         'Imposta come Programma Corrente',
         style: theme.textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
-      ),
-      content: Text(
-        'Sei sicuro di voler impostare questo programma come programma corrente? Questo sostituirà il tuo programma corrente.',
-        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
       ),
       actions: [
         AppButton(
@@ -442,6 +430,10 @@ class SetCurrentProgramDialog extends StatelessWidget {
         ),
         AppButton(label: 'Conferma', onPressed: () => Navigator.of(context).pop(true)),
       ],
+      child: Text(
+        'Sei sicuro di voler impostare questo programma come programma corrente? Questo sostituirà il tuo programma corrente.',
+        style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../Main/app_theme.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 
 class WeightInputFields extends HookConsumerWidget {
   final num maxWeight;
@@ -32,8 +33,8 @@ class WeightInputFields extends HookConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Calcola i pesi basati su intensità
-    final minIntensity = double.tryParse(intensity ?? '') ?? 0;
-    final maxIntensityValue = double.tryParse(maxIntensity ?? '');
+  final minIntensity = FormatParsingExtensions.parseFlexibleDouble(intensity) ?? 0;
+  final maxIntensityValue = FormatParsingExtensions.parseFlexibleDouble(maxIntensity);
 
     final calculatedWeight = maxWeight > 0 ? (maxWeight.toDouble() * minIntensity / 100) : 0;
     final calculatedMaxWeight = maxIntensityValue != null && maxWeight > 0
@@ -106,7 +107,7 @@ class WeightInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final weight = double.tryParse(value) ?? 0;
+                      final weight = FormatParsingExtensions.parseFlexibleDouble(value) ?? 0;
                       onWeightChanged(weight);
                     },
                   ),
@@ -127,7 +128,7 @@ class WeightInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final maxWeight = double.tryParse(value);
+                      final maxWeight = FormatParsingExtensions.parseFlexibleDouble(value);
                       onMaxWeightChanged(maxWeight);
                     },
                   ),

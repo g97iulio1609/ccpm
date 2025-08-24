@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 import 'package:alphanessone/Viewer/domain/entities/timer_preset.dart';
 import 'package:alphanessone/Viewer/presentation/notifiers/exercise_timer_notifier.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
@@ -33,7 +34,7 @@ class CustomInputField extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
+  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*'))],
         textAlign: TextAlign.center,
         style: theme.textTheme.headlineSmall?.copyWith(
           color: colorScheme.onSurface,
@@ -182,7 +183,8 @@ class _ExerciseTimerBottomSheetState extends ConsumerState<ExerciseTimerBottomSh
     } else {
       // Quando il timer è completato, chiama la callback per completare la serie strength
       final int repsDone = int.tryParse(_repsController.text) ?? 0;
-      final double weightDone = double.tryParse(_weightController.text) ?? 0.0;
+    final double weightDone =
+      FormatParsingExtensions.parseFlexibleDouble(_weightController.text) ?? 0.0;
       widget.onSeriesComplete(repsDone, weightDone);
     }
   }

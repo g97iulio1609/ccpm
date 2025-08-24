@@ -12,6 +12,7 @@ import 'package:alphanessone/UI/components/app_card.dart';
 import 'package:alphanessone/UI/components/glass.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
 import 'UI/components/bottom_menu.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class UserProgramsScreen extends HookConsumerWidget {
   final String userId;
@@ -415,26 +416,18 @@ class UserProgramsScreen extends HookConsumerWidget {
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: const Text('Conferma eliminazione'),
-          content: const Text('Sei sicuro di voler eliminare questo programma?'),
           actions: [
-            TextButton(
-              child: const Text('Annulla'),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            FilledButton(
-              child: const Text('Elimina'),
+            AppDialogHelpers.buildCancelButton(context: context),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Elimina',
+              isDestructive: true,
               onPressed: () => Navigator.of(context).pop(true),
             ),
           ],
+          child: const Text('Sei sicuro di voler eliminare questo programma?'),
         );
       },
     );
@@ -459,26 +452,20 @@ class UserProgramsScreen extends HookConsumerWidget {
       context: context,
       builder: (BuildContext context) {
         TextEditingController nameController = TextEditingController();
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: const Text('Duplica Programma'),
-          content: TextField(
+          actions: <Widget>[
+            AppDialogHelpers.buildCancelButton(context: context),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'OK',
+              onPressed: () => Navigator.of(context).pop(nameController.text.trim()),
+            ),
+          ],
+          child: TextField(
             controller: nameController,
             decoration: const InputDecoration(labelText: 'Nuovo Nome del Programma'),
           ),
-          actions: <Widget>[
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annulla')),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(nameController.text.trim()),
-              child: const Text('OK'),
-            ),
-          ],
         );
       },
     );
@@ -535,16 +522,7 @@ class AddProgramDialogState extends State<AddProgramDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return AlertDialog(
-      scrollable: true,
-      insetPadding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-      ),
-      backgroundColor: colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radii.xl)),
+    return AppDialog(
       title: Text(
         'Create New Program',
         style: theme.textTheme.titleLarge?.copyWith(
@@ -553,7 +531,38 @@ class AddProgramDialogState extends State<AddProgramDialog> {
         ),
         textAlign: TextAlign.center,
       ),
-      content: Form(
+      actions: [
+        AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radii.md),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _submitForm,
+              borderRadius: BorderRadius.circular(AppTheme.radii.md),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacing.lg,
+                  vertical: AppTheme.spacing.sm,
+                ),
+                child: Text(
+                  'Create',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+      child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -586,40 +595,6 @@ class AddProgramDialogState extends State<AddProgramDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: TextStyle(color: colorScheme.primary)),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [colorScheme.primary, colorScheme.primary.withAlpha(204)],
-            ),
-            borderRadius: BorderRadius.circular(AppTheme.radii.md),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _submitForm,
-              borderRadius: BorderRadius.circular(AppTheme.radii.md),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing.lg,
-                  vertical: AppTheme.spacing.sm,
-                ),
-                child: Text(
-                  'Create',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 

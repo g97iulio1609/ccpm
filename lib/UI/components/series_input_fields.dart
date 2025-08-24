@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../Main/app_theme.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 
 class SeriesInputFields extends HookConsumerWidget {
   final num maxWeight;
@@ -50,13 +51,13 @@ class SeriesInputFields extends HookConsumerWidget {
 
     // Funzione per calcolare il peso dall'intensità
     void updateWeightFromIntensity(String intensity, [String? maxIntensity]) {
-      final intensityValue = double.tryParse(intensity) ?? 0;
+  final intensityValue = FormatParsingExtensions.parseFlexibleDouble(intensity) ?? 0;
       final calculatedWeight = maxWeight > 0 ? (maxWeight.toDouble() * intensityValue / 100) : 0.0;
       weightController.text = calculatedWeight.toStringAsFixed(1);
       onWeightChanged(calculatedWeight);
 
       if (maxIntensity != null && maxIntensity.isNotEmpty) {
-        final maxIntensityValue = double.tryParse(maxIntensity) ?? 0;
+  final maxIntensityValue = FormatParsingExtensions.parseFlexibleDouble(maxIntensity) ?? 0;
         final calculatedMaxWeight = maxWeight > 0
             ? (maxWeight.toDouble() * maxIntensityValue / 100)
             : 0.0;
@@ -70,7 +71,7 @@ class SeriesInputFields extends HookConsumerWidget {
 
     // Funzione per calcolare l'intensità dal peso
     void updateIntensityFromWeight(String weightStr, [String? maxWeightStr]) {
-      final weightValue = double.tryParse(weightStr) ?? 0;
+  final weightValue = FormatParsingExtensions.parseFlexibleDouble(weightStr) ?? 0;
       final maxWeightRef = maxWeight.toDouble();
 
       if (maxWeightRef > 0) {
@@ -80,7 +81,7 @@ class SeriesInputFields extends HookConsumerWidget {
       }
 
       if (maxWeightStr != null && maxWeightStr.isNotEmpty) {
-        final maxWeightValue = double.tryParse(maxWeightStr) ?? 0;
+  final maxWeightValue = FormatParsingExtensions.parseFlexibleDouble(maxWeightStr) ?? 0;
         if (maxWeightRef > 0) {
           final maxIntensityValue = (maxWeightValue / maxWeightRef) * 100;
           maxIntensityController.text = maxIntensityValue.toStringAsFixed(1);
@@ -151,7 +152,7 @@ class SeriesInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final intensity = double.tryParse(value) ?? 0;
+                      final intensity = FormatParsingExtensions.parseFlexibleDouble(value) ?? 0;
                       onIntensityChanged(intensity);
                       updateWeightFromIntensity(value, maxIntensityController.text);
                     },
@@ -173,7 +174,7 @@ class SeriesInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final maxIntensity = double.tryParse(value);
+                      final maxIntensity = FormatParsingExtensions.parseFlexibleDouble(value);
                       onMaxIntensityChanged(maxIntensity);
                       updateWeightFromIntensity(intensityController.text, value);
                     },
@@ -208,7 +209,7 @@ class SeriesInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final rpe = double.tryParse(value) ?? 0;
+                      final rpe = FormatParsingExtensions.parseFlexibleDouble(value) ?? 0;
                       onRpeChanged(rpe);
                     },
                   ),
@@ -229,7 +230,7 @@ class SeriesInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final maxRpe = double.tryParse(value);
+                      final maxRpe = FormatParsingExtensions.parseFlexibleDouble(value);
                       onMaxRpeChanged(maxRpe);
                     },
                   ),
@@ -263,7 +264,7 @@ class SeriesInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final weight = double.tryParse(value) ?? 0;
+                      final weight = FormatParsingExtensions.parseFlexibleDouble(value) ?? 0;
                       onWeightChanged(weight);
                       updateIntensityFromWeight(value, maxWeightController.text);
                     },
@@ -285,7 +286,7 @@ class SeriesInputFields extends HookConsumerWidget {
                       ),
                     ),
                     onChanged: (value) {
-                      final maxWeight = double.tryParse(value);
+                      final maxWeight = FormatParsingExtensions.parseFlexibleDouble(value);
                       onMaxWeightChanged(maxWeight);
                       updateIntensityFromWeight(weightController.text, value);
                     },

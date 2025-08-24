@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 /// Mixin that provides common functionality for training list widgets
 mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
@@ -12,20 +13,18 @@ mixin TrainingListMixin<T extends StatefulWidget> on State<T> {
   }) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        insetPadding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-        ),
+      builder: (context) => AppDialog(
         title: Text(title),
-        content: Text(content),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Elimina')),
+          AppDialogHelpers.buildCancelButton(context: context),
+          AppDialogHelpers.buildActionButton(
+            context: context,
+            label: 'Elimina',
+            isDestructive: true,
+            onPressed: () => Navigator.pop(context, true),
+          ),
         ],
+        child: Text(content),
       ),
     );
     return result ?? false;

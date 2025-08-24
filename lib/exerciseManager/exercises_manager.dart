@@ -14,6 +14,7 @@ import 'package:alphanessone/UI/components/bottom_menu.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/icon_button_with_background.dart';
 import 'package:alphanessone/UI/components/bottom_input_form.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/UI/components/glass.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
 
@@ -549,35 +550,26 @@ class _ExercisesGridState extends ConsumerState<ExercisesGrid> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        insetPadding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: 24 + MediaQuery.of(dialogContext).viewInsets.bottom,
-        ),
+      builder: (dialogContext) => AppDialog(
         title: Text(
           'Approve Exercise',
           style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
         ),
-        content: Text(
-          'Are you sure you want to approve "${exercise.name}"?',
-          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary)),
-          ),
-          TextButton(
+          AppDialogHelpers.buildCancelButton(context: dialogContext, label: 'Cancel'),
+          AppDialogHelpers.buildActionButton(
+            context: dialogContext,
+            label: 'Approve',
             onPressed: () {
               ref.read(exercisesServiceProvider).approveExercise(exercise.id);
               Navigator.pop(dialogContext);
             },
-            child: Text('Approve', style: TextStyle(color: theme.colorScheme.tertiary)),
           ),
         ],
+        child: Text(
+          'Are you sure you want to approve "${exercise.name}"?',
+          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
       ),
     );
   }

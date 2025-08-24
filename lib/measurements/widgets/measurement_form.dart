@@ -6,6 +6,7 @@ import '../measurement_controller.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/models/measurement_model.dart';
 import 'package:alphanessone/UI/components/button.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 
 class MeasurementForm extends ConsumerStatefulWidget {
   final ScrollController scrollController;
@@ -231,7 +232,7 @@ class _MeasurementFormState extends ConsumerState<MeasurementForm> {
               if (value == null || value.isEmpty) {
                 return null;
               }
-              final number = double.tryParse(value);
+              final number = FormatParsingExtensions.parseFlexibleDouble(value);
               if (number == null) {
                 return 'Inserisci un numero valido';
               }

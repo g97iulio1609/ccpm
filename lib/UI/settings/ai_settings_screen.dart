@@ -6,6 +6,7 @@ import '../../services/ai/ai_settings_service.dart';
 import '../../services/ai/ai_keys_service.dart';
 import '../../providers/auth_providers.dart';
 import 'package:alphanessone/providers/ui_settings_provider.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 class AISettingsScreen extends HookConsumerWidget {
   const AISettingsScreen({super.key});
@@ -298,19 +299,17 @@ class AISettingsScreen extends HookConsumerWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: Text(title),
-          content: Text(content),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'OK',
+              onPressed: () => Navigator.of(context).pop(),
+              isPrimary: true,
+            ),
           ],
+          child: Text(content),
         );
       },
     );

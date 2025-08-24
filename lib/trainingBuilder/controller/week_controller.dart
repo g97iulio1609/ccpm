@@ -81,16 +81,10 @@ class WeekController {
     return showDialog<int>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: const Text('Copy Week'),
-          content: DropdownButtonFormField<int>(
+          actions: [AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel')],
+          child: DropdownButtonFormField<int>(
             value: null,
             items: List.generate(
               program.weeks.length + 1,
@@ -106,7 +100,6 @@ class WeekController {
             },
             decoration: const InputDecoration(labelText: 'Destination Week'),
           ),
-          actions: [AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel')],
         );
       },
     );

@@ -768,16 +768,12 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     return showDialog<DietPlan>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: Text('Select a Template', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
-          content: SizedBox(
+          actions: [
+            AppDialogHelpers.buildCancelButton(context: context, label: 'Cancel'),
+          ],
+          child: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
@@ -795,12 +791,6 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
               },
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: GoogleFonts.roboto()),
-            ),
-          ],
         );
       },
     );

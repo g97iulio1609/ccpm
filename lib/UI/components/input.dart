@@ -284,7 +284,7 @@ class AppInput extends StatelessWidget {
       onChanged: onChanged,
       validator: validator,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
     );
   }
 

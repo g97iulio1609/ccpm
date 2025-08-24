@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 
 Future<void> showSeriesExecutionDialog({
   required BuildContext context,
@@ -37,7 +38,7 @@ Future<void> showSeriesExecutionDialog({
         label: 'Salva',
         onPressed: () async {
           final repsDone = int.tryParse(repsController.text.trim()) ?? 0;
-          final weightDone = double.tryParse(weightController.text.trim()) ?? 0.0;
+          final weightDone = FormatParsingExtensions.parseFlexibleDouble(weightController.text.trim()) ?? 0.0;
           await onSave(repsDone, weightDone);
           if (context.mounted) {
             Navigator.of(context, rootNavigator: true).pop();
@@ -147,7 +148,7 @@ int? _parseDuration(String input) {
 
 int? _parseDistance(String input) {
   if (input.isEmpty) return null;
-  final km = double.tryParse(input);
+  final km = FormatParsingExtensions.parseFlexibleDouble(input);
   if (km == null || km < 0) return null;
   return (km * 1000).round();
 }

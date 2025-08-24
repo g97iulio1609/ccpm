@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/shared/shared.dart';
 import '../domain/services/exercise_business_service.dart';
 import '../dialog/exercise_dialog.dart';
@@ -276,33 +277,21 @@ class ExerciseControllerRefactored {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: const Text('Conferma Rimozione'),
-          content: Text(
+          actions: [
+            AppDialogHelpers.buildCancelButton(context: context),
+            AppDialogHelpers.buildActionButton(
+              context: context,
+              label: 'Rimuovi',
+              isDestructive: true,
+              onPressed: () => Navigator.pop(context, true),
+            ),
+          ],
+          child: Text(
             'Sei sicuro di voler rimuovere l\'esercizio "$exerciseName"?\n\n'
             'Questa azione eliminerà anche tutte le serie associate.',
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Annulla'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Rimuovi'),
-            ),
-          ],
         );
       },
     );
@@ -329,16 +318,12 @@ class ExerciseControllerRefactored {
     return showDialog<Exercise>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-          ),
+        return AppDialog(
           title: const Text('Seleziona Esercizio da Copiare'),
-          content: SizedBox(
+          actions: [
+            AppDialogHelpers.buildCancelButton(context: context),
+          ],
+          child: SizedBox(
             width: double.maxFinite,
             height: 400,
             child: ListView.builder(
@@ -354,9 +339,6 @@ class ExerciseControllerRefactored {
               },
             ),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-          ],
         );
       },
     );

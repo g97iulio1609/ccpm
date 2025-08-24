@@ -40,7 +40,9 @@ class FormatUtils {
 
   /// Validates if a string is a valid number
   static bool isValidNumber(String value) {
-    return double.tryParse(value) != null;
+    if (value.isEmpty) return false;
+    final normalized = value.replaceAll(',', '.');
+    return double.tryParse(normalized) != null;
   }
 
   /// Parses a range string to min/max values
@@ -53,5 +55,14 @@ class FormatUtils {
       );
     }
     return (min: range.trim(), max: '');
+  }
+}
+
+extension FormatParsingExtensions on FormatUtils {
+  /// Parses a double accepting both comma and dot as decimal separator
+  static double? parseFlexibleDouble(String? value) {
+    if (value == null) return null;
+    final normalized = value.trim().replaceAll(',', '.');
+    return double.tryParse(normalized);
   }
 }

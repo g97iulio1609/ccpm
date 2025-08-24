@@ -7,6 +7,13 @@ import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/shared/services/cardio_metrics_service.dart';
 
+// Helper per gestire input decimali con virgola o punto
+double? _parseDoubleFlexible(String? text) {
+  if (text == null) return null;
+  final t = text.trim().replaceAll(',', '.');
+  return double.tryParse(t);
+}
+
 class SeriesDialog extends StatefulWidget {
   final ExerciseRecordService exerciseRecordService;
   final String athleteId;
@@ -282,7 +289,8 @@ class _SeriesDialogState extends State<SeriesDialog> {
             controller: controller,
             focusNode: focusNode,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+            // Consenti sia punto che virgola come separatore decimale
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
             decoration: InputDecoration(
               hintText: hint,
               prefixIcon: Icon(icon, color: colorScheme.primary),
@@ -305,7 +313,8 @@ class _SeriesDialogState extends State<SeriesDialog> {
               controller: maxController,
               focusNode: maxFocusNode,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+              // Consenti sia punto che virgola come separatore decimale
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
               decoration: InputDecoration(
                 hintText: maxHint,
                 prefixIcon: Icon(icon, color: colorScheme.primary),
@@ -671,8 +680,8 @@ class _CardioFormState extends State<_CardioForm> {
     final h = int.tryParse(_hours.text) ?? 0;
     final m = int.tryParse(_minutes.text) ?? 0;
     final dur = (h * 3600) + (m * 60);
-    final pace = int.tryParse(_pace.text);
-    final speed = double.tryParse(_speed.text);
+  final pace = int.tryParse(_pace.text);
+  final speed = _parseDoubleFlexible(_speed.text);
     final dist = _svc.deriveDistanceMeters(
       durationSeconds: dur,
       paceSecPerKm: pace,
@@ -684,7 +693,7 @@ class _CardioFormState extends State<_CardioForm> {
   void _syncFromDistance() {
     final dist = int.tryParse(_distance.text);
     final pace = int.tryParse(_pace.text);
-    final speed = double.tryParse(_speed.text);
+    final speed = _parseDoubleFlexible(_speed.text);
     if (dist != null) {
       final dur = _svc.deriveDurationSeconds(
         distanceMeters: dist,
@@ -699,7 +708,7 @@ class _CardioFormState extends State<_CardioForm> {
   }
 
   void _syncFromSpeed() {
-    final speed = double.tryParse(_speed.text);
+    final speed = _parseDoubleFlexible(_speed.text);
     if (speed != null && speed > 0) {
       _pace.text = _svc.paceSecPerKmFromSpeed(speed).toString();
       _syncFromDistance();
@@ -715,7 +724,7 @@ class _CardioFormState extends State<_CardioForm> {
   }
 
   void _syncHrFromPercent() {
-    final pct = double.tryParse(_hrPct.text) ?? 0;
+    final pct = _parseDoubleFlexible(_hrPct.text) ?? 0;
     final age = int.tryParse(_age.text) ?? 0;
     if (pct > 0 && age > 0) {
       final hrmax = _svc.hrMaxTanaka(age);
@@ -738,10 +747,10 @@ class _CardioFormState extends State<_CardioForm> {
     final m = int.tryParse(_minutes.text) ?? 0;
     final duration = (h == 0 && m == 0) ? null : (h * 3600 + m * 60);
     final distance = int.tryParse(_distance.text);
-    final speed = double.tryParse(_speed.text);
+  final speed = _parseDoubleFlexible(_speed.text);
     final pace = int.tryParse(_pace.text);
-    final incline = double.tryParse(_incline.text);
-    final hrPct = double.tryParse(_hrPct.text);
+  final incline = _parseDoubleFlexible(_incline.text);
+  final hrPct = _parseDoubleFlexible(_hrPct.text);
     final hrBpm = int.tryParse(_hrBpm.text);
     final kcal = int.tryParse(_kcal.text);
     
@@ -888,7 +897,7 @@ class SeriesFormController {
   }
 
   void updateWeightFromIntensity() {
-    final intensity = double.tryParse(intensityController.text) ?? 0.0;
+    final intensity = _parseDoubleFlexible(intensityController.text) ?? 0.0;
     if (intensity > 0) {
       final weight = (latestMaxWeight * intensity / 100).toStringAsFixed(1);
       weightController.text = weight;
@@ -896,7 +905,7 @@ class SeriesFormController {
   }
 
   void updateIntensityFromWeight() {
-    final weight = double.tryParse(weightController.text) ?? 0.0;
+    final weight = _parseDoubleFlexible(weightController.text) ?? 0.0;
     if (weight > 0 && latestMaxWeight > 0) {
       final intensity = ((weight / latestMaxWeight) * 100).toStringAsFixed(1);
       intensityController.text = intensity;
@@ -904,7 +913,7 @@ class SeriesFormController {
   }
 
   void updateMaxWeightFromMaxIntensity() {
-    final maxIntensity = double.tryParse(maxIntensityController.text) ?? 0.0;
+    final maxIntensity = _parseDoubleFlexible(maxIntensityController.text) ?? 0.0;
     if (maxIntensity > 0) {
       final maxWeight = (latestMaxWeight * maxIntensity / 100).toStringAsFixed(1);
       maxWeightController.text = maxWeight;
@@ -912,7 +921,7 @@ class SeriesFormController {
   }
 
   void updateMaxIntensityFromMaxWeight() {
-    final maxWeight = double.tryParse(maxWeightController.text) ?? 0.0;
+    final maxWeight = _parseDoubleFlexible(maxWeightController.text) ?? 0.0;
     if (maxWeight > 0 && latestMaxWeight > 0) {
       final maxIntensity = ((maxWeight / latestMaxWeight) * 100).toStringAsFixed(1);
       maxIntensityController.text = maxIntensity;
@@ -932,8 +941,8 @@ class SeriesFormController {
     final maxIntensity = maxIntensityController.text;
     final rpe = rpeController.text;
     final maxRpe = maxRpeController.text;
-    final weight = double.tryParse(weightController.text) ?? 0.0;
-    final maxWeight = double.tryParse(maxWeightController.text);
+  final weight = _parseDoubleFlexible(weightController.text) ?? 0.0;
+  final maxWeight = _parseDoubleFlexible(maxWeightController.text);
 
     List<Series> newSeries = [];
 

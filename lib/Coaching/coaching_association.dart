@@ -5,6 +5,7 @@ import 'package:alphanessone/providers/providers.dart';
 import 'package:alphanessone/models/user_model.dart';
 import 'package:alphanessone/Main/app_theme.dart';
 import 'package:alphanessone/UI/components/bottom_menu.dart';
+import 'package:alphanessone/UI/components/app_dialog.dart';
 
 /// Provider per ottenere lo stream delle associazioni in base al ruolo dell'utente
 final associationsStreamProvider = StreamProvider.autoDispose<List<Association>>((ref) {
@@ -275,21 +276,14 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      scrollable: true,
-      insetPadding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
-      ),
+    return AppDialog(
       title: const Text('Cerca Coach'),
-      content: SizedBox(
+      // ignore: sort_child_properties_last
+      child: SizedBox(
         width: double.maxFinite,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Campo di testo per inserire il nome o l'email del coach
             TextField(
               controller: _searchController,
               decoration: const InputDecoration(
@@ -299,34 +293,30 @@ class CoachSearchDialogState extends ConsumerState<CoachSearchDialog> {
               onChanged: _performSearch,
             ),
             const SizedBox(height: 10),
-            // Mostra un indicatore di caricamento durante la ricerca
             _isLoading
                 ? const CircularProgressIndicator()
-                : Flexible(
-                    child: SizedBox(
-                      height: 200, // Altezza fissa per il ListView
-                      child: _searchResults.isEmpty
-                          ? const Center(child: Text('Nessun coach trovato.'))
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: _searchResults.length,
-                              itemBuilder: (context, index) {
-                                final coach = _searchResults[index];
-                                return ListTile(
-                                  title: Text(coach.displayName),
-                                  subtitle: Text(coach.email),
-                                  onTap: () => _requestAssociation(coach.id),
-                                );
-                              },
-                            ),
-                    ),
+                : SizedBox(
+                    height: 200,
+                    child: _searchResults.isEmpty
+                        ? const Center(child: Text('Nessun coach trovato.'))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _searchResults.length,
+                            itemBuilder: (context, index) {
+                              final coach = _searchResults[index];
+                              return ListTile(
+                                title: Text(coach.displayName),
+                                subtitle: Text(coach.email),
+                                onTap: () => _requestAssociation(coach.id),
+                              );
+                            },
+                          ),
                   ),
           ],
         ),
       ),
       actions: [
-        // Bottone per annullare e chiudere il dialogo
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+        AppDialogHelpers.buildCancelButton(context: context),
       ],
     );
   }

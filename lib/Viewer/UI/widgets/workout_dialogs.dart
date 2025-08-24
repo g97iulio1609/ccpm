@@ -8,6 +8,7 @@ import 'package:alphanessone/shared/shared.dart';
 import 'package:alphanessone/providers/providers.dart' as app_providers;
 import 'package:alphanessone/Viewer/UI/workout_provider.dart' as workout_provider;
 import 'package:flutter/services.dart';
+import 'package:alphanessone/trainingBuilder/shared/utils/format_utils.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 import 'package:alphanessone/Viewer/presentation/notifiers/workout_details_notifier.dart';
 import 'package:alphanessone/trainingBuilder/services/exercise_service.dart';
@@ -81,7 +82,7 @@ class WorkoutDialogs {
     final keepWeightSwitch = ValueNotifier<bool>(false);
 
     void calculateMaxWeight() {
-      final weight = double.tryParse(weightController.text);
+  final weight = FormatParsingExtensions.parseFlexibleDouble(weightController.text);
       final reps = int.tryParse(repsController.text);
 
       if (weight != null && reps != null && reps > 0) {
@@ -150,7 +151,7 @@ class WorkoutDialogs {
           label: 'Salva',
           onPressed: () async {
             final maxWeight = calculatedMaxWeight.value;
-            final weight = double.tryParse(weightController.text);
+            final weight = FormatParsingExtensions.parseFlexibleDouble(weightController.text);
             if (maxWeight != null && weight != null) {
               await ref
                   .read(workout_provider.workoutServiceProvider)
@@ -334,7 +335,7 @@ class WorkoutDialogs {
           TextField(
             controller: repsController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.,]?\d*'))],
             decoration: const InputDecoration(
               labelText: 'Ripetizioni eseguite',
               hintText: 'Inserisci le ripetizioni',
@@ -346,7 +347,7 @@ class WorkoutDialogs {
           TextField(
             controller: weightController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.,]?\d*'))],
             decoration: const InputDecoration(
               labelText: 'Peso eseguito',
               hintText: 'Inserisci il peso',
@@ -360,8 +361,8 @@ class WorkoutDialogs {
           context: context,
           label: 'Salva',
           onPressed: () {
-            final reps = double.tryParse(repsController.text);
-            final weight = double.tryParse(weightController.text);
+            final reps = FormatParsingExtensions.parseFlexibleDouble(repsController.text);
+            final weight = FormatParsingExtensions.parseFlexibleDouble(weightController.text);
             if (reps != null) {
               seriesData['reps_done'] = reps;
             }

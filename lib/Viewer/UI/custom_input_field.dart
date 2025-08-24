@@ -122,7 +122,7 @@ class _CustomInputFieldState extends State<CustomInputField> with SingleTickerPr
                     child: TextField(
                       controller: widget.controller,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+[\.,]?\d*'))],
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: Colors.white,
