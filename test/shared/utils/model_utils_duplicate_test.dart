@@ -342,4 +342,25 @@ void main() {
       }
     });
   });
+
+  group('TrainingProgram deletion tracking', () {
+    test(
+      'markSeriesForDeletion falls back to document ID when serieId missing',
+      () {
+        final program = TrainingProgram(id: 'p1', name: 'Test');
+        final series = Series(
+          id: 'doc-123',
+          serieId: null,
+          exerciseId: 'ex-1',
+          order: 1,
+          reps: 5,
+          weight: 50,
+        );
+
+        program.markSeriesForDeletion(series);
+
+        expect(program.trackToDeleteSeries, contains('doc-123'));
+      },
+    );
+  });
 }

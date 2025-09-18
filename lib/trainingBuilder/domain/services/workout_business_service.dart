@@ -24,14 +24,23 @@ class WorkoutBusinessService {
 
   /// Rimuove un workout dalla settimana
   void removeWorkout(TrainingProgram program, int weekIndex, int workoutIndex) {
-    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex)) {
-      throw ArgumentError('Indici non validi: week=$weekIndex, workout=$workoutIndex');
+    if (!ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
+      throw ArgumentError(
+        'Indici non validi: week=$weekIndex, workout=$workoutIndex',
+      );
     }
 
     final workout = program.weeks[weekIndex].workouts[workoutIndex];
     _trackWorkoutForDeletion(program, workout);
     program.weeks[weekIndex].workouts.removeAt(workoutIndex);
-    ModelUtils.updateWorkoutOrders(program.weeks[weekIndex].workouts, workoutIndex);
+    ModelUtils.updateWorkoutOrders(
+      program.weeks[weekIndex].workouts,
+      workoutIndex,
+    );
   }
 
   /// Copia un workout in un'altra settimana
@@ -41,14 +50,19 @@ class WorkoutBusinessService {
     int workoutIndex,
     int? destinationWeekIndex,
   ) async {
-    if (!ValidationUtils.isValidProgramIndex(program, sourceWeekIndex, workoutIndex)) {
+    if (!ValidationUtils.isValidProgramIndex(
+      program,
+      sourceWeekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError('Indici sorgente non validi');
     }
 
     final sourceWorkout = program.weeks[sourceWeekIndex].workouts[workoutIndex];
     final copiedWorkout = ModelUtils.copyWorkout(sourceWorkout);
 
-    if (destinationWeekIndex != null && destinationWeekIndex < program.weeks.length) {
+    if (destinationWeekIndex != null &&
+        destinationWeekIndex < program.weeks.length) {
       final destinationWeek = program.weeks[destinationWeekIndex];
       final existingWorkoutIndex = destinationWeek.workouts.indexWhere(
         (workout) => workout.order == sourceWorkout.order,
@@ -79,7 +93,12 @@ class WorkoutBusinessService {
   }
 
   /// Riordina i workout in una settimana
-  void reorderWorkouts(TrainingProgram program, int weekIndex, int oldIndex, int newIndex) {
+  void reorderWorkouts(
+    TrainingProgram program,
+    int weekIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
     if (!ValidationUtils.isValidProgramIndex(program, weekIndex) ||
         oldIndex < 0 ||
         oldIndex >= program.weeks[weekIndex].workouts.length ||
@@ -104,7 +123,11 @@ class WorkoutBusinessService {
     int workoutIndex,
     Workout updatedWorkout,
   ) {
-    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex)) {
+    if (!ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError('Indici non validi per aggiornamento workout');
     }
 
@@ -112,8 +135,16 @@ class WorkoutBusinessService {
   }
 
   /// Duplica un workout nella stessa settimana
-  void duplicateWorkout(TrainingProgram program, int weekIndex, int workoutIndex) {
-    if (!ValidationUtils.isValidProgramIndex(program, weekIndex, workoutIndex)) {
+  void duplicateWorkout(
+    TrainingProgram program,
+    int weekIndex,
+    int workoutIndex,
+  ) {
+    if (!ValidationUtils.isValidProgramIndex(
+      program,
+      weekIndex,
+      workoutIndex,
+    )) {
       throw ArgumentError('Indici non validi per duplicazione workout');
     }
 
@@ -138,7 +169,9 @@ class WorkoutBusinessService {
     }
 
     // Controlla che ogni workout abbia almeno un esercizio o sia configurato correttamente
-    return workouts.every((workout) => workout.exercises.isNotEmpty || workout.order > 0);
+    return workouts.every(
+      (workout) => workout.exercises.isNotEmpty || workout.order > 0,
+    );
   }
 
   /// Ottiene statistiche sui workout per una settimana
@@ -173,7 +206,7 @@ class WorkoutBusinessService {
     if (workout.id != null) {
       program.trackToDeleteWorkouts.add(workout.id!);
     }
-    for (var exercise in workout.exercises) {
+    for (final exercise in workout.exercises) {
       _trackExerciseForDeletion(program, exercise);
     }
   }
@@ -182,15 +215,13 @@ class WorkoutBusinessService {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
-    for (var series in exercise.series) {
+    for (final series in exercise.series) {
       _trackSeriesForDeletion(program, series);
     }
   }
 
-  void _trackSeriesForDeletion(TrainingProgram program, series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
-    }
+  void _trackSeriesForDeletion(TrainingProgram program, Series series) {
+    program.markSeriesForDeletion(series);
   }
 
   void _addWeekToProgram(TrainingProgram program) {

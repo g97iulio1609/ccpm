@@ -390,6 +390,10 @@ extension SeriesCompatibility on Series {
   /// Check if this is a range series
   bool get isRange => hasRange;
 
+  /// ID to use for persistence operations (falls back to Firestore doc ID)
+  String? get persistedSerieId =>
+      (serieId != null && serieId!.isNotEmpty) ? serieId : (id?.isNotEmpty == true ? id : null);
+
   /// Get display text for reps (handles ranges)
   String get repsDisplay {
     if (maxReps != null && maxReps != reps) {

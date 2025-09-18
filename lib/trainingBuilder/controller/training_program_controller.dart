@@ -173,9 +173,7 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
           final exercise = workout.exercises[exerciseIndex];
 
           for (final series in exercise.series) {
-            if (!program.trackToDeleteSeries.contains(series.serieId ?? '')) {
-              program.trackToDeleteSeries.add(series.serieId ?? '');
-            }
+            program.markSeriesForDeletion(series);
           }
 
           // Create updated series with the new progressions

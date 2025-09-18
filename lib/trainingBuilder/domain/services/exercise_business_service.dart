@@ -427,14 +427,12 @@ class ExerciseBusinessService {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
-    for (var series in exercise.series) {
+    for (final series in exercise.series) {
       _trackSeriesForDeletion(program, series);
     }
   }
 
   void _trackSeriesForDeletion(TrainingProgram program, Series series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
-    }
+    program.markSeriesForDeletion(series);
   }
 }

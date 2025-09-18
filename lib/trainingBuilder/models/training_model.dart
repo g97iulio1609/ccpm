@@ -93,4 +93,12 @@ class TrainingProgram {
       'mesocycleNumber': mesocycleNumber,
     };
   }
+
+  void markSeriesForDeletion(Series series) {
+    final persistedId = series.persistedSerieId;
+    if (persistedId == null) return;
+    if (!trackToDeleteSeries.contains(persistedId)) {
+      trackToDeleteSeries.add(persistedId);
+    }
+  }
 }

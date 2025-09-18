@@ -1,4 +1,5 @@
-import 'package:alphanessone/shared/shared.dart' hide ValidationUtils, ModelUtils, WeekRepository;
+import 'package:alphanessone/shared/shared.dart'
+    hide ValidationUtils, ModelUtils, WeekRepository;
 import '../../shared/utils/validation_utils.dart';
 import '../../shared/utils/model_utils.dart';
 
@@ -36,20 +37,25 @@ class WeekBusinessService {
     int? destinationWeekIndex,
   ) async {
     if (!ValidationUtils.isValidProgramIndex(program, sourceWeekIndex)) {
-      throw ArgumentError('Indice settimana sorgente non valido: $sourceWeekIndex');
+      throw ArgumentError(
+        'Indice settimana sorgente non valido: $sourceWeekIndex',
+      );
     }
 
     final sourceWeek = program.weeks[sourceWeekIndex];
     final copiedWeek = ModelUtils.copyWeek(sourceWeek);
 
-    if (destinationWeekIndex != null && destinationWeekIndex < program.weeks.length) {
+    if (destinationWeekIndex != null &&
+        destinationWeekIndex < program.weeks.length) {
       final destinationWeek = program.weeks[destinationWeekIndex];
       if (destinationWeek.id != null) {
         program.trackToDeleteWeeks.add(destinationWeek.id!);
       }
       program.weeks[destinationWeekIndex] = copiedWeek;
     } else {
-      final weekWithNewNumber = copiedWeek.copyWith(number: program.weeks.length + 1);
+      final weekWithNewNumber = copiedWeek.copyWith(
+        number: program.weeks.length + 1,
+      );
       program.weeks.add(weekWithNewNumber);
     }
   }
@@ -112,8 +118,12 @@ class WeekBusinessService {
       'totalWeeks': program.weeks.length,
       'totalWorkouts': totalWorkouts,
       'totalExercises': totalExercises,
-      'averageWorkoutsPerWeek': program.weeks.isNotEmpty ? totalWorkouts / program.weeks.length : 0,
-      'averageExercisesPerWorkout': totalWorkouts > 0 ? totalExercises / totalWorkouts : 0,
+      'averageWorkoutsPerWeek': program.weeks.isNotEmpty
+          ? totalWorkouts / program.weeks.length
+          : 0,
+      'averageExercisesPerWorkout': totalWorkouts > 0
+          ? totalExercises / totalWorkouts
+          : 0,
     };
   }
 
@@ -123,7 +133,7 @@ class WeekBusinessService {
     if (week.id != null) {
       program.trackToDeleteWeeks.add(week.id!);
     }
-    for (var workout in week.workouts) {
+    for (final workout in week.workouts) {
       _trackWorkoutForDeletion(program, workout);
     }
   }
@@ -132,23 +142,21 @@ class WeekBusinessService {
     if (workout.id != null) {
       program.trackToDeleteWorkouts.add(workout.id!);
     }
-    for (var exercise in workout.exercises) {
+    for (final exercise in workout.exercises) {
       _trackExerciseForDeletion(program, exercise);
     }
   }
 
-  void _trackExerciseForDeletion(TrainingProgram program, exercise) {
+  void _trackExerciseForDeletion(TrainingProgram program, Exercise exercise) {
     if (exercise.id != null) {
       program.trackToDeleteExercises.add(exercise.id!);
     }
-    for (var series in exercise.series) {
+    for (final series in exercise.series) {
       _trackSeriesForDeletion(program, series);
     }
   }
 
-  void _trackSeriesForDeletion(TrainingProgram program, series) {
-    if (series.serieId != null) {
-      program.trackToDeleteSeries.add(series.serieId!);
-    }
+  void _trackSeriesForDeletion(TrainingProgram program, Series series) {
+    program.markSeriesForDeletion(series);
   }
 }
