@@ -611,6 +611,16 @@ class TrainingProgramController extends StateNotifier<TrainingProgram> {
     _emit();
   }
 
+  void duplicateWorkout(int weekIndex, int workoutIndex, int newOrder) {
+    _workoutController.duplicateWorkout(
+      program,
+      weekIndex,
+      workoutIndex,
+      newOrder,
+    );
+    _emit();
+  }
+
   void updateSeries(
     int weekIndex,
     int workoutIndex,

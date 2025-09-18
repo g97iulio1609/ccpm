@@ -4,6 +4,15 @@ import 'package:alphanessone/trainingBuilder/utility_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:alphanessone/UI/components/app_dialog.dart';
 
+class WorkoutDuplicationException implements Exception {
+  final String message;
+
+  WorkoutDuplicationException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class WorkoutController {
   void addWorkout(TrainingProgram program, int weekIndex) {
     final newWorkout = Workout(
@@ -62,6 +71,68 @@ class WorkoutController {
           .workouts[i]
           .copyWith(order: i + 1);
     }
+  }
+
+  void duplicateWorkout(
+    TrainingProgram program,
+    int weekIndex,
+    int sourceWorkoutIndex,
+    int newOrder,
+  ) {
+    final week = program.weeks[weekIndex];
+    final maxOrder = week.workouts.length + 1;
+
+    if (newOrder < 1 || newOrder > maxOrder) {
+      throw WorkoutDuplicationException(
+        'Il numero allenamento deve essere compreso tra 1 e $maxOrder.',
+      );
+    }
+
+    final hasExistingOrder = week.workouts.any(
+      (workout) => workout.order == newOrder,
+    );
+    if (hasExistingOrder) {
+      throw WorkoutDuplicationException(
+        'Esiste già un allenamento con questo numero. Scegli un valore diverso.',
+      );
+    }
+
+    final sourceWorkout = week.workouts[sourceWorkoutIndex];
+    final duplicatedWorkout = _copyWorkout(sourceWorkout).copyWith(
+      order: newOrder,
+      name: _deriveDuplicatedWorkoutName(sourceWorkout, newOrder),
+    );
+
+    final insertIndex = newOrder - 1;
+    week.workouts.insert(insertIndex, duplicatedWorkout);
+    _reindexWorkouts(week.workouts, insertIndex);
+  }
+
+  String _deriveDuplicatedWorkoutName(Workout sourceWorkout, int newOrder) {
+    final defaultSourceName = 'Workout ${sourceWorkout.order}';
+    final trimmedName = sourceWorkout.name.trim();
+
+    if (trimmedName.isEmpty || trimmedName == defaultSourceName) {
+      return 'Workout $newOrder';
+    }
+
+    return trimmedName;
+  }
+
+  void _reindexWorkouts(List<Workout> workouts, int startIndex) {
+    for (int i = startIndex; i < workouts.length; i++) {
+      final workout = workouts[i];
+      final bool usesDefaultName = _usesDefaultName(workout);
+      workouts[i] = workout.copyWith(
+        order: i + 1,
+        name: usesDefaultName ? 'Workout ${i + 1}' : workout.name,
+      );
+    }
+  }
+
+  bool _usesDefaultName(Workout workout) {
+    final expectedName = 'Workout ${workout.order}';
+    return workout.name.trim() == expectedName;
   }
 
   Future<void> copyWorkout(
